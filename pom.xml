@@ -6,10 +6,10 @@
 
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>xsloader4j</name>
-    <description>让java web项目支持JavaScript ES6+、*.SCSS、*.LESS、*.vue、*.jsx。</description>
+    <description>让java web项目支持JavaScript ES6+、*.SCSS、*.LESS、*.vue、*.jsx。（*.vue与*.jsx还未加入）</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <licenses>
@@ -44,7 +44,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <project.OftenPorter.version>1.2.75</project.OftenPorter.version>
+        <project.OftenPorter.version>1.2.76</project.OftenPorter.version>
         <project.log4j12.version>1.7.30</project.log4j12.version>
     </properties>
 

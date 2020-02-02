@@ -25,7 +25,7 @@ public class DefaultConfigFilter extends XsloaderConfigFilter
 
     public String getResourcePath()
     {
-        return "/xsloader-config.js";
+        return "/xsloader-conf.js";
     }
 
     @Override
