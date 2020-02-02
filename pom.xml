@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.xishankeji</groupId>
+    <artifactId>xsloader4j</artifactId>
+    <version>1.0.0</version>
+
+    <name>xsloader4j</name>
+    <description></description>
+    <url>https://github.com/gzxishan/xsloader4j</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>chenyg</name>
+            <email>zggzcyg@qq.com</email>
+            <organization>GuiZhouXiShanTechnology</organization>
+            <organizationUrl>http://www.xishankeji.com</organizationUrl>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>
+            scm:git:https://github.com/gzxishan/xsloader4j.git
+        </connection>
+        <developerConnection>
+            scm:git:https://github.com/gzxishan/xsloader4j.git
+        </developerConnection>
+        <url>https://github.com/gzxishan/xsloader4j</url>
+        <tag>v1.0.x</tag>
+    </scm>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+
+        <project.OftenPorter.version>1.2.75</project.OftenPorter.version>
+        <project.log4j12.version>1.7.30</project.log4j12.version>
+    </properties>
+
+
+    <!--发布到私服-->
+    <distributionManagement>
+        <repository>
+            <id>${repo.releases.id}</id>
+            <name>Releases</name>
+            <url>${repo.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${repo.snapshots.id}</id>
+            <name>Snapshots</name>
+            <url>${repo.snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_win32_x86_64 -->
+        <dependency>
+            <groupId>com.eclipsesource.j2v8</groupId>
+            <artifactId>j2v8_win32_x86_64</artifactId>
+            <version>4.6.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_linux_x86_64 -->
+        <dependency>
+            <groupId>com.eclipsesource.j2v8</groupId>
+            <artifactId>j2v8_linux_x86_64</artifactId>
+            <version>4.6.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_win32_x86_64 -->
+        <dependency>
+            <groupId>com.eclipsesource.j2v8</groupId>
+            <artifactId>j2v8_macosx_x86_64</artifactId>
+            <version>4.6.0</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/io.bit3/jsass -->
+        <!--用于转化scss css-->
+        <dependency>
+            <groupId>io.bit3</groupId>
+            <artifactId>jsass</artifactId>
+            <version>5.9.2</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/de.inetsoftware/jlessc -->
+        <!--用于转化less css-->
+        <dependency>
+            <groupId>de.inetsoftware</groupId>
+            <artifactId>jlessc</artifactId>
+            <version>1.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.xishankeji</groupId>
+            <artifactId>Porter-Core</artifactId>
+            <version>${project.OftenPorter.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.xishankeji</groupId>
+            <artifactId>Porter-Bridge-Servlet</artifactId>
+            <version>${project.OftenPorter.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${project.log4j12.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+
+    <build>
+        <plugins>
+            <plugin><!-- 用于导出源码 -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <!-- 要绑定到的生命周期的阶段 在verify之后，install之前执行下面指定的goal -->
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                            <!-- 类似执行mvn source:jar -->
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includePom>true</includePom>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19.1</version>
+                <configuration>
+                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!--
+  发布命令：mvn clean deploy -P release-oss
+  https://oss.sonatype.org
+  https://oss.sonatype.org/content/repositories/snapshots/
+  -->
+    <profiles>
+        <profile>
+            <id>release-oss</id>
+            <build>
+                <plugins>
+                    <!-- Source -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>2.4</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <includePom>true</includePom>
+                        </configuration>
+                    </plugin>
+                    <!-- Javadoc -->
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <encoding>UTF-8</encoding>
+                                    <!--<additionalparam>-Xdoclint:none</additionalparam>-->
+                                    <doclint>none</doclint>
+                                    <failOnError>false</failOnError>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </plugin>
+                    <!-- GPG -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>gpg</executable>
+                            <passphrase>${sonatype.gpg.passphrase}</passphrase>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>${sonatype.id}</id>
+                    <url>${sonatype.snapshots.url}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${sonatype.id}</id>
+                    <url>${sonatype.releases.url}</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
+</project>
