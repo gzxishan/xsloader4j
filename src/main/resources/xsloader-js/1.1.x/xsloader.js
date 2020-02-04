@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.6
+ * xsloader.js v1.1.7
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue, 04 Feb 2020 06:01:04 GMT
+ * build time:Tue, 04 Feb 2020 12:03:23 GMT
  */
 (function () {
   'use strict';
@@ -4564,6 +4564,11 @@
       height: 1,
       delay: 500
     }, option.plugins.loading);
+
+    if (script.theLoaderScript.getAttribute("disable-loading") !== undefined) {
+      option.plugins.loading.enable = false;
+    }
+
     option.plugins.image = xsloader$b.extend({
       timeout: 10000
     }, option.plugins.image);
