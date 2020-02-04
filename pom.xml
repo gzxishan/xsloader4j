@@ -6,7 +6,7 @@
 
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 
     <name>xsloader4j</name>
     <description>让java web项目支持JavaScript ES6+、*.SCSS、*.LESS、*.vue、*.jsx。（*.vue与*.jsx还未加入）</description>

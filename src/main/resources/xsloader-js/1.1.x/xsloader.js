@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed, 29 Jan 2020 12:54:56 GMT
+ * build time:Tue, 04 Feb 2020 06:01:04 GMT
  */
 (function () {
   'use strict';
@@ -6470,24 +6470,28 @@
               return;
             }
 
-            var cmd = data.cmd;
-            var oinstanceid = data.id;
-            var rdata = data.data;
-            var type = data.type;
-            var msgid = data.msgid;
+            try {
+              var cmd = data.cmd;
+              var oinstanceid = data.id;
+              var rdata = data.data;
+              var type = data.type;
+              var msgid = data.msgid;
 
-            if (type == "conn") {
-              handleConn(cmd, event.source, event.origin, rdata, oinstanceid);
-            } else if (type == "accept") {
-              handleAccept(cmd, event.source, event.origin, rdata, oinstanceid, msgid);
-            } else if (type == "conned") {
-              handleConned(cmd, event.source, event.origin, rdata, oinstanceid);
-            } else if (type == "msg") {
-              handleMsg(cmd, event.source, event.origin, rdata, oinstanceid, msgid);
-            } else if (type == "response") {
-              handleResponse(cmd, event.source, event.origin, rdata, oinstanceid);
-            } else if (type == "binded") {
-              handleBinded(cmd, event.source, event.origin, rdata);
+              if (type == "conn") {
+                handleConn(cmd, event.source, event.origin, rdata, oinstanceid);
+              } else if (type == "accept") {
+                handleAccept(cmd, event.source, event.origin, rdata, oinstanceid, msgid);
+              } else if (type == "conned") {
+                handleConned(cmd, event.source, event.origin, rdata, oinstanceid);
+              } else if (type == "msg") {
+                handleMsg(cmd, event.source, event.origin, rdata, oinstanceid, msgid);
+              } else if (type == "response") {
+                handleResponse(cmd, event.source, event.origin, rdata, oinstanceid);
+              } else if (type == "binded") {
+                handleBinded(cmd, event.source, event.origin, rdata);
+              }
+            } catch (e) {
+              console.error(e);
             }
           }
         });
