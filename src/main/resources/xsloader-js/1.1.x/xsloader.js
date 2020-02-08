@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.7
+ * xsloader.js v1.1.8
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue, 04 Feb 2020 12:03:23 GMT
+ * build time:Sat, 08 Feb 2020 14:02:17 GMT
  */
 (function () {
   'use strict';
@@ -960,9 +960,122 @@
     ToProgress: ToProgress
   };
 
+  function Base64() {
+    var _keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+
+    this.encode = function (input) {
+      var output = "";
+      var chr1, chr2, chr3, enc1, enc2, enc3, enc4;
+      var i = 0;
+      input = _utf8_encode(input);
+
+      while (i < input.length) {
+        chr1 = input.charCodeAt(i++);
+        chr2 = input.charCodeAt(i++);
+        chr3 = input.charCodeAt(i++);
+        enc1 = chr1 >> 2;
+        enc2 = (chr1 & 3) << 4 | chr2 >> 4;
+        enc3 = (chr2 & 15) << 2 | chr3 >> 6;
+        enc4 = chr3 & 63;
+
+        if (isNaN(chr2)) {
+          enc3 = enc4 = 64;
+        } else if (isNaN(chr3)) {
+          enc4 = 64;
+        }
+
+        output = output + _keyStr.charAt(enc1) + _keyStr.charAt(enc2) + _keyStr.charAt(enc3) + _keyStr.charAt(enc4);
+      }
+
+      return output;
+    };
+
+    this.decode = function (input) {
+      var output = "";
+      var chr1, chr2, chr3;
+      var enc1, enc2, enc3, enc4;
+      var i = 0;
+      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+      while (i < input.length) {
+        enc1 = _keyStr.indexOf(input.charAt(i++));
+        enc2 = _keyStr.indexOf(input.charAt(i++));
+        enc3 = _keyStr.indexOf(input.charAt(i++));
+        enc4 = _keyStr.indexOf(input.charAt(i++));
+        chr1 = enc1 << 2 | enc2 >> 4;
+        chr2 = (enc2 & 15) << 4 | enc3 >> 2;
+        chr3 = (enc3 & 3) << 6 | enc4;
+        output = output + String.fromCharCode(chr1);
+
+        if (enc3 != 64) {
+          output = output + String.fromCharCode(chr2);
+        }
+
+        if (enc4 != 64) {
+          output = output + String.fromCharCode(chr3);
+        }
+      }
+
+      output = _utf8_decode(output);
+      return output;
+    };
+
+    var _utf8_encode = function _utf8_encode(string) {
+      string = string.replace(/\r\n/g, "\n");
+      var utftext = "";
+
+      for (var n = 0; n < string.length; n++) {
+        var c = string.charCodeAt(n);
+
+        if (c < 128) {
+          utftext += String.fromCharCode(c);
+        } else if (c > 127 && c < 2048) {
+          utftext += String.fromCharCode(c >> 6 | 192);
+          utftext += String.fromCharCode(c & 63 | 128);
+        } else {
+          utftext += String.fromCharCode(c >> 12 | 224);
+          utftext += String.fromCharCode(c >> 6 & 63 | 128);
+          utftext += String.fromCharCode(c & 63 | 128);
+        }
+      }
+
+      return utftext;
+    };
+
+    var _utf8_decode = function _utf8_decode(utftext) {
+      var string = "";
+      var i = 0;
+      var c = 0,
+          c2 = 0,
+          c3 = 0;
+
+      while (i < utftext.length) {
+        c = utftext.charCodeAt(i);
+
+        if (c < 128) {
+          string += String.fromCharCode(c);
+          i++;
+        } else if (c > 191 && c < 224) {
+          c2 = utftext.charCodeAt(i + 1);
+          string += String.fromCharCode((c & 31) << 6 | c2 & 63);
+          i += 2;
+        } else {
+          c2 = utftext.charCodeAt(i + 1);
+          c3 = utftext.charCodeAt(i + 2);
+          string += String.fromCharCode((c & 15) << 12 | (c2 & 63) << 6 | c3 & 63);
+          i += 3;
+        }
+      }
+
+      return string;
+    };
+  }
+
   var utils = _objectSpread2({}, urls, {
     global: global$1
-  }, base, {}, loading);
+  }, base, {}, loading, {
+    base64: Base64
+  });
 
   var global$2 = utils.global;
   var xsloader$3 = global$2.xsloader;
@@ -2197,7 +2310,8 @@
 
   var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
     _ignoreAspect_: {},
-    each: utils.each
+    each: utils.each,
+    Base64: utils.base64
   });
 
   for (var _k in justLoader) {
@@ -4929,6 +5043,14 @@
     return true;
   };
 
+  require.get = function (name) {
+    if (!xsloader$c.isString(name)) {
+      throw new Error("expected string type for module name");
+    } else {
+      return require(name);
+    }
+  };
+
   xsloader$c.define = define;
   xsloader$c.defineAsync = define;
   xsloader$c.require = require;
@@ -5031,8 +5153,18 @@
       if (vars.length == 0) {
         onerror("args error for exists!");
       } else {
-        var moduleName = vars[0];
-        var module = moduleScript.getModule(moduleName);
+        var moduleNames = vars[0].replace(/\s/g, " ").split(" or ");
+        var moduleName;
+        var module;
+
+        for (var _i = 0; _i < moduleNames.length; _i++) {
+          moduleName = moduleNames[_i].trim();
+          module = moduleScript.getModule(moduleName);
+
+          if (module) {
+            break;
+          }
+        }
 
         if (module) {
           this.invoker().withAbsUrl().require([moduleName], function (mod, depModuleArgs) {
@@ -5043,9 +5175,9 @@
         } else {
           var obj = undefined;
 
-          for (var _i = 1; _i < vars.length; _i++) {
-            if (window[vars[_i]]) {
-              obj = window[vars[_i]];
+          for (var _i2 = 1; _i2 < vars.length; _i2++) {
+            if (window[vars[_i2]]) {
+              obj = window[vars[_i2]];
               break;
             }
           }
@@ -6607,7 +6739,176 @@
 
   var global$s = utils.global;
   var xsloader$t = global$s.xsloader;
-  var http = global$s._xshttp_request_;
+  xsloader$t.define("xsloader4j-server-bridge", [], function () {
+    var base64 = new xsloader$t.Base64();
+    var isDebug = false;
+
+    function __renderJsx(vm) {
+      return function (component, props) {
+        if (!vm || !vm.$createElement) {
+          var Vue = xsloader$t.require.get("vue");
+
+          vm = new Vue();
+        }
+
+        var $createElement = vm.$createElement;
+
+        if (!$createElement) {
+          throw new Error("not found function '$createElement'");
+        }
+
+        var children = [];
+
+        for (var i = 2; i < arguments.length; i++) {
+          children.push(arguments[i]);
+        }
+
+        return $createElement(component, props, children);
+      };
+    }
+
+    var mod = {
+      getDefine: function getDefine(thiz) {
+        return thiz.define;
+      },
+      getRequire: function getRequire(thiz) {
+        return thiz.require;
+      },
+      getInvoker: function getInvoker(thiz) {
+        return thiz.invoker();
+      },
+      renderJsx: function renderJsx(vm) {
+        return __renderJsx(vm);
+      },
+      getVueCompiler: function getVueCompiler(thiz) {
+        var rt = function rt(exports) {
+          var Vue = xsloader$t.require.get("vue");
+
+          var _default = exports['default'] || exports;
+
+          if (_default.template) {
+            var dealUrl = function dealUrl(reg, group, str, appendArgs, fun) {
+              fun = fun || function (regResult, url) {
+                return url;
+              };
+
+              var result = "";
+
+              while (true) {
+                var rs = reg.exec(str);
+
+                if (!rs) {
+                  result += str;
+                  break;
+                } else {
+                  var rurl = rs[group].trim();
+                  result += str.substring(0, rs.index);
+
+                  if (xsloader$t.startsWith(rurl, "url(")) {
+                    result += rs[0];
+                  } else {
+                    result += fun(rs, thiz.getUrl(rurl, appendArgs));
+                  }
+
+                  str = str.substring(rs.index + rs[0].length);
+                }
+              }
+
+              return result;
+            };
+
+            _default.template = dealUrl(/(^|\s)(src|href)\s*=\s*('|")([^'"\(\)]+)('|")/, 4, _default.template, false, function (regResult, url) {
+              return regResult[2] + "=" + regResult[3] + url + regResult[5];
+            });
+            _default.template = dealUrl(/(^|\s)url\(([^\(\)]+)\)/, 2, _default.template, true);
+            var res;
+
+            try {
+              if (isDebug) {
+                console.log("compile vue template content,url=", thiz.getUrl());
+              }
+
+              res = Vue.compile(_default.template);
+            } catch (e) {
+              console.error("url=", thiz.getUrl());
+              throw e;
+            }
+
+            _default.render = res.render;
+            _default.staticRenderFns = res.staticRenderFns;
+          }
+
+          delete _default.template;
+        };
+
+        return rt;
+      },
+      getVtemplate: function getVtemplate(thiz) {
+        var vtemplate = function vtemplate(component) {
+          return function (resolve, reject) {
+            var invoker = thiz.invoker();
+
+            thiz.require([component], function (comp) {
+              resolve(comp);
+            }).error(function (err) {
+              reject(err.err);
+            });
+          };
+        };
+
+        return vtemplate;
+      },
+      getImporter: function getImporter(thiz) {
+        var vtemplate = this.getVtemplate(thiz);
+        return function (name) {
+          return new Promise(vtemplate(name));
+        };
+      },
+      getStyleBuilder: function getStyleBuilder(thiz) {
+        return function (cssContent) {
+          if (cssContent) {
+            var id = xsloader$t.randId();
+            var count = 0;
+            var styleDom = document.createElement("style");
+            styleDom.setAttribute("id", id);
+            styleDom.setAttribute("type", "text/css");
+            styleDom.innerHTML = cssContent;
+            var obj = {
+              init: function init() {
+                if (count <= 0) {
+                  xsloader$t.appendHeadDom(styleDom);
+                }
+
+                count++;
+                return {
+                  destroy: function destroy() {
+                    if (--count <= 0) {
+                      var element = document.getElementById(id);
+
+                      if (element) {
+                        element.parentNode.removeChild(element);
+                      }
+                    }
+                  }
+                };
+              }
+            };
+            return obj;
+          }
+        };
+      },
+      decodeBase64: function decodeBase64(base64Content) {
+        if (base64Content) {
+          return base64.decode(base64Content);
+        }
+      }
+    };
+    return mod;
+  });
+
+  var global$t = utils.global;
+  var xsloader$u = global$t.xsloader;
+  var http = global$t._xshttp_request_;
   var DATA_CONF = "data-conf",
       DATA_CONFX = "data-xsloader-conf";
   var DATA_CONF2 = "data-conf2",
@@ -6616,9 +6917,9 @@
       DATA_MAINX = "data-xsloader-main";
   var DATA_CONF_TYPE = "data-conf-type";
   var serviceConfigUrl;
-  var dataConf = xsloader$t.script().getAttribute(DATA_CONF) || xsloader$t.script().getAttribute(DATA_CONFX);
-  var dataMain = xsloader$t.script().getAttribute(DATA_MAIN) || xsloader$t.script().getAttribute(DATA_MAINX);
-  var dataConfType = xsloader$t.script().getAttribute(DATA_CONF_TYPE);
+  var dataConf = xsloader$u.script().getAttribute(DATA_CONF) || xsloader$u.script().getAttribute(DATA_CONFX);
+  var dataMain = xsloader$u.script().getAttribute(DATA_MAIN) || xsloader$u.script().getAttribute(DATA_MAINX);
+  var dataConfType = xsloader$u.script().getAttribute(DATA_CONF_TYPE);
 
   if (dataConfType !== "json" && dataConfType != "js") {
     dataConfType = "auto";
@@ -6635,7 +6936,7 @@
         name = "index";
       }
 
-      if (xsloader$t.endsWith(name, ".html")) {
+      if (xsloader$u.endsWith(name, ".html")) {
         name = name.substring(0, name.length - 5);
       }
 
@@ -6648,7 +6949,7 @@
     }
 
     function extendConfig(config) {
-      config = xsloader$t.extendDeep({
+      config = xsloader$u.extendDeep({
         properties: {},
         main: {
           getPath: function getPath() {
@@ -6690,14 +6991,14 @@
           var conf;
 
           if (dataConfType == "js") {
-            conf = xsloader$t.xsEval(confText);
+            conf = xsloader$u.xsEval(confText);
           } else if (dataConfType == "json") {
-            conf = xsloader$t.xsParseJson(confText);
+            conf = xsloader$u.xsParseJson(confText);
           } else {
-            if (xsloader$t.startsWith(url, location.protocol + "//" + location.host + "/")) {
-              conf = xsloader$t.xsEval(confText);
+            if (xsloader$u.startsWith(url, location.protocol + "//" + location.host + "/")) {
+              conf = xsloader$u.xsEval(confText);
             } else {
-              conf = xsloader$t.xsParseJson(confText);
+              conf = xsloader$u.xsParseJson(confText);
             }
           }
 
@@ -6707,13 +7008,13 @@
             conf.beforeDealProperties();
           }
 
-          conf = xsloader$t.dealProperties(conf, conf.properties);
+          conf = xsloader$u.dealProperties(conf, conf.properties);
 
           if (isLocal && conf.service.hasGlobal) {
             loadServiceConfig("global servie", conf.service.confUrl, function (globalConfig) {
               var localConfig = conf;
-              global$s[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
-              global$s[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
+              global$t[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
+              global$t[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
               var mainName, mainPath, loaderName;
               loaderName = globalConfig.chooseLoader.call(globalConfig, localConfig);
               var conf;
@@ -6761,7 +7062,7 @@
 
     function startLoad() {
       loadServiceConfig("local", serviceConfigUrl, function (localConfig) {
-        global$s[localConfig.main.localConfigVar] = localConfig;
+        global$t[localConfig.main.localConfigVar] = localConfig;
         var mainName = localConfig.main.name;
         var href = location.href;
         var index = href.lastIndexOf("?");
@@ -6792,10 +7093,10 @@
       conf.service.resUrls && Array.pushAll(resUrls, conf.service.resUrls);
       localConfig !== conf && localConfig.service.resUrls && Array.pushAll(resUrls, localConfig.service.resUrls);
 
-      xsloader$t._resUrlBuilder = function (groupModule) {
+      xsloader$u._resUrlBuilder = function (groupModule) {
         var as = [];
         utils.each(resUrls, function (url) {
-          as.push(xsloader$t.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
+          as.push(xsloader$u.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
         });
         return as;
       };
@@ -6805,7 +7106,7 @@
       loader.depsPaths = loader.depsPaths || {};
 
       if (mainPath.indexOf("!") != -1) {
-        var theConfig = xsloader$t(loader);
+        var theConfig = xsloader$u(loader);
         mainName = "_plugin_main_";
         var deps = [];
 
@@ -6820,31 +7121,31 @@
         }
 
         deps.push(mainPath);
-        xsloader$t.define(mainName, deps, function () {}).then({
+        xsloader$u.define(mainName, deps, function () {}).then({
           absUrl: pageHref
         });
-      } else if (!xsloader$t.hasDefine(mainName)) {
+      } else if (!xsloader$u.hasDefine(mainName)) {
         loader.depsPaths[mainName] = mainPath;
-        xsloader$t(loader);
+        xsloader$u(loader);
       } else {
-        xsloader$t(loader);
+        xsloader$u(loader);
       }
 
       loader.defineFunction[mainName] = function (originCallback, originThis, originArgs) {
-        if (xsloader$t.isFunction(conf.main.before)) {
+        if (xsloader$u.isFunction(conf.main.before)) {
           conf.main.before.call(conf, mainName);
         }
 
         var rt = originCallback.apply(originThis, originArgs);
 
-        if (xsloader$t.isFunction(conf.main.after)) {
+        if (xsloader$u.isFunction(conf.main.after)) {
           conf.main.after.call(conf, mainName);
         }
 
         return rt;
       };
 
-      xsloader$t.require([mainName], function (main) {}).error(function (err, invoker) {
+      xsloader$u.require([mainName], function (main) {}).error(function (err, invoker) {
         if (invoker) {
           console.error("error occured:invoker.url=", invoker.getUrl());
         }
@@ -6854,13 +7155,13 @@
       });
     }
 
-    xsloader$t.asyncCall(startLoad, true);
+    xsloader$u.asyncCall(startLoad, true);
   };
 
   if (dataConf) {
     serviceConfigUrl = utils.getPathWithRelative(location.href, dataConf);
-  } else if (dataConf = xsloader$t.script().getAttribute(DATA_CONF2) || xsloader$t.script().getAttribute(DATA_CONF2X)) {
-    serviceConfigUrl = utils.getPathWithRelative(xsloader$t.scriptSrc(), dataConf);
+  } else if (dataConf = xsloader$u.script().getAttribute(DATA_CONF2) || xsloader$u.script().getAttribute(DATA_CONF2X)) {
+    serviceConfigUrl = utils.getPathWithRelative(xsloader$u.scriptSrc(), dataConf);
   } else {
     initFun = null;
   }

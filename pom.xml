@@ -6,7 +6,7 @@
 
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
-    <version>1.0.3</version>
+    <version>1.0.5</version>
 
     <name>xsloader4j</name>
     <description>让java web项目支持JavaScript ES6+、*.SCSS、*.LESS、*.vue、*.jsx。（*.vue与*.jsx还未加入）</description>
@@ -111,6 +111,16 @@
             <groupId>com.xishankeji</groupId>
             <artifactId>Porter-Bridge-Servlet</artifactId>
             <version>${project.OftenPorter.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>jstl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>taglibs</groupId>
+                    <artifactId>standard</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

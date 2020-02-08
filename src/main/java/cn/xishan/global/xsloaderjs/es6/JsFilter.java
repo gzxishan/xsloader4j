@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * 用于处理静态资源文件
+ *
  * @author Created by https://github.com/CLovinr on 2019/5/26.
  */
 //@WebFilter(urlPatterns = {"*.jsx", "*.js+", "*.js", "*.vue", "*.less", "*.sass", "*.scss", "*.source"}, description =
@@ -33,7 +35,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsFilter.class);
 
-    private String encoding = "utf-8";
+    @Property(value = "xsloader.es6.encoding", defaultVal = "utf-8")//
+    private String encoding;
+
     @Property(value = "xsloader.es6.forceCacheSeconds", defaultVal = "-1")//
     private Integer forceCacheSeconds;
 
@@ -247,12 +251,12 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
         if (path.endsWith(".js") || path.endsWith(".js.map"))
         {//对js文件进行单独判断，是否为es6语法
-            if (!pathDealt.detectESCode(path))
+            String rpath = path.endsWith(".js") ? path : path.substring(0, path.length() - 4);
+            if (!pathDealt.detectESCode(rpath))
             {
                 return null;
             } else
             {
-                String rpath = path.endsWith(".js") ? path : path.substring(0, path.length() - 4);
                 File file = pathDealt.getRealFile(servletContext, rpath);
 
                 if (file == null || !file.exists())

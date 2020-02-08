@@ -1,6 +1,7 @@
 package cn.xishan.global.xsloaderjs;
 
 import cn.xishan.global.xsloaderjs.es6.JsFilter;
+import cn.xishan.oftenporter.porter.core.advanced.IConfigData;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.exception.InitException;
@@ -19,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * 路径在项目的根目录下。
@@ -67,7 +69,18 @@ public class XsloaderFilter implements Filterer
     @Property(name = "xsloader.forceCacheSeconds", defaultVal = "3600")//3600
     private Integer forceCacheSeconds;
 
+    @Property(name = "xsloader.conf.resourcePath", defaultVal = "/xsloader-conf.js")
+    private String resourcePath;
 
+    @Property(name = "xsloader.conf.requestPath", defaultVal = "/xsloader.conf")
+    private String requestPath;
+
+    @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties")
+    private String propertiesPrefix;
+
+
+    @AutoSet
+    IConfigData configData;
     @AutoSet
     IAutoSetter autoSetter;
     @AutoSet
@@ -82,11 +95,19 @@ public class XsloaderFilter implements Filterer
     @AutoSet.SetOk
     public void setOk()
     {
-        JsFilter jsFilter = new JsFilter();
-        autoSetter.forInstance(new Object[]{jsFilter});
-        WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
+
         try
         {
+            Map<String, Object> props = configData.getJSONByKeyPrefix(propertiesPrefix);
+            DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, requestPath,
+                    resourcePath, props);
+            WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(defaultConfigFilter);
+            defaultConfigFilter.init(null);
+
+            JsFilter jsFilter = new JsFilter();
+            autoSetter.forInstance(new Object[]{jsFilter});
+            WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
+
             if (useLatest)
             {
                 content = FileTool.getData(getClass().getResourceAsStream(
@@ -98,7 +119,7 @@ public class XsloaderFilter implements Filterer
                 content = FileTool.getData(getClass().getResourceAsStream("/xsloader-js/xsloader.js"), 2048);
             }
             etag = HashUtil.md5(content);
-        } catch (IOException e)
+        } catch (Exception e)
         {
             throw new InitException(e);
         }

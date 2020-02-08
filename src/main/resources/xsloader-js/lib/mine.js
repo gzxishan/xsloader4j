@@ -273,26 +273,33 @@
 				getInvoker: function(thiz) {
 					return thiz.invoker();
 				},
+				renderJsx(vm) {
+					return function(){
+						throw 'not support jsx';
+					};
+				},
 				getVueCompiler: function(thiz) {
 					return function(){
 						throw 'not support:getVueCompiler';
 					};
 				},
-				getVtemplate: function(thiz) {
-					return function(){
-						throw 'not support:getVtemplate'
-					};
-				},
-				getImporter: function(thiz) {
-					return function(m){
-						return new Promise(function(resolve, reject) {
-							var invoker = thiz.invoker();
-							thiz.require([m], function(module) {
-								resolve(module);
-							}).error(function(err) {
+				getVtemplate(thiz) {
+					let vtemplate = (component) => {
+						return(resolve, reject) => {
+							let invoker = thiz.invoker();
+							thiz.require([component], (comp) => {
+								resolve(comp);
+							}).error((err) => {
 								reject(err.err);
 							});
-						});
+						}
+					};
+					return vtemplate;
+				},
+				getImporter(thiz) {
+					let vtemplate = this.getVtemplate(thiz);
+					return function(name) {
+						return new Promise(vtemplate(name));
 					};
 				},
 				getStyleBuilder: function(thiz) {
@@ -306,7 +313,7 @@
 				
 			};
 			
-			define(['exports','exists!server-bridge|__server_bridge__'],function(exports,__serverBridge__){var thiz=this;
+			define(['exports','exists!xsloader4j-server-bridge or server-bridge|__server_bridge__'],function(exports,__serverBridge__){var thiz=this;
 			var module={};
 			var __real_require=__serverBridge__.getRequire(thiz);
 			var require=function(){
