@@ -136,6 +136,16 @@ public abstract class XsloaderConfigFilter implements Filter
                 lastEditTimeOfResourceFile = resourceFile.lastModified();
             }
 
+            if (resourceFile == null && this.conf == null)
+            {
+                init(this.resourcePath);
+                if (resourceFile != null)
+                {
+                    loadConf();
+                    lastEditTimeOfResourceFile = resourceFile.lastModified();
+                }
+            }
+
             if (this.conf != null)
             {
                 resp.setContentType(ContentType.APP_JSON.getType());

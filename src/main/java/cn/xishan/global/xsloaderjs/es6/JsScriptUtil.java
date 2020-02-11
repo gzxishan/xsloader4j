@@ -113,7 +113,7 @@ public class JsScriptUtil
 
     static void init()
     {
-        String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.4.4.js", "utf-8");
+        String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.8.4/babel.js", "utf-8");
         String vueScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
         JsScriptUtil.scripts = new String[]{
                 babelScript,

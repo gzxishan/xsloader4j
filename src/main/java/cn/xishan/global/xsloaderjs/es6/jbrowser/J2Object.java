@@ -176,7 +176,7 @@ public abstract class J2Object
                 case V8Value.V8_ARRAY_BUFFER:
                     return array.get(index);
                 case V8Value.UNDEFINED:
-                    return V8.getUndefined();
+                    return null;
             }
         } catch (V8ResultUndefined e)
         {

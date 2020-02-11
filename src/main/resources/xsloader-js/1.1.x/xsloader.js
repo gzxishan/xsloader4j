@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.8
+ * xsloader.js v1.1.9
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Sat, 08 Feb 2020 14:02:17 GMT
+ * build time:Tue, 11 Feb 2020 09:54:38 GMT
  */
 (function () {
   'use strict';
@@ -551,7 +551,7 @@
 
   var xsloader$2 = global$1.xsloader;
   var commentRegExp = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
-  var cjsRequireRegExp = /[^.]require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var cjsRequireRegExp = /[^.]require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
 
   function GraphPath() {
     var pathEdges = {};
@@ -3624,6 +3624,10 @@
       return h;
     };
 
+    invoker.require.get = function (name) {
+      return xsloader$a.require.get.apply(new ThisInvoker(invoker), [name]);
+    };
+
     invoker.define = function () {
       var h = xsloader$a.define.apply(new ThisInvoker(invoker), arguments);
 
@@ -3906,7 +3910,7 @@
 
           module._dealApplyArgs = function (directDepLength, hasOrderDep) {
             return function (applyArgs) {
-              if (directDepLength == 0) {
+              if (directDepLength == 0 || applyArgs.length == 0) {
                 return [];
               }
 
@@ -5025,6 +5029,14 @@
     return defineHandle.prerequire.apply(this, arguments);
   };
 
+  require.get = function (name) {
+    if (!xsloader$c.isString(name)) {
+      throw new Error("expected string type for module name");
+    } else {
+      return require.call(this, name);
+    }
+  };
+
   require.has = function () {
     var args = arguments;
 
@@ -5041,14 +5053,6 @@
     }
 
     return true;
-  };
-
-  require.get = function (name) {
-    if (!xsloader$c.isString(name)) {
-      throw new Error("expected string type for module name");
-    } else {
-      return require(name);
-    }
   };
 
   xsloader$c.define = define;
@@ -6782,7 +6786,7 @@
       },
       getVueCompiler: function getVueCompiler(thiz) {
         var rt = function rt(exports) {
-          var Vue = xsloader$t.require.get("vue");
+          var Vue = xsloader$t.require("vue");
 
           var _default = exports['default'] || exports;
 
@@ -6973,9 +6977,7 @@
           return "default";
         },
         loader: {
-          "default": {
-            autoUrlArgs: true
-          }
+          "default": {}
         }
       }, config);
       return config;

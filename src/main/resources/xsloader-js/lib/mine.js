@@ -194,6 +194,22 @@
 		return script;
 	}
 
+	const IMPORT_PREFIX = "__replace__require__";
+	const IMPORT_REQUIRE_REG = new RegExp(`require\\("${IMPORT_PREFIX}([^"]*)"\\)`, "g");
+
+	function __replaceRequire(code) {
+		if(code) {
+			code = code.replace(IMPORT_REQUIRE_REG, 'require.get("$1")');
+		}
+		return code;
+	}
+
+	const ReplaceRequireVisitor = {
+		ImportDeclaration(path) {
+			path.node.source.value = IMPORT_PREFIX + path.node.source.value;
+		}
+	};
+
 	/**
 	 * 转换es6的代码。
 	 * 特殊指令：
@@ -234,8 +250,11 @@
 			sourceType: "module",
 			sourceMaps: !otherOption.isInline && hasSourceMap ? true : false,
 			filename: currentUrl,
-			presets: ['es2015'],
-			plugins: ['proposal-object-rest-spread', ['transform-react-jsx', {
+			presets: ['es2017'],
+			plugins: [{
+					visitor: ReplaceRequireVisitor
+				},
+				'proposal-object-rest-spread', ['transform-react-jsx', {
 					pragma: "__serverBridge__.renderJsx(this)",
 					throwIfNamespace: false
 				}],
@@ -246,14 +265,17 @@
 				}],
 				["proposal-class-properties", {
 					"loose": true
+				}],
+				["transform-modules-commonjs", {
+					"allowTopLevelThis": true
 				}]
 			]
 		};
 
 		let rs = Babel.transform(scriptContent, option);
-		let parsedCode = rs.code;
+		let parsedCode = __replaceRequire(rs.code);
 		let sourceMap = rs.map ? JSON.stringify(rs.map) : null;
-		parsedCode = replaceAsyncImport(parsedCode, "ImporT");
+		parsedCode = replaceAsyncImport(parsedCode, "__ImporT__");
 		if(otherOption.isInline) {
 			return {
 				code: parsedCode,
@@ -262,80 +284,37 @@
 		}
 
 		let scriptPrefix =
-			`
-			window.__server_bridge__={
-				getDefine: function(thiz) {
-					return thiz.define;
-				},
-				getRequire: function(thiz) {
-					return thiz.require;
-				},
-				getInvoker: function(thiz) {
-					return thiz.invoker();
-				},
-				renderJsx(vm) {
-					return function(){
-						throw 'not support jsx';
-					};
-				},
-				getVueCompiler: function(thiz) {
-					return function(){
-						throw 'not support:getVueCompiler';
-					};
-				},
-				getVtemplate(thiz) {
-					let vtemplate = (component) => {
-						return(resolve, reject) => {
-							let invoker = thiz.invoker();
-							thiz.require([component], (comp) => {
-								resolve(comp);
-							}).error((err) => {
-								reject(err.err);
-							});
-						}
-					};
-					return vtemplate;
-				},
-				getImporter(thiz) {
-					let vtemplate = this.getVtemplate(thiz);
-					return function(name) {
-						return new Promise(vtemplate(name));
-					};
-				},
-				getStyleBuilder: function(thiz) {
-					return function(){
-						throw 'not support:getStyleBuilder';
-					};
-				},
-				decodeBase64: function(base64Content) {
-					throw 'not support:decodeBase64';
-				}
+			`xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge'],function(exports,__serverBridge__){
+				var thiz=this;
+				var module={};
+				var __real_require=__serverBridge__.getRequire(thiz);
+				var require=function(){
+					if(arguments.length==1&&arguments[0]==="exports"){
+						throw new Error("you should use 'exports' directly");
+					}
+					return __real_require.apply(this,arguments);
+				};
 				
-			};
-			
-			define(['exports','exists!xsloader4j-server-bridge or server-bridge|__server_bridge__'],function(exports,__serverBridge__){var thiz=this;
-			var module={};
-			var __real_require=__serverBridge__.getRequire(thiz);
-			var require=function(){
-				if(arguments.length==1&&arguments[0]==="exports"){
-					throw new Error("you should use 'exports' directly");
-				}
-				return __real_require.apply(this,arguments);
-			};
-			
-			var define=__serverBridge__.getDefine?__serverBridge__.getDefine(thiz):thiz.define;
-			var invoker=__serverBridge__.getInvoker(thiz);
-			var vtemplate=__serverBridge__.getVtemplate(thiz);
-			var __styleBuilder=__serverBridge__.getStyleBuilder(thiz);
-			var __decodeBase64=__serverBridge__.decodeBase64;
-			var __compileVue=__serverBridge__.getVueCompiler(thiz);
-			var ImporT=__serverBridge__.getImporter(thiz);
-			var __defineEsModuleProp=function(obj){
-			if(!obj||typeof obj != 'object'||(obj instanceof Function)){return};
-			Object.defineProperty(obj,'__esModule',{value: true});
-			for(var x in obj){__defineEsModuleProp(obj[x])}
-			};
-			__defineEsModuleProp(exports);(function(__unstrictFunMap){`;
+				require.get=function(name){
+					if(name==="exports"){
+						throw new Error("you should use 'exports' directly");
+					}
+					return __real_require.get.call(this,name);
+				};
+				
+				var define=__serverBridge__.getDefine?__serverBridge__.getDefine(thiz):thiz.define;
+				var invoker=__serverBridge__.getInvoker(thiz);
+				var vtemplate=__serverBridge__.getVtemplate(thiz);
+				var __styleBuilder=__serverBridge__.getStyleBuilder(thiz);
+				var __decodeBase64=__serverBridge__.decodeBase64;
+				var __compileVue=__serverBridge__.getVueCompiler(thiz);
+				var __ImporT__=__serverBridge__.getImporter(thiz);
+				var __defineEsModuleProp=function(obj){
+					if(!obj||typeof obj != 'object'||(obj instanceof Function)){return};
+					Object.defineProperty(obj,'__esModule',{value: true});
+					for(var x in obj){__defineEsModuleProp(obj[x])}
+				};
+				__defineEsModuleProp(exports);(function(__unstrictFunMap){`;
 		scriptPrefix = scriptPrefix.replace(/[\r\n]+[\t\b ]+/g, ' ');
 
 		let scriptSuffix = "\n})(" + (function() {
