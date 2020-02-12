@@ -9,7 +9,7 @@
     <version>1.0.10</version>
 
     <name>xsloader4j</name>
-    <description>让java web项目支持JavaScript ES6+、*.SCSS、*.LESS、*.vue、*.jsx。</description>
+    <description>让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <licenses>
