@@ -107,19 +107,21 @@
 		}
 	};
 
-	api.compileVueTemplate = function(currentUrl, filepath, template, hasSourceMap) {
+	api.compileVueTemplate = function(currentUrl, filepath, template, hasSourceMap, otherOption) {
 		if(!template) {
 			return {};
 		}
 
+		otherOption = extend({}, otherOption, {
+			strictMode: false,
+			isInline: true,
+			doStaticInclude: false,
+			doStaticVueTemplate: false
+		});
+
 		//进行编译，转换内部es6表达式等,使得低版本浏览器支持es6的表达式
 		function parseScript(scriptStr) {
-			let rs = api.parseEs6(currentUrl, filepath, scriptStr, null, hasSourceMap, {
-				strictMode: false,
-				isInline: true,
-				doStaticInclude: false,
-				doStaticVueTemplate: false
-			});
+			let rs = api.parseEs6(currentUrl, filepath, scriptStr, null, hasSourceMap, otherOption);
 			rs = rs.code.trim();
 			if(rs.startsWith('"use strict";')) {
 				rs = rs.substring('"use strict";'.length);
@@ -194,7 +196,7 @@
 		return script;
 	}
 
-	const IMPORT_PREFIX = "__replace__require__";
+	const IMPORT_PREFIX = "__rplc_rqr__";
 	const IMPORT_REQUIRE_REG = new RegExp(`require\\("${IMPORT_PREFIX}([^"]*)"\\)`, "g");
 
 	function __replaceRequire(code) {
@@ -227,7 +229,8 @@
 			strictMode: true,
 			isInline: false,
 			doStaticInclude: true,
-			doStaticVueTemplate: true
+			doStaticVueTemplate: true,
+			replaceType: "require"
 		}, otherOption);
 		let __unstrictFunMap = {};
 		if(otherOption.doStaticInclude) {
@@ -252,7 +255,7 @@
 			filename: currentUrl,
 			presets: ['es2017'],
 			plugins: [{
-					visitor: ReplaceRequireVisitor
+					visitor: otherOption.replaceType=="require.get" ? ReplaceRequireVisitor : undefined
 				},
 				'proposal-object-rest-spread', ['transform-react-jsx', {
 					pragma: "__serverBridge__.renderJsx(this)",
@@ -273,7 +276,7 @@
 		};
 
 		let rs = Babel.transform(scriptContent, option);
-		let parsedCode = __replaceRequire(rs.code);
+		let parsedCode = otherOption.replaceType=="require.get" ? __replaceRequire(rs.code) : rs.code;
 		let sourceMap = rs.map ? JSON.stringify(rs.map) : null;
 		parsedCode = replaceAsyncImport(parsedCode, "__ImporT__");
 		if(otherOption.isInline) {
@@ -368,7 +371,7 @@
 	 * @param {Object} content
 	 * @param {Object} hasSourceMap
 	 */
-	api.transformVue = function(url, filepath, content, hasSourceMap) {
+	api.transformVue = function(url, filepath, content, hasSourceMap, otherOption) {
 		content = $jsBridge$.staticInclude(filepath, content);
 
 		//获取script的内容
@@ -554,7 +557,7 @@
 					}
 				}
 
-				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap);
+				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap, otherOption);
 				if(compiledTemplate.render) {
 					strs.push("exports.default.render=", compiledTemplate.render, ";\n");
 				}
@@ -611,10 +614,12 @@
 			__compileVue(exports);
 			__defineEsModuleProp(exports);\n`;
 
-		let result = this.parseEs6(url, filepath, scriptContent, customerScriptPart, hasSourceMap, {
+		otherOption = extend({}, otherOption, {
 			doStaticInclude: false,
 			doStaticVueTemplate: false
 		});
+
+		let result = this.parseEs6(url, filepath, scriptContent, customerScriptPart, hasSourceMap, otherOption);
 		result.markedComments = JSON.stringify(markedComments);
 
 		return result

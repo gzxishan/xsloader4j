@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.9
+ * xsloader.js v1.1.10
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue, 11 Feb 2020 09:54:38 GMT
+ * build time:Wed, 12 Feb 2020 08:11:13 GMT
  */
 (function () {
   'use strict';
@@ -550,8 +550,9 @@
   };
 
   var xsloader$2 = global$1.xsloader;
-  var commentRegExp = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
-  var cjsRequireRegExp = /[^.]require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var COMMENT_REGEXP = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
+  var REPLACE_REQUIRE_GET_REGEXP = /([\s]|^)require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var REPLACE_REQUIRE_REGEXP = /([\s]|^)require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
 
   function GraphPath() {
     var pathEdges = {};
@@ -699,13 +700,39 @@
     return singlePrefix || '';
   }
 
+  function __appendInnerDeps(deps, callbackString, reg, depIndex) {
+    callbackString.replace(reg, function () {
+      var dep = arguments[depIndex];
+
+      if (xsloader$2.indexInArray(deps, dep) == -1) {
+        deps.push(dep);
+      }
+    });
+  }
+
   function appendInnerDeps(deps, callback) {
     if (xsloader$2.isFunction(callback)) {
-      callback.toString().replace(commentRegExp, __commentReplace).replace(cjsRequireRegExp, function (match, dep) {
-        if (xsloader$2.indexInArray(deps, dep) == -1) {
-          deps.push(dep);
+      var innerDepType = xsloader$2.config().props.innerDepType;
+
+      if (innerDepType != "disable") {
+        var callbackString = callback.toString().replace(COMMENT_REGEXP, __commentReplace);
+
+        if (innerDepType == "auto") {
+          if (callbackString.indexOf("__webpack_require__") >= 0) {
+            innerDepType = "disable";
+          }
         }
-      });
+
+        if (innerDepType == "auto") {
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2);
+
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2);
+        } else if (innerDepType == "require") {
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2);
+        } else if (innerDepType == "require.get") {
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2);
+        }
+      }
     }
   }
 
@@ -2300,6 +2327,9 @@
 
   var global$6 = utils.global;
   var xsloader$7 = global$6.xsloader;
+  var env = {
+    version: "1.1.10"
+  };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
 
@@ -2309,9 +2339,10 @@
   }
 
   var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
-    _ignoreAspect_: {},
+    ignoreAspect_: {},
     each: utils.each,
-    Base64: utils.base64
+    Base64: utils.base64,
+    env: env
   });
 
   for (var _k in justLoader) {
@@ -3289,7 +3320,7 @@
               return "break";
             }
 
-            var _url = xsloader$9._resUrlBuilder(groupModule);
+            var _url = xsloader$9.resUrlBuilder(groupModule);
 
             urls = xsloader$9.isArray(_url) ? _url : [_url];
           } else if (config.isInUrls(dep)) {
@@ -3325,7 +3356,7 @@
                 dep = url;
               }
 
-              urls[index] = config.dealUrl(dep, url);
+              urls[index] = config.dealUrl(dep, url, true);
             });
           }
 
@@ -4528,7 +4559,7 @@
     return has;
   };
 
-  xsloader$b._resUrlBuilder = function (groupName) {
+  xsloader$b.resUrlBuilder = function (groupName) {
     throw new Error('resUrlBuilder not found!');
   };
 
@@ -4565,7 +4596,6 @@
       deps: {},
       jsExts: undefined,
       properties: {},
-      loading: {},
       modulePrefix: {},
       defineFunction: {},
       modulePrefixCount: 0,
@@ -4609,6 +4639,7 @@
         return deps;
       },
       dealUrl: function dealUrl(module, url) {
+        var addVersion = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         var urlArg;
         var nameOrUrl;
 
@@ -4664,6 +4695,10 @@
           urlArg += "&" + k + "=" + encodeURIComponent(argsObject[k]);
         }
 
+        if (addVersion && this.props.addVersion) {
+          urlArg += "&_xsv=" + encodeURIComponent(xsloader$b.env.version);
+        }
+
         return xsloader$b.appendArgs2Url(url, urlArg);
       },
       dealUrlArgs: function dealUrlArgs(url) {
@@ -4671,8 +4706,13 @@
         return this.dealUrl(url, url);
       },
       defaultVersion: {},
-      plugins: {}
+      plugins: {},
+      props: {}
     }, option);
+    option.props = xsloader$b.extend({
+      addVersion: true,
+      innerDepType: "auto"
+    }, option.props);
     option.plugins.loading = xsloader$b.extend({
       enable: true,
       color: '#2196f3',
@@ -4968,7 +5008,7 @@
     utils.each(defineObject.names, function (name) {
       moduleScript.setModule(name, ifmodule);
 
-      if (xsloader$c._ignoreAspect_[name]) {
+      if (xsloader$c.ignoreAspect_[name]) {
         ifmodule.ignoreAspect = true;
       }
     });
@@ -7095,7 +7135,7 @@
       conf.service.resUrls && Array.pushAll(resUrls, conf.service.resUrls);
       localConfig !== conf && localConfig.service.resUrls && Array.pushAll(resUrls, localConfig.service.resUrls);
 
-      xsloader$u._resUrlBuilder = function (groupModule) {
+      xsloader$u.resUrlBuilder = function (groupModule) {
         var as = [];
         utils.each(resUrls, function (url) {
           as.push(xsloader$u.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));

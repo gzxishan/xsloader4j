@@ -96,7 +96,14 @@ public class Es6Wrapper
         this.fileContentGetter = fileContentGetter;
     }
 
-    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap)
+
+//    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap)
+//    {
+//        return parseEs6(url, filepath, es6Content, hasSourceMap, true);
+//    }
+
+    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
+            String replaceType)
     {
         LOGGER.debug("parse es6 code:url={},file={}", url, filepath);
         J2BaseInterface j2BaseInterface = JsScriptUtil.getInterface();
@@ -104,6 +111,7 @@ public class Es6Wrapper
         V8Object xsloaderServer = null;
         V8Array parameters = null;
         V8Object rs = null;
+        V8Object option = null;
         try
         {
             j2BaseInterface.lock();
@@ -111,9 +119,16 @@ public class Es6Wrapper
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
+            option = j2BaseInterface.newObject();
+            option.add("replaceType", replaceType);
+
             xsloaderServer = v8.getObject("XsloaderServer");
-            parameters = j2BaseInterface.newArray().push(url).push(filepath).push(es6Content).push((String) null)
-                    .push(hasSourceMap);
+            parameters = j2BaseInterface.newArray()
+                    .push(url).push(filepath)
+                    .push(es6Content)
+                    .push((String) null)
+                    .push(hasSourceMap)
+                    .push(option);
             rs = xsloaderServer.executeObjectFunction("parseEs6", parameters);
             String parsedCode = rs.getString("code");
             String sourceMap = rs.getString("sourceMap");
@@ -139,12 +154,19 @@ public class Es6Wrapper
             return result;
         } finally
         {
-            JsScriptUtil.release(parameters, xsloaderServer, rs);
+            JsScriptUtil.release(parameters, xsloaderServer, rs, option);
             j2BaseInterface.release();
         }
     }
 
-    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap)
+
+//    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap)
+//    {
+//        return parseVue(url, filepath, vueContent, hasSourceMap, true);
+//    }
+
+    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap,
+            String replaceType)
     {
         LOGGER.debug("parse vue code:url={},file={}", url, filepath);
         J2BaseInterface j2BaseInterface = JsScriptUtil.getInterface();
@@ -152,6 +174,7 @@ public class Es6Wrapper
         V8Object xsloaderServer = null;
         V8Array parameters = null;
         V8Object rs = null;
+        V8Object option = null;
         try
         {
             j2BaseInterface.lock();
@@ -160,8 +183,17 @@ public class Es6Wrapper
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
+            option = j2BaseInterface.newObject();
+            option.add("replaceType", replaceType);
+
             xsloaderServer = v8.getObject("XsloaderServer");
-            parameters = j2BaseInterface.newArray().push(url).push(filepath).push(vueContent).push(hasSourceMap);
+            parameters = j2BaseInterface.newArray()
+                    .push(url)
+                    .push(filepath)
+                    .push(vueContent)
+                    .push(hasSourceMap)
+                    .push(option);
+
             rs = xsloaderServer.executeObjectFunction("transformVue", parameters);
             String parsedCode = rs.getString("code");
             String sourceMap = rs.getString("sourceMap");
@@ -202,7 +234,7 @@ public class Es6Wrapper
             return result;
         } finally
         {
-            JsScriptUtil.release(parameters, xsloaderServer, rs);
+            JsScriptUtil.release(parameters, xsloaderServer, rs, option);
             j2BaseInterface.release();
         }
     }

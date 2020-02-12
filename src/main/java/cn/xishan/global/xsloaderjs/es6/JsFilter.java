@@ -1,11 +1,13 @@
 package cn.xishan.global.xsloaderjs.es6;
 
+import cn.xishan.global.xsloaderjs.Version;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.exception.OftenCallException;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.servlet.*;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
@@ -41,6 +43,12 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(value = "xsloader.es6.forceCacheSeconds", defaultVal = "-1")//
     private Integer forceCacheSeconds;
 
+    /**
+     * require.get或require
+     */
+    @Property(value = "xsloader.es6.replaceType", defaultVal = "require")//
+    private String replaceType;
+
     @Property(value = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
 
@@ -52,6 +60,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
     @AutoSet(nullAble = true)
     IPathDealt pathDealt;
+
+
+    public static final Version VERSION_NEED_REPLACE_REQUIRE = new Version("1.1.10");
 
     private static List<IFileContentGetter> contentGetterList = new ArrayList<>();
 
@@ -175,7 +186,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      */
     private static CachedResource parse(boolean isSourceMap, String requestUrl, String path, File file,
             IFileContentGetter fileContentGetter,
-            String encoding) throws IOException
+            String encoding, String replaceType) throws IOException
     {
         CachedResource cachedResource = CachedResource.getByPath(isSourceMap, path);
         if (cachedResource == null || cachedResource.needReload(file, isDebug))
@@ -198,7 +209,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             {
                 Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
                 Es6Wrapper.Result<String> result = es6Wrapper
-                        .parseEs6(requestUrl, realPath, fileContent, hasSourceMap);
+                        .parseEs6(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
                 cachedResource = CachedResource
                         .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
                                 result);
@@ -206,7 +217,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             {
                 Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
                 Es6Wrapper.Result<String> result = es6Wrapper
-                        .parseVue(requestUrl, realPath, fileContent, hasSourceMap);
+                        .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
                 cachedResource = CachedResource
                         .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
                                 result);
@@ -230,6 +241,12 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         return cachedResource;
     }
 
+    public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
+            String path, String encoding) throws IOException
+    {
+        return tryGetResource(servletContext, pathDealt, requestUrl, path, encoding, "require");
+    }
+
     /**
      * @param servletContext
      * @param pathDealt
@@ -240,7 +257,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @throws IOException
      */
     public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
-            String path, String encoding) throws IOException
+            String path, String encoding, String replaceType) throws IOException
     {
         path = pathDealt.dealPath(servletContext, path);
         if (!isSupport(path))
@@ -348,7 +365,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                     }
                     return result;
                 }
-            }, encoding);
+            }, encoding, replaceType);
             return cachedResource;
         }
     }
@@ -360,8 +377,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         String path = OftenServletRequest.getPath(request);
 
+        String replaceType = this.replaceType;
+
         CachedResource cachedResource = tryGetResource(request.getServletContext(), pathDealt,
-                request.getRequestURL().toString(), path, encoding);
+                request.getRequestURL().toString(), path, encoding, replaceType);
 
         if (cachedResource == null)
         {
@@ -395,6 +414,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         return CachedResource.getByPath(isSourceMap, path);
     }
 
+
     /**
      * @param url        请求地址(可以含.map后缀)
      * @param path       请求路径(可以含.map后缀)
@@ -403,6 +423,19 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @throws IOException
      */
     public static CachedResource parseVue(String url, String path, String vueContent) throws IOException
+    {
+        return parseVue(url, path, vueContent, "require");
+    }
+
+    /**
+     * @param url        请求地址(可以含.map后缀)
+     * @param path       请求路径(可以含.map后缀)
+     * @param vueContent
+     * @return
+     * @throws IOException
+     */
+    public static CachedResource parseVue(String url, String path, String vueContent,
+            String replaceType) throws IOException
     {
         boolean isSourceMap = false;
         if (url.endsWith(".map"))
@@ -417,7 +450,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             path = path.substring(0, path.length() - 4);
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null);
-        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, null, vueContent, hasSourceMap);
+        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, null, vueContent, hasSourceMap, replaceType);
         CachedResource cachedResource = CachedResource.save(isSourceMap, path, System.currentTimeMillis(), "utf-8",
                 "application/javascript", result);
         return cachedResource;
