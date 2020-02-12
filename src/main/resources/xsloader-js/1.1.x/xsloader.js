@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.10
+ * xsloader.js v1.1.11
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed, 12 Feb 2020 08:11:13 GMT
+ * build time:Wed Feb 12 2020 18:15:07 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -551,8 +551,9 @@
 
   var xsloader$2 = global$1.xsloader;
   var COMMENT_REGEXP = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
-  var REPLACE_REQUIRE_GET_REGEXP = /([\s]|^)require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
-  var REPLACE_REQUIRE_REGEXP = /([\s]|^)require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var REPLACE_REQUIRE_GET_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var REPLACE_REQUIRE_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
+  var NOT_REQUIRE_REGEXP = /\.\s*$/;
 
   function GraphPath() {
     var pathEdges = {};
@@ -700,11 +701,11 @@
     return singlePrefix || '';
   }
 
-  function __appendInnerDeps(deps, callbackString, reg, depIndex) {
+  function __appendInnerDeps(deps, callbackString, reg, depIndex, notIndex) {
     callbackString.replace(reg, function () {
       var dep = arguments[depIndex];
 
-      if (xsloader$2.indexInArray(deps, dep) == -1) {
+      if ((!notIndex || !NOT_REQUIRE_REGEXP.test(arguments[notIndex])) && xsloader$2.indexInArray(deps, dep) == -1) {
         deps.push(dep);
       }
     });
@@ -712,7 +713,8 @@
 
   function appendInnerDeps(deps, callback) {
     if (xsloader$2.isFunction(callback)) {
-      var innerDepType = xsloader$2.config().props.innerDepType;
+      var theConfig = xsloader$2.config();
+      var innerDepType = !theConfig ? "disable" : theConfig.props.innerDepType;
 
       if (innerDepType != "disable") {
         var callbackString = callback.toString().replace(COMMENT_REGEXP, __commentReplace);
@@ -724,13 +726,13 @@
         }
 
         if (innerDepType == "auto") {
-          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2);
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2, 1);
 
-          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2);
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2, 1);
         } else if (innerDepType == "require") {
-          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2);
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_REGEXP, 2, 1);
         } else if (innerDepType == "require.get") {
-          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2);
+          __appendInnerDeps(deps, callbackString, REPLACE_REQUIRE_GET_REGEXP, 2, 1);
         }
       }
     }
@@ -2328,7 +2330,7 @@
   var global$6 = utils.global;
   var xsloader$7 = global$6.xsloader;
   var env = {
-    version: "1.1.10"
+    version: "1.1.11"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
