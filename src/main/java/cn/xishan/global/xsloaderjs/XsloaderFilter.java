@@ -63,6 +63,13 @@ public class XsloaderFilter implements Filterer
      */
     @Property(name = "xsloader.min", defaultVal = "true")
     private Boolean useMin;
+
+    /**
+     * 是否含有map。
+     */
+    @Property(name = "xsloader.hasmap", defaultVal = "true")
+    private Boolean hasMap;
+
     /**
      * 浏览器强制缓存的时间，默认3600秒。
      */
@@ -143,12 +150,13 @@ public class XsloaderFilter implements Filterer
             HttpServletRequest request = (HttpServletRequest) servletRequest;
             HttpServletResponse response = (HttpServletResponse) servletResponse;
 
+            String name = OftenStrUtil.getNameFormPath(request.getRequestURI());
             if (latestDirForDebug != null)
             {
-                String name = OftenStrUtil.getNameFormPath(request.getRequestURI());
-                File file = new File(latestDirForDebug + "/" + name);
+
                 if (name.endsWith(".map"))
                 {
+                    File file = new File(latestDirForDebug + File.separator + name);
                     if (file.exists() && file.lastModified() != mapTime)
                     {
                         map = FileTool.getData(file, 2048);
@@ -156,6 +164,9 @@ public class XsloaderFilter implements Filterer
                     }
                 } else
                 {
+                    File file = new File(
+                            latestDirForDebug + File.separator + (useMin ? "xsloader.min.js" : "xsloader.js"));
+
                     if (file.exists() && file.lastModified() != contentTime)
                     {
                         content = FileTool.getData(file, 2048);
@@ -166,9 +177,9 @@ public class XsloaderFilter implements Filterer
             }
 
 
-            if (request.getRequestURI().endsWith(".map"))
+            if (name.endsWith(".map"))
             {
-                if (map == null)
+                if (!hasMap || map == null || useMin && !name.contains(".min") || !useMin && name.contains(".min"))
                 {
                     response.sendError(404);
                 } else

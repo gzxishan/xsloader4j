@@ -1,14 +1,16 @@
 /*!
- * xsloader.js v1.1.11
+ * xsloader.js v1.1.12
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed Feb 12 2020 18:15:07 GMT+0800 (GMT+08:00)
+ * build time:Thu Feb 13 2020 18:06:40 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
 
   function _typeof(obj) {
+    "@babel/helpers - typeof";
+
     if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
       _typeof = function (obj) {
         return typeof obj;
@@ -78,13 +80,13 @@
       var source = arguments[i] != null ? arguments[i] : {};
 
       if (i % 2) {
-        ownKeys(source, true).forEach(function (key) {
+        ownKeys(Object(source), true).forEach(function (key) {
           _defineProperty(target, key, source[key]);
         });
       } else if (Object.getOwnPropertyDescriptors) {
         Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
       } else {
-        ownKeys(source).forEach(function (key) {
+        ownKeys(Object(source)).forEach(function (key) {
           Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
         });
       }
@@ -93,14 +95,14 @@
     return target;
   }
 
-  var g;
+  var G;
 
   if ((typeof window === "undefined" ? "undefined" : _typeof(window)) !== undefined) {
-    g = window;
+    G = window;
   } else if ((typeof self === "undefined" ? "undefined" : _typeof(self)) !== undefined) {
-    g = self;
+    G = self;
   } else if ((typeof global === "undefined" ? "undefined" : _typeof(global)) !== undefined) {
-    g = global;
+    G = global;
   } else {
     throw new Error("not found global var!");
   }
@@ -117,8 +119,8 @@
     };
   }
 
-  g.InVar = InVar$1;
-  var global$1 = g;
+  G.InVar = InVar$1;
+  var global$1 = G;
 
   var _loaderFun;
 
@@ -135,10 +137,10 @@
   var ABSOLUTE_PROTOCOL_REG = /^(([a-zA-Z0-9_]*:\/\/)|(\/)|(\/\/))/;
   var ABSOLUTE_PROTOCOL_REG2 = /^([a-zA-Z0-9_]+:)\/\/([^/\s]+)/;
   var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue"];
-  var xsloader$1 = global$1.xsloader;
+  var L = global$1.xsloader;
 
   function isJsFile(path) {
-    if (!xsloader$1.isString(path) || path.indexOf(".") == -1) {
+    if (!L.isString(path) || path.indexOf(".") == -1) {
       return false;
     }
 
@@ -160,11 +162,11 @@
       path = path.substring(0, index);
     }
 
-    var theConfig = xsloader$1.config();
+    var theConfig = L.config();
     var jsExts = theConfig && theConfig.jsExts || defaultJsExts;
 
     for (var i = 0; i < jsExts.length; i++) {
-      if (xsloader$1.endsWith(path, jsExts[i])) {
+      if (L.endsWith(path, jsExts[i])) {
         return {
           ext: jsExts[i],
           path: path
@@ -258,16 +260,16 @@
       }
     }
 
-    if (xsloader$1.endsWith(path, "/")) {
+    if (L.endsWith(path, "/")) {
       path = path.substring(0, path.length - 1);
     }
 
     var isRelativeDir = false;
 
-    if (relative == "." || xsloader$1.endsWith(relative, "/")) {
+    if (relative == "." || L.endsWith(relative, "/")) {
       relative = relative.substring(0, relative.length - 1);
       isRelativeDir = true;
-    } else if (relative == "." || relative == ".." || xsloader$1.endsWith("/.") || xsloader$1.endsWith("/..")) {
+    } else if (relative == "." || relative == ".." || L.endsWith("/.") || L.endsWith("/..")) {
       isRelativeDir = true;
     }
 
@@ -311,11 +313,11 @@
 
     var result = prefix + stack.join("/");
 
-    if (isRelativeDir && !xsloader$1.endsWith(result, "/")) {
+    if (isRelativeDir && !L.endsWith(result, "/")) {
       result += "/";
     }
 
-    result = xsloader$1.appendArgs2Url(result, relativeQuery);
+    result = L.appendArgs2Url(result, relativeQuery);
     return result;
   }
 
@@ -357,7 +359,7 @@
 
       if (rs) {
         var propKey = rs[1];
-        var propValue = xsloader$1.getObjectAttr(properties, propKey);
+        var propValue = L.getObjectAttr(properties, propKey);
 
         if (propValue === undefined) {
           return str;
@@ -384,7 +386,7 @@
           }
 
           result += str.substring(0, rs.index);
-          result += xsloader$1.getObjectAttr(properties, _propKey);
+          result += L.getObjectAttr(properties, _propKey);
           str = str.substring(rs.index + rs[0].length);
         }
       }
@@ -397,15 +399,15 @@
         return obj;
       }
 
-      if (xsloader$1.isFunction(obj)) {
+      if (L.isFunction(obj)) {
         return obj;
-      } else if (xsloader$1.isArray(obj)) {
+      } else if (L.isArray(obj)) {
         for (var i = 0; i < obj.length; i++) {
           obj[i] = replaceProperties(obj[i], property, enableKeyAttr);
         }
-      } else if (xsloader$1.isString(obj)) {
+      } else if (L.isString(obj)) {
         obj = replaceStringProperties(obj, properties, property);
-      } else if (xsloader$1.isObject(obj)) {
+      } else if (L.isObject(obj)) {
         if (property) {
           property.has = false;
         }
@@ -446,7 +448,7 @@
       for (var x in properties) {
         var fun = properties[x];
 
-        if (xsloader$1.isFunction(fun)) {
+        if (L.isFunction(fun)) {
           properties[x] = fun.call(properties);
         }
       }
@@ -478,7 +480,7 @@
         m = index > 0 ? m.substring(0, index) : m;
         var is = isJsFile(m);
 
-        if (!is && !/\.[^\/\s]*$/.test(m) && (xsloader$1.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
+        if (!is && !/\.[^\/\s]*$/.test(m) && (L.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
           deps[i] = m + ".js" + query + pluginParam;
         }
       }
@@ -502,7 +504,7 @@
               _m = _m.substring(pluginIndex + 1);
             }
 
-            if (xsloader$1.startsWith(_m, prefix)) {
+            if (L.startsWith(_m, prefix)) {
               var dep = replaceStr + _m.substring(len);
 
               deps[_i] = pluginName ? pluginName + dep : dep;
@@ -549,7 +551,7 @@
     thePageUrl: thePageUrl
   };
 
-  var xsloader$2 = global$1.xsloader;
+  var L$1 = global$1.xsloader;
   var COMMENT_REGEXP = /\/\*[\s\S]*?\*\/|([^:"'=]|^)\/\/.*$/mg;
   var REPLACE_REQUIRE_GET_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
   var REPLACE_REQUIRE_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
@@ -648,12 +650,12 @@
   }
 
   function strValue2Arr(obj) {
-    if (!obj || xsloader$2.isArray(obj)) {
+    if (!obj || L$1.isArray(obj)) {
       return;
     }
 
     for (var x in obj) {
-      if (xsloader$2.isString(obj[x])) {
+      if (L$1.isString(obj[x])) {
         obj[x] = [obj[x]];
       }
     }
@@ -705,15 +707,15 @@
     callbackString.replace(reg, function () {
       var dep = arguments[depIndex];
 
-      if ((!notIndex || !NOT_REQUIRE_REGEXP.test(arguments[notIndex])) && xsloader$2.indexInArray(deps, dep) == -1) {
+      if ((!notIndex || !NOT_REQUIRE_REGEXP.test(arguments[notIndex])) && L$1.indexInArray(deps, dep) == -1) {
         deps.push(dep);
       }
     });
   }
 
   function appendInnerDeps(deps, callback) {
-    if (xsloader$2.isFunction(callback)) {
-      var theConfig = xsloader$2.config();
+    if (L$1.isFunction(callback)) {
+      var theConfig = L$1.config();
       var innerDepType = !theConfig ? "disable" : theConfig.props.innerDepType;
 
       if (innerDepType != "disable") {
@@ -1100,24 +1102,24 @@
     };
   }
 
-  var utils = _objectSpread2({}, urls, {
+  var U = _objectSpread2({}, urls, {
     global: global$1
   }, base, {}, loading, {
     base64: Base64
   });
 
-  var global$2 = utils.global;
-  var xsloader$3 = global$2.xsloader;
+  var G$1 = U.global;
+  var L$2 = G$1.xsloader;
 
   try {
     if (Function.prototype.bind && console && _typeof(console['log']) == "object") {
-      utils.each(["log", "info", "warn", "error", "assert", "dir", "clear", "profile", "profileEnd"], function (method) {
+      U.each(["log", "info", "warn", "error", "assert", "dir", "clear", "profile", "profileEnd"], function (method) {
         var thiz = Function.prototype.bind;
         console[method] = thiz.call(console[method], console);
       });
     }
   } catch (e) {
-    global$2.console = {
+    G$1.console = {
       log: function log() {},
       error: function error() {},
       warn: function warn() {}
@@ -1139,7 +1141,7 @@
 
     if (!Array.pushAll) {
       Array.pushAll = function (thiz, arr) {
-        if (!xsloader$3.isArray(arr)) {
+        if (!L$2.isArray(arr)) {
           throw new Error("not array:" + arr);
         }
 
@@ -1572,20 +1574,20 @@
     return ProxyPolyfill;
   }
 
-  function polyfillInit(global, xsloader) {
+  function polyfillInit(G, L) {
     var proxy = proxyPolyfill();
 
-    if (!global['Proxy']) {
-      global.Proxy = proxy;
+    if (!G['Proxy']) {
+      G.Proxy = proxy;
     }
 
-    xsloader.Proxy = proxy;
+    L.Proxy = proxy;
   }
 
-  var global$3 = utils.global;
-  var xsloader$4 = global$3.xsloader;
-  var IE_VERSION$1 = utils.IE_VERSION;
-  polyfillInit(global$3, xsloader$4);
+  var G$2 = U.global;
+  var L$3 = G$2.xsloader;
+  var IE_VERSION$1 = U.IE_VERSION;
+  polyfillInit(G$2, L$3);
 
   if (!String.prototype.trim) {
     String.prototype.trim = function () {
@@ -1594,7 +1596,7 @@
   }
 
   function randId(suffix) {
-    var id = "r" + parseInt(new Date().getTime() / 1000) + "_" + parseInt(Math.random() * 1000) + "_" + utils.getAndIncIdCount();
+    var id = "r" + parseInt(new Date().getTime() / 1000) + "_" + parseInt(Math.random() * 1000) + "_" + U.getAndIncIdCount();
 
     if (suffix !== undefined) {
       id += suffix;
@@ -1604,21 +1606,17 @@
   }
 
   function xsEval(scriptString) {
-    try {
-      var rs = IE_VERSION$1 > 0 && IE_VERSION$1 < 9 ? eval("[" + scriptString + "][0]") : eval("(" + scriptString + ")");
-      return rs;
-    } catch (e) {
-      throw e;
-    }
+    var rs = IE_VERSION$1 > 0 && IE_VERSION$1 < 9 ? eval("[" + scriptString + "][0]") : eval("(" + scriptString + ")");
+    return rs;
   }
 
   function xsParseJson(str, option) {
     try {
-      if (str === "" || str === null || str === undefined || !xsloader$4.isString(str)) {
+      if (str === "" || str === null || str === undefined || !L$3.isString(str)) {
         return str;
       }
 
-      option = xsloader$4.extend({
+      option = L$3.extend({
         fnStart: "",
         fnEnd: "",
         rcomment: "\\/\\/#\\/\\/"
@@ -1645,13 +1643,13 @@
           var fnId = "_[_" + randId() + "_]_";
           var fnStr = str.substring(indexStart + option.fnStart.length, indexEnd).trim();
 
-          if (!xsloader$4.startsWith(fnStr, "function(")) {
+          if (!L$3.startsWith(fnStr, "function(")) {
             throw "not a function:" + fnStr;
           }
 
           try {
             str = str.substring(0, indexStart) + '"' + fnId + '"' + str.substring(indexEnd + option.fnEnd.length);
-            var fn = xsloader$4.xsEval(fnStr);
+            var fn = L$3.xsEval(fnStr);
             fnMap[fnId] = fn;
           } catch (e) {
             console.error(fnStr);
@@ -1662,7 +1660,7 @@
         }
 
         replacer = function replacer(key, val) {
-          if (xsloader$4.isString(val) && fnMap[val]) {
+          if (L$3.isString(val) && fnMap[val]) {
             return fnMap[val];
           } else {
             return val;
@@ -1702,12 +1700,12 @@
     return jsonObj.stringify(obj);
   }
 
-  var getPathWithRelative$1 = utils.getPathWithRelative;
+  var getPathWithRelative$1 = U.getPathWithRelative;
 
   function _toParamsMap(argsStr) {
     var decode = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 
-    if (xsloader$4.isObject(argsStr)) {
+    if (L$3.isObject(argsStr)) {
       return argsStr;
     }
 
@@ -1720,7 +1718,7 @@
     if (index >= 0) {
       argsStr = argsStr.substring(index + 1);
     } else {
-      if (utils.dealPathMayAbsolute(argsStr).absolute) {
+      if (U.dealPathMayAbsolute(argsStr).absolute) {
         return {};
       }
     }
@@ -1856,8 +1854,8 @@
     isEmpty: isEmpty
   };
 
-  var global$4 = utils.global;
-  var xsloader$5 = global$4.xsloader;
+  var G$3 = U.global;
+  var L$4 = G$3.xsloader;
 
   function queryParam(name, otherValue, optionUrl) {
     var search;
@@ -1886,18 +1884,18 @@
     var appendArgs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
     var optionalAbsUrl = arguments.length > 2 ? arguments[2] : undefined;
 
-    if (optionalAbsUrl && !utils.dealPathMayAbsolute(optionalAbsUrl).absolute) {
+    if (optionalAbsUrl && !U.dealPathMayAbsolute(optionalAbsUrl).absolute) {
       throw new Error("expected absolute url:" + optionalAbsUrl);
     }
 
-    var theConfig = xsloader$5.config();
-    var thePageUrl = utils.thePageUrl;
+    var theConfig = L$4.config();
+    var thePageUrl = U.thePageUrl;
     var url;
 
     if (relativeUrl === undefined) {
       url = thePageUrl;
-    } else if (xsloader$5.startsWith(relativeUrl, ".") || utils.dealPathMayAbsolute(relativeUrl).absolute) {
-      url = utils.getPathWithRelative(optionalAbsUrl || thePageUrl, relativeUrl);
+    } else if (L$4.startsWith(relativeUrl, ".") || U.dealPathMayAbsolute(relativeUrl).absolute) {
+      url = U.getPathWithRelative(optionalAbsUrl || thePageUrl, relativeUrl);
     } else {
       url = theConfig.baseUrl + relativeUrl;
     }
@@ -1919,7 +1917,7 @@
     var url = getUrl(relativeUrl, false, optionalAbsUrl);
 
     if (appendArgs) {
-      return xsloader$5.config().dealUrl({}, url);
+      return L$4.config().dealUrl({}, url);
     } else {
       return url;
     }
@@ -1932,7 +1930,7 @@
       thiz = thiz === undefined ? this : thiz;
       rs = fun.call(thiz);
     } catch (e) {
-      if (xsloader$5.isFunction(exCallback)) {
+      if (L$4.isFunction(exCallback)) {
         exCallback(e);
       } else {
         console.warn(e);
@@ -1947,7 +1945,7 @@
   }
 
   function dealProperties(obj, properties) {
-    return utils.propertiesDeal(obj, properties);
+    return U.propertiesDeal(obj, properties);
   }
 
   function extend(target) {
@@ -1991,8 +1989,8 @@
           continue;
         }
 
-        if (xsloader$5.isObject(value) && xsloader$5.isObject(target[x])) {
-          target[x] = xsloader$5.extendDeep(target[x], value);
+        if (L$4.isObject(value) && L$4.isObject(target[x])) {
+          target[x] = L$4.extendDeep(target[x], value);
         } else {
           target[x] = obj[x];
         }
@@ -2045,8 +2043,8 @@
 
         ctrlCallbackMap[mineCount] = [];
 
-        if (!useTimer && global$4.Promise && global$4.Promise.resolve) {
-          global$4.Promise.resolve().then(ctrlCallback);
+        if (!useTimer && G$3.Promise && G$3.Promise.resolve) {
+          G$3.Promise.resolve().then(ctrlCallback);
         } else {
           setTimeout(ctrlCallback, 0);
         }
@@ -2137,25 +2135,24 @@
 
   function clone(obj) {
     var isDeep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    if (!obj || xsloader$5.isFunction(obj) || xsloader$5.isString(obj)) return obj;
+    if (!obj || L$4.isFunction(obj) || L$4.isString(obj)) return obj;
 
-    if (xsloader$5.isRegExp(obj)) {
+    if (L$4.isRegExp(obj)) {
       return new RegExp(obj.source, obj.flags);
     }
 
-    if (xsloader$5.isDate(obj)) {
+    if (L$4.isDate(obj)) {
       var copy = new Date();
       copy.setTime(obj.getTime());
       return copy;
     }
 
-    if (xsloader$5.isArray(obj) || xsloader$5.isObject(obj)) {
-      var _copy = xsloader$5.isArray(obj) ? [] : {};
+    if (L$4.isArray(obj) || L$4.isObject(obj)) {
+      var _copy = L$4.isArray(obj) ? [] : {};
 
       for (var attr in obj) {
-        if (obj.hasOwnProperty(attr)) {
-          _copy[attr] = isDeep ? clone(obj[attr]) : obj[attr];
-        }
+        var v = obj[attr];
+        _copy[attr] = isDeep ? clone(v) : v;
       }
 
       return _copy;
@@ -2165,7 +2162,7 @@
   }
 
   function sortObject(obj) {
-    if (!obj || !xsloader$5.isObject(obj)) {
+    if (!obj || !L$4.isObject(obj)) {
       return obj;
     } else {
       var keys = [];
@@ -2200,8 +2197,8 @@
     sortObject: sortObject
   };
 
-  var global$5 = utils.global;
-  var xsloader$6 = global$5.xsloader;
+  var G$4 = U.global;
+  var L$5 = G$4.xsloader;
   var isDOM = (typeof HTMLElement === "undefined" ? "undefined" : _typeof(HTMLElement)) === 'object' ? function (obj) {
     return obj && obj instanceof HTMLElement;
   } : function (obj) {
@@ -2263,9 +2260,9 @@
           ready();
         };
 
-        if (document.documentElement.doScroll && typeof global$5.frameElement === "undefined") _fun3();
+        if (document.documentElement.doScroll && typeof G$4.frameElement === "undefined") _fun3();
       } else {
-        xsloader$6.asyncCall(null, true).next(function () {
+        L$5.asyncCall(null, true).next(function () {
           ready();
         });
       }
@@ -2294,17 +2291,17 @@
     } else {
       var addEventHandle;
 
-      if (global$5.addEventListener) {
+      if (G$4.addEventListener) {
         addEventHandle = function addEventHandle(type, callback) {
-          global$5.addEventListener(type, callback, false);
+          G$4.addEventListener(type, callback, false);
         };
-      } else if (global$5.attachEvent) {
+      } else if (G$4.attachEvent) {
         addEventHandle = function addEventHandle(type, callback) {
-          global$5.attachEvent("on" + type, callback);
+          G$4.attachEvent("on" + type, callback);
         };
       } else {
         addEventHandle = function addEventHandle(type, callback) {
-          xsloader$6.asyncCall(null, true).next(function () {
+          L$5.asyncCall(null, true).next(function () {
             callback();
           });
         };
@@ -2327,32 +2324,31 @@
     onReady: onReadyFun
   };
 
-  var global$6 = utils.global;
-  var xsloader$7 = global$6.xsloader;
+  var G$5 = U.global;
+  var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.11"
+    version: "1.1.12"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
 
   for (var k in toGlobal) {
-    xsloader$7[k] = toGlobal[k];
-    global$6[k] = toGlobal[k];
+    L$6[k] = toGlobal[k];
+    G$5[k] = toGlobal[k];
   }
 
   var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
     ignoreAspect_: {},
-    each: utils.each,
-    Base64: utils.base64,
+    each: U.each,
+    Base64: U.base64,
     env: env
   });
 
   for (var _k in justLoader) {
-    xsloader$7[_k] = justLoader[_k];
+    L$6[_k] = justLoader[_k];
   }
 
-  var global$7 = utils.global;
-  var xsloader$8 = global$7.xsloader;
+  var L$7 = U.global.xsloader;
   var theDefinedMap = {};
   var lastDefinObjectMap = {};
 
@@ -2425,12 +2421,12 @@
   }
 
   function setLastDefineObject(src, defineObject) {
-    src = utils.removeQueryHash(src);
+    src = U.removeQueryHash(src);
     lastDefinObjectMap[src] = defineObject;
   }
 
   function getLastDefineObject(src) {
-    src = utils.removeQueryHash(src);
+    src = U.removeQueryHash(src);
     return lastDefinObjectMap[src];
   }
 
@@ -2444,8 +2440,8 @@
 
       var _deps = mod && mod.deps;
 
-      utils.each(_deps, function (dep) {
-        if (xsloader$8.indexInArray(deps, dep) == -1) {
+      U.each(_deps, function (dep) {
+        if (L$7.indexInArray(deps, dep) == -1) {
           deps.push(dep);
         }
       });
@@ -2462,8 +2458,8 @@
           defineObject.pushName(mod.selfname);
         }
 
-        utils.each(_deps, function (dep) {
-          if (xsloader$8.indexInArray(deps, dep) == -1) {
+        U.each(_deps, function (dep) {
+          if (L$7.indexInArray(deps, dep) == -1) {
             deps.push(dep);
           }
         });
@@ -2474,7 +2470,7 @@
   function getModule(nameOrUrl) {
     var selfname = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     var ifoneThenGet = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    nameOrUrl = utils.removeQueryHash(nameOrUrl);
+    nameOrUrl = U.removeQueryHash(nameOrUrl);
 
     var isSrc = _isSrc(nameOrUrl);
 
@@ -2630,8 +2626,7 @@
     appendLoadingModuleDeps: appendLoadingModuleDeps
   };
 
-  var global$8 = utils.global;
-  var xsloader$9 = global$8.xsloader;
+  var L$8 = U.global.xsloader;
 
   function newModuleInstance(module, thatInvoker, relyCallback, pluginArgs) {
     var index = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
@@ -2665,13 +2660,13 @@
 
         var isSingle = module.instanceType != "clone";
 
-        if (xsloader$9.isObject(obj)) {
+        if (L$8.isObject(obj)) {
           if (module.loopObject && !isSingle) {
             throw new Error("loop dependency not support single option:" + module.description());
           }
 
-          this._object = addTheAttrs(isSingle ? obj : xsloader$9.clone(obj));
-        } else if (xsloader$9.isFunction(obj)) {
+          this._object = addTheAttrs(isSingle ? obj : L$8.clone(obj));
+        } else if (L$8.isFunction(obj)) {
           this._object = addTheAttrs(obj);
         }
       },
@@ -2767,7 +2762,7 @@
 
           var onerror = function onerror(err) {
             hasFinished = true;
-            relyCallback(_this2, new utils.PluginError(err || false));
+            relyCallback(_this2, new U.PluginError(err || false));
           };
 
           try {
@@ -2777,7 +2772,7 @@
               var last = cacheResult;
               onload(last.result, last.ignoreAspect);
             } else {
-              var args = [pluginArgs, onload, onerror, xsloader$9.config()].concat(this.module.args);
+              var args = [pluginArgs, onload, onerror, L$8.config()].concat(this.module.args);
 
               this._object.pluginMain.apply(this.thiz, args);
             }
@@ -2790,7 +2785,7 @@
               if (!hasFinished) {
                 console.warn("invoke plugin may failed:page=" + location.href + ",plugin=" + module.selfname + "!" + pluginArgs);
               }
-            }, xsloader$9.config().waitSeconds * 1000);
+            }, L$8.config().waitSeconds * 1000);
           }
         } else {
           relyCallback(this);
@@ -2812,7 +2807,7 @@
   }
 
   function _newModule(name, src, thatInvoker, index) {
-    src = utils.removeQueryHash(src);
+    src = U.removeQueryHash(src);
     var defineObject = new script.DefineObject(src, null, [name, null, null]);
     defineObject.index = index;
     defineObject.thatInvoker = thatInvoker;
@@ -2824,7 +2819,7 @@
     var instances = [];
     var moduleMap = {
       index: defineObject.index || 0,
-      id: utils.getAndIncIdCount(),
+      id: U.getAndIncIdCount(),
       selfname: defineObject.selfname,
       parent: defineObject.parentDefine,
       description: function description() {
@@ -2884,7 +2879,7 @@
         this.args = args;
         var obj;
 
-        if (xsloader$9.isFunction(this.getCallback())) {
+        if (L$8.isFunction(this.getCallback())) {
           try {
             script.currentDefineModuleQueue.push(this);
             obj = this.getCallback().apply(this.thiz, args);
@@ -2914,7 +2909,7 @@
         }
 
         if (this.loopObject) {
-          if (!xsloader$9.isObject(obj)) {
+          if (!L$8.isObject(obj)) {
             throw new Error("循环依赖的模块必须是对象：" + this.description());
           }
 
@@ -2945,10 +2940,10 @@
             }
           };
 
-          var deps = !thiz.loopObject && xsloader$9.config().getDeps(thiz.selfname);
+          var deps = !thiz.loopObject && L$8.config().getDeps(thiz.selfname);
 
           if (deps && deps.length > 0) {
-            xsloader$9.require(deps, function () {
+            L$8.require(deps, function () {
               theCallback();
             }).then({
               defined_module_for_deps: this.selfname
@@ -3047,9 +3042,9 @@
           this.opId = opId;
           var obj = {};
 
-          if (xsloader$9.isString(name)) {
+          if (L$8.isString(name)) {
             obj[name] = value;
-          } else if (xsloader$9.isObject(name)) {
+          } else if (L$8.isObject(name)) {
             for (var k in name) {
               obj[k] = name[k];
             }
@@ -3057,7 +3052,7 @@
             throw new Error("unknown param:" + name);
           }
 
-          utils.each(instances, function (ins) {
+          U.each(instances, function (ins) {
             var mobj = ins.moduleObject();
 
             for (var _k in obj) {
@@ -3065,7 +3060,7 @@
             }
 
             if (mobj._modules_) {
-              utils.each(mobj._modules_, function (_m_) {
+              U.each(mobj._modules_, function (_m_) {
                 _m_.setToAll(name, value, opId);
               });
             }
@@ -3086,7 +3081,7 @@
 
       function findLeaf(node) {
         if (node.nodes.length) {
-          utils.each(node.nodes, function (item) {
+          U.each(node.nodes, function (item) {
             findLeaf(item);
           });
         } else {
@@ -3106,7 +3101,7 @@
 
       console.error("{-----------------------------------------------------------------------------------------------");
       console.error("load module error:id=" + this.id + "," + (this.selfname ? "selfname=" + this.selfname + "," : "") + "my page=" + location.href);
-      utils.each(leafs, function (leaf) {
+      U.each(leafs, function (leaf) {
         var infos = [];
         genErrs(leaf, infos);
         infos = infos.reverse();
@@ -3184,7 +3179,7 @@
         return;
       }
 
-      utils.each(this.deps, function (dep) {
+      U.each(this.deps, function (dep) {
         var indexPlguin = dep.indexOf("!");
 
         if (indexPlguin > 0) {
@@ -3227,7 +3222,7 @@
     }
 
     defineObject.dealRelative(module);
-    var config = xsloader$9.config();
+    var config = L$8.config();
     var isError = false,
         hasCallErr = false,
         theExports;
@@ -3245,7 +3240,7 @@
 
         if (!hasCallErr) {
           hasCallErr = true;
-          var err = new utils.PluginError(isError, invoker_of_module, {
+          var err = new U.PluginError(isError, invoker_of_module, {
             index: index,
             dep_name: dep_name
           });
@@ -3256,7 +3251,7 @@
       !isError && syncHandle && syncHandle();
     }
 
-    utils.each(module.deps, function (dep, index, ary, syncHandle) {
+    U.each(module.deps, function (dep, index, ary, syncHandle) {
       var originDep = dep;
       var pluginArgs = undefined;
       var pluginIndex = dep.indexOf("!");
@@ -3289,7 +3284,7 @@
       };
 
       if (!moduleDef.getModule(dep)) {
-        var isJsFile = utils.isJsFile(dep);
+        var isJsFile = U.isJsFile(dep);
 
         var _loop = function _loop() {
           var urls = void 0;
@@ -3322,9 +3317,9 @@
               return "break";
             }
 
-            var _url = xsloader$9.resUrlBuilder(groupModule);
+            var _url = L$8.resUrlBuilder(groupModule);
 
-            urls = xsloader$9.isArray(_url) ? _url : [_url];
+            urls = L$8.isArray(_url) ? _url : [_url];
           } else if (config.isInUrls(dep)) {
             urls = config.getUrls(dep);
           } else if (isJsFile) {
@@ -3336,16 +3331,16 @@
           if (urls.length == 0) {
             moduleDef.preDependOn(dep, index);
           } else {
-            utils.each(urls, function (url, index) {
-              if (xsloader$9.startsWith(url, ".") || xsloader$9.startsWith(url, "/")) {
+            U.each(urls, function (url, index) {
+              if (L$8.startsWith(url, ".") || L$8.startsWith(url, "/")) {
                 if (!invoker_of_module.rurl(defineObject)) {
                   isError = "script url is null:'" + module.description();
                   errCallback(isError, invoker_of_module);
                 }
 
-                url = utils.getPathWithRelative(invoker_of_module.rurl(defineObject), url);
+                url = U.getPathWithRelative(invoker_of_module.rurl(defineObject), url);
               } else {
-                var absolute = utils.dealPathMayAbsolute(url);
+                var absolute = U.dealPathMayAbsolute(url);
 
                 if (absolute.absolute) {
                   url = absolute.path;
@@ -3375,7 +3370,7 @@
 
               if (index > 0) {
                 var oldSrc = module2.src;
-                module2.src = utils.removeQueryHash(url);
+                module2.src = U.removeQueryHash(url);
                 moduleDef.replaceModuleSrc(oldSrc, module2);
               }
 
@@ -3408,11 +3403,11 @@
               });
             };
 
-            utils.replaceModulePrefix(config, urls);
+            U.replaceModulePrefix(config, urls);
 
             if (isJsFile) {
               var lastModule;
-              utils.each([dep].concat(urls), function (item) {
+              U.each([dep].concat(urls), function (item) {
                 lastModule = moduleDef.getModule(item);
 
                 if (lastModule) {
@@ -3436,25 +3431,25 @@
             if (m2Name) {
               var _deps = config.getDeps(m2Name);
 
-              utils.each(_deps, function (d) {
-                if (xsloader$9.indexInArray(configDeps, d) == -1) {
+              U.each(_deps, function (d) {
+                if (L$8.indexInArray(configDeps, d) == -1) {
                   configDeps.push(d);
                 }
               });
             }
 
-            utils.each(urls, function (url) {
+            U.each(urls, function (url) {
               var _deps = config.getDeps(url);
 
-              utils.each(_deps, function (d) {
-                if (xsloader$9.indexInArray(configDeps, d) == -1) {
+              U.each(_deps, function (d) {
+                if (L$8.indexInArray(configDeps, d) == -1) {
                   configDeps.push(d);
                 }
               });
             });
 
             if (configDeps.length) {
-              xsloader$9.require(configDeps, function () {
+              L$8.require(configDeps, function () {
                 loadModule();
               });
             } else {
@@ -3483,8 +3478,7 @@
     getModuleId: getModuleId
   });
 
-  var global$9 = utils.global;
-  var xsloader$a = global$9.xsloader;
+  var L$9 = U.global.xsloader;
   var defContextName = "xsloader1.1.x";
   var DATA_ATTR_MODULE = 'data-xsloader-module';
   var DATA_ATTR_CONTEXT = "data-xsloader-context";
@@ -3500,9 +3494,9 @@
   }();
 
   var readyRegExp = navigator.platform === 'PLAYSTATION 3' ? /^complete$/ : /^(complete|loaded)$/;
-  var theLoaderScript = document.currentScript || utils.getScriptBySubname("xsloader.js");
-  var theLoaderUrl = utils.removeQueryHash(utils.getNodeAbsolutePath(theLoaderScript));
-  var thePageUrl$1 = utils.thePageUrl;
+  var theLoaderScript = document.currentScript || U.getScriptBySubname("xsloader.js");
+  var theLoaderUrl = U.removeQueryHash(U.getNodeAbsolutePath(theLoaderScript));
+  var thePageUrl$1 = U.thePageUrl;
   var theHead = document.head || document.getElementsByTagName('head')[0];
   var currentDefineModuleQueue = [];
 
@@ -3525,7 +3519,7 @@
     for (var i = 0; i < deps.length; i++) {
       var dep = deps[i];
 
-      if (xsloader$a.isArray(dep)) {
+      if (L$9.isArray(dep)) {
         var modName = "inner_order_" + moduleScript.getModuleId();
         var isOrderDep = !(dep.length > 0 && dep[0] === false);
 
@@ -3567,7 +3561,7 @@
       key: "then",
       value: function then(option) {
         var defineObject = this.defineObject;
-        defineObject.handle = xsloader$a.extend(defineObject.handle, option);
+        defineObject.handle = L$9.extend(defineObject.handle, option);
         return this;
       }
     }, {
@@ -3598,7 +3592,7 @@
   function _buildInvoker(module) {
     var invoker = module["thiz"];
     module = module.module || module;
-    var id = xsloader$a.randId();
+    var id = L$9.randId();
 
     invoker.getId = function () {
       return id;
@@ -3608,7 +3602,7 @@
       var appendArgs = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
       var optionalAbsUrl = arguments.length > 2 ? arguments[2] : undefined;
 
-      if (optionalAbsUrl && !utils.dealPathMayAbsolute(optionalAbsUrl).absolute) {
+      if (optionalAbsUrl && !U.dealPathMayAbsolute(optionalAbsUrl).absolute) {
         throw new Error(-1, "expected absolute url:" + optionalAbsUrl);
       }
 
@@ -3616,10 +3610,10 @@
 
       if (relativeUrl === undefined) {
         url = this.src();
-      } else if (xsloader$a.startsWith(relativeUrl, ".") || utils.dealPathMayAbsolute(relativeUrl).absolute) {
-        url = utils.getPathWithRelative(optionalAbsUrl || this.absUrl(), relativeUrl);
+      } else if (L$9.startsWith(relativeUrl, ".") || U.dealPathMayAbsolute(relativeUrl).absolute) {
+        url = U.getPathWithRelative(optionalAbsUrl || this.absUrl(), relativeUrl);
       } else {
-        url = xsloader$a.config().baseUrl + relativeUrl;
+        url = L$9.config().baseUrl + relativeUrl;
       }
 
       if (appendArgs) {
@@ -3627,7 +3621,7 @@
           url += location.search + location.hash;
         }
 
-        return xsloader$a.config().dealUrl(module, url);
+        return L$9.config().dealUrl(module, url);
       } else {
         return url;
       }
@@ -3639,14 +3633,14 @@
       var url = this.getUrl(relativeUrl, false, optionalAbsUrl);
 
       if (appendArgs) {
-        return xsloader$a.config().dealUrl(module, url);
+        return L$9.config().dealUrl(module, url);
       } else {
         return url;
       }
     };
 
     invoker.require = function () {
-      var h = xsloader$a.require.apply(new ThisInvoker(invoker), arguments);
+      var h = L$9.require.apply(new ThisInvoker(invoker), arguments);
 
       if (h instanceof Handle) {
         h.then({
@@ -3658,11 +3652,11 @@
     };
 
     invoker.require.get = function (name) {
-      return xsloader$a.require.get.apply(new ThisInvoker(invoker), [name]);
+      return L$9.require.get.apply(new ThisInvoker(invoker), [name]);
     };
 
     invoker.define = function () {
-      var h = xsloader$a.define.apply(new ThisInvoker(invoker), arguments);
+      var h = L$9.define.apply(new ThisInvoker(invoker), arguments);
 
       if (h instanceof Handle) {
         h.then({
@@ -3709,7 +3703,7 @@
       _defineProperty(this, "_id", void 0);
 
       this._im = new InVar(moduleMap);
-      this._id = utils.getAndIncIdCount();
+      this._id = U.getAndIncIdCount();
       moduleMap.thiz = this;
 
       _buildInvoker(moduleMap);
@@ -3845,7 +3839,7 @@
       this.isRequire = isRequire;
       this.handle = {
         onError: function onError(err, invoker) {
-          console.error(utils.unwrapError(err));
+          console.error(U.unwrapError(err));
         },
         before: function before(deps) {},
         depBefore: function depBefore(index, dep, depDeps) {},
@@ -3873,7 +3867,7 @@
         selfname = null;
       }
 
-      if (deps && !xsloader$a.isArray(deps)) {
+      if (deps && !L$9.isArray(deps)) {
         callback = deps;
         deps = null;
       }
@@ -3881,10 +3875,10 @@
       if (!deps) {
         deps = [];
       } else {
-        deps = xsloader$a.clone(deps);
+        deps = L$9.clone(deps);
       }
 
-      utils.appendInnerDeps(deps, callback);
+      U.appendInnerDeps(deps, callback);
       this.selfname = selfname;
       this.deps = deps;
       this.pushName(selfname);
@@ -3896,28 +3890,28 @@
     _createClass(DefineObject, [{
       key: "pushName",
       value: function pushName(name) {
-        if (name && xsloader$a.indexInArray(this.names, name) == -1) {
+        if (name && L$9.indexInArray(this.names, name) == -1) {
           this.names.push(name);
         }
       }
     }, {
       key: "appendConfigDepsAndEmbedDeps",
       value: function appendConfigDepsAndEmbedDeps(module) {
-        var config = xsloader$a.config();
+        var config = L$9.config();
         var src = this.src;
         var deps = this.deps;
 
         var _deps = config.getDeps(src);
 
-        utils.each(_deps, function (dep) {
-          if (xsloader$a.indexInArray(deps, dep) == -1) {
+        U.each(_deps, function (dep) {
+          if (L$9.indexInArray(deps, dep) == -1) {
             deps.push(dep);
           }
         });
-        utils.each(this.names, function (name) {
+        U.each(this.names, function (name) {
           _deps = config.getDeps(name);
-          utils.each(_deps, function (dep) {
-            if (xsloader$a.indexInArray(deps, dep) == -1) {
+          U.each(_deps, function (dep) {
+            if (L$9.indexInArray(deps, dep) == -1) {
               deps.push(dep);
             }
           });
@@ -3936,7 +3930,7 @@
 
         _dealEmbedDeps(deps, this);
 
-        utils.replaceModulePrefix(config, deps);
+        U.replaceModulePrefix(config, deps);
 
         if (module) {
           module.deps = deps;
@@ -3971,14 +3965,14 @@
 
         for (var i = 0; i < deps.length; i++) {
           var m = deps[i];
-          var jsFilePath = utils.isJsFile(m);
+          var jsFilePath = U.isJsFile(m);
 
-          if (jsFilePath && xsloader$a.startsWith(m, ".")) {
-            m = utils.getPathWithRelative(module.thiz.rurl(this), jsFilePath.path) + _getPluginParam(m);
+          if (jsFilePath && L$9.startsWith(m, ".")) {
+            m = U.getPathWithRelative(module.thiz.rurl(this), jsFilePath.path) + _getPluginParam(m);
             deps[i] = m;
           }
 
-          var paths = utils.graphPath.tryAddEdge(this.handle.defined_module_for_deps || module.selfname, m);
+          var paths = U.graphPath.tryAddEdge(this.handle.defined_module_for_deps || module.selfname, m);
 
           if (paths.length > 0) {
             var moduleLoop = moduleScript.getModule(m);
@@ -4011,7 +4005,7 @@
         }
       }
 
-      if (utils.IE_VERSION > 0 && utils.IE_VERSION <= 10) {
+      if (U.IE_VERSION > 0 && U.IE_VERSION <= 10) {
         var nodes = document.getElementsByTagName("script");
 
         for (var i = nodes.length - 1; i >= 0; i--) {
@@ -4066,19 +4060,19 @@
       };
     }
 
-    if (utils.isLoaderEnd() && rs.src == theLoaderUrl) {
+    if (U.isLoaderEnd() && rs.src == theLoaderUrl) {
       rs.src = thePageUrl$1;
       rs.node = null;
     }
 
     if (!rs.node && rs.src != thePageUrl$1) {
-      var src = utils.removeQueryHash(rs.src);
+      var src = U.removeQueryHash(rs.src);
       var nodes = document.getElementsByTagName("script");
 
       for (var i = 0; i < nodes.length; i++) {
         var node = nodes[i];
 
-        if (src == utils.removeQueryHash(node.src)) {
+        if (src == U.removeQueryHash(node.src)) {
           rs.node = node;
           break;
         }
@@ -4086,11 +4080,11 @@
     }
 
     if (rs.node) {
-      rs.src = utils.getNodeAbsolutePath(rs.node);
+      rs.src = U.getNodeAbsolutePath(rs.node);
     }
 
     if (isRemoveQueryHash) {
-      rs.src = utils.removeQueryHash(rs.src);
+      rs.src = U.removeQueryHash(rs.src);
     }
 
     return rs;
@@ -4119,7 +4113,7 @@
 
     moduleName && node.setAttribute(DATA_ATTR_MODULE, moduleName);
     node.setAttribute(DATA_ATTR_CONTEXT, defContextName);
-    var useAttach = !xsloader$a.isFunction(node.addEventListener) && node.attachEvent && !(node.attachEvent.toString && node.attachEvent.toString().indexOf('[native code') < 0) && !isOpera;
+    var useAttach = !L$9.isFunction(node.addEventListener) && node.attachEvent && !(node.attachEvent.toString && node.attachEvent.toString().indexOf('[native code') < 0) && !isOpera;
 
     if (useAttach) {
       node.attachEvent('onreadystatechange', callbackObj.onScriptLoad);
@@ -4138,8 +4132,8 @@
 
     appendHeadDom(node);
 
-    if (utils.IE_VERSION > 0 && utils.IE_VERSION <= 10) {
-      xsloader$a.asyncCall(function () {
+    if (U.IE_VERSION > 0 && U.IE_VERSION <= 10) {
+      L$9.asyncCall(function () {
         node.src = url;
       });
     } else {
@@ -4157,12 +4151,12 @@
     return {
       node: node,
       name: node && node.getAttribute(DATA_ATTR_MODULE),
-      src: utils.removeQueryHash(node && utils.getNodeAbsolutePath(node))
+      src: U.removeQueryHash(node && U.getNodeAbsolutePath(node))
     };
   }
 
   function appendHeadDom(dom) {
-    if (!xsloader$a.isDOM(dom)) {
+    if (!L$9.isDOM(dom)) {
       throw new Error("expected dom object,but provided:" + dom);
     }
 
@@ -4186,12 +4180,12 @@
 
         if (isSrcFromScriptLoad) {
           lastScriptSrc = scriptData.src;
-          xsloader$a.asyncCall(function () {
+          L$9.asyncCall(function () {
             onload(scriptData);
           });
         } else {
-          if (utils.IE_VERSION > 0 || utils.IE_VERSION == "edge") {
-            xsloader$a.asyncCall(function () {
+          if (U.IE_VERSION > 0 || U.IE_VERSION == "edge") {
+            L$9.asyncCall(function () {
               onload(scriptData);
             });
           } else {
@@ -4227,19 +4221,19 @@
           var node = document.currentScript;
 
           if (node && node.getAttribute("src") && node.getAttribute(DATA_ATTR_CONTEXT) != defContextName && defineObject.src != theLoaderUrl && defineObject.src != thePageUrl$1) {
-            console.error("unknown js script module:" + xsloader$a.xsJson2String(defineObject.src));
+            console.error("unknown js script module:" + L$9.xsJson2String(defineObject.src));
             console.error(node);
             return;
           }
         }
       } catch (e) {
-        xsloader$a.config().error(e);
+        L$9.config().error(e);
       }
     }
 
     var handle = new Handle(defineObject);
-    var isLoaderEnd = utils.isLoaderEnd();
-    xsloader$a.asyncCall(function () {
+    var isLoaderEnd = U.isLoaderEnd();
+    L$9.asyncCall(function () {
       if (isSrcFromScriptLoad && isLoaderEnd) {
         defineObject.src = lastScriptSrc;
       }
@@ -4262,7 +4256,7 @@
   var isFirstRequire = true;
 
   function prerequire(deps, callback) {
-    var config = xsloader$a.config();
+    var config = L$9.config();
 
     if (!config) {
       throw new Error("not config");
@@ -4270,7 +4264,7 @@
 
     var thatInvoker = getInvoker(this);
 
-    if (arguments.length == 1 && xsloader$a.isString(deps)) {
+    if (arguments.length == 1 && L$9.isString(deps)) {
       if (deps == "exports") {
         var mineInvoker = getMineInvoker(this);
         var exports = mineInvoker && mineInvoker.exports();
@@ -4292,7 +4286,7 @@
 
         if (pluginArgs) {
           var argArr = [pluginArgs];
-          utils.replaceModulePrefix(config, argArr);
+          U.replaceModulePrefix(config, argArr);
           pluginArgs = argArr[0];
         }
       }
@@ -4322,16 +4316,16 @@
       return theMod;
     }
 
-    var selfname = xsloader$a.randId("_require");
+    var selfname = L$9.randId("_require");
 
-    if (xsloader$a.isFunction(deps)) {
+    if (L$9.isFunction(deps)) {
       callback = deps;
       deps = [];
-    } else if (!xsloader$a.isArray(deps)) {
+    } else if (!L$9.isArray(deps)) {
       throw new Error("unexpected argument:" + deps);
     }
 
-    utils.appendInnerDeps(deps, callback);
+    U.appendInnerDeps(deps, callback);
     var timeid;
     var loading;
     var isOk = false;
@@ -4342,7 +4336,7 @@
       isFirstRequire = false;
       setTimeout(function () {
         if (!isOk) {
-          loading = new utils.ToProgress(config.plugins.loading);
+          loading = new U.ToProgress(config.plugins.loading);
           loading.autoIncrement();
 
           if (isErr) {
@@ -4377,7 +4371,7 @@
       isOk = true;
       clearTimer();
 
-      if (xsloader$a.isFunction(callback)) {
+      if (L$9.isFunction(callback)) {
         try {
           callback.apply(this, arguments);
         } catch (e) {
@@ -4391,7 +4385,7 @@
       var logFun = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "error";
       invoker && console[logFun]("invoker.url=", invoker.getUrl());
       thatInvoker && console[logFun]("require.invoker.url=", thatInvoker.getUrl());
-      console[logFun](utils.unwrapError(err));
+      console[logFun](U.unwrapError(err));
     };
 
     handle.error(function (err, invoker) {
@@ -4410,7 +4404,7 @@
       return this;
     };
 
-    xsloader$a.asyncCall(function () {
+    L$9.asyncCall(function () {
       if (handle.waitTime) {
         var checkResultFun = function checkResultFun() {
           try {
@@ -4421,7 +4415,7 @@
               handle.onError("require timeout:selfname=" + selfname + ",\n\tdeps=[" + (deps ? deps.join(",") : "") + "]");
 
               if (_module) {
-                utils.each(_module.deps, function (dep) {
+                U.each(_module.deps, function (dep) {
                   var mod = moduleScript.getModule(dep);
 
                   if (mod && mod.printOnNotDefined) {
@@ -4470,7 +4464,7 @@
 
   var initDefine = function initDefine(theDefine) {
     theRealDefine = function theRealDefine(defines, loaded) {
-      if (!xsloader$a.config()) {
+      if (!L$9.config()) {
         globalDefineQueue.push(defines);
       } else {
         theDefine(defines, loaded);
@@ -4513,44 +4507,43 @@
     innerDepsMap: innerDepsMap
   };
 
-  var global$a = utils.global;
-  var xsloader$b = global$a.xsloader;
+  var L$a = U.global.xsloader;
   var theContext;
   var theConfig;
   var argsObject = {};
 
-  xsloader$b.config = function () {
+  L$a.config = function () {
     return theConfig;
   };
 
-  xsloader$b.script = function () {
+  L$a.script = function () {
     return script.theLoaderScript;
   };
 
-  xsloader$b.lastAppendHeadDom = function () {
+  L$a.lastAppendHeadDom = function () {
     return script.lastAppendHeadDom();
   };
 
-  xsloader$b.scriptSrc = function () {
+  L$a.scriptSrc = function () {
     return script.theLoaderUrl;
   };
 
-  xsloader$b.putUrlArgs = function (argsObj) {
-    argsObject = xsloader$b.extend(argsObject, argsObj);
+  L$a.putUrlArgs = function (argsObj) {
+    argsObject = L$a.extend(argsObject, argsObj);
   };
 
-  xsloader$b.getUrlArgs = function () {
-    var obj = xsloader$b.extend({}, argsObject);
+  L$a.getUrlArgs = function () {
+    var obj = L$a.extend({}, argsObject);
     return obj;
   };
 
-  xsloader$b.clearUrlArgs = function () {
+  L$a.clearUrlArgs = function () {
     argsObject = {};
   };
 
-  xsloader$b.appendHeadDom = script.appendHeadDom;
+  L$a.appendHeadDom = script.appendHeadDom;
 
-  xsloader$b.hasDefine = function (name) {
+  L$a.hasDefine = function (name) {
     var has = false;
     var module = moduleScript.getModule(name);
 
@@ -4561,11 +4554,11 @@
     return has;
   };
 
-  xsloader$b.resUrlBuilder = function (groupName) {
+  L$a.resUrlBuilder = function (groupName) {
     throw new Error('resUrlBuilder not found!');
   };
 
-  xsloader$b.clear_module_ = function () {
+  L$a.clear_module_ = function () {
     var modules = arguments;
 
     for (var i = 0; i < modules.length; i++) {
@@ -4589,8 +4582,8 @@
       throw new Error("already configed!");
     }
 
-    option = xsloader$b.extend({
-      baseUrl: utils.getPathWithRelative(location.pathname, "./", xsloader$b.endsWith(location.pathname, "/")),
+    option = L$a.extend({
+      baseUrl: U.getPathWithRelative(location.pathname, "./", L$a.endsWith(location.pathname, "/")),
       urlArgs: {},
       ignoreProperties: false,
       paths: {},
@@ -4608,7 +4601,7 @@
       instance: "single",
       dealtDeps: {},
       dealProperties: function dealProperties(obj) {
-        return utils.propertiesDeal(obj, option.properties);
+        return U.propertiesDeal(obj, option.properties);
       },
       isInUrls: function isInUrls(m) {
         return !!this.getUrls(m);
@@ -4651,7 +4644,7 @@
           var moduleName;
           var src;
 
-          if (xsloader$b.isString(module)) {
+          if (L$a.isString(module)) {
             moduleName = module;
           } else {
             moduleName = module.selfname;
@@ -4685,7 +4678,7 @@
           }
         }
 
-        if (xsloader$b.isFunction(urlArg)) {
+        if (L$a.isFunction(urlArg)) {
           urlArg = urlArg.call(this, nameOrUrl);
         }
 
@@ -4698,24 +4691,24 @@
         }
 
         if (addVersion && this.props.addVersion) {
-          urlArg += "&_xsv=" + encodeURIComponent(xsloader$b.env.version);
+          urlArg += "&_xsv=" + encodeURIComponent(L$a.env.version);
         }
 
-        return xsloader$b.appendArgs2Url(url, urlArg);
+        return L$a.appendArgs2Url(url, urlArg);
       },
       dealUrlArgs: function dealUrlArgs(url) {
-        url = utils.getPathWithRelative(location.href, url);
+        url = U.getPathWithRelative(location.href, url);
         return this.dealUrl(url, url);
       },
       defaultVersion: {},
       plugins: {},
       props: {}
     }, option);
-    option.props = xsloader$b.extend({
+    option.props = L$a.extend({
       addVersion: true,
       innerDepType: "auto"
     }, option.props);
-    option.plugins.loading = xsloader$b.extend({
+    option.plugins.loading = L$a.extend({
       enable: true,
       color: '#2196f3',
       bgColor: 'rgba(0,0,0,0.1)',
@@ -4729,29 +4722,29 @@
       option.plugins.loading.enable = false;
     }
 
-    option.plugins.image = xsloader$b.extend({
+    option.plugins.image = L$a.extend({
       timeout: 10000
     }, option.plugins.image);
-    option.plugins.xsmsg = xsloader$b.extend({
+    option.plugins.xsmsg = L$a.extend({
       timeout: 30000,
       sleep: 500
     }, option.plugins.xsmsg);
 
-    if (!xsloader$b.endsWith(option.baseUrl, "/")) {
+    if (!L$a.endsWith(option.baseUrl, "/")) {
       option.baseUrl += "/";
     }
 
-    option.baseUrl = utils.getPathWithRelative(location.href, option.baseUrl);
+    option.baseUrl = U.getPathWithRelative(location.href, option.baseUrl);
 
     if (!option.ignoreProperties) {
       option = option.dealProperties(option);
     }
 
-    utils.strValue2Arr(option.paths);
-    utils.strValue2Arr(option.depsPaths);
-    utils.strValue2Arr(option.deps);
+    U.strValue2Arr(option.paths);
+    U.strValue2Arr(option.depsPaths);
+    U.strValue2Arr(option.deps);
 
-    if (!xsloader$b.isFunction(option.autoUrlArgs)) {
+    if (!L$a.isFunction(option.autoUrlArgs)) {
       var isAutoUrlArgs = option.autoUrlArgs;
 
       option.autoUrlArgs = function () {
@@ -4762,7 +4755,7 @@
     var modulePrefixCount = 0;
 
     for (var prefix in option.modulePrefix) {
-      if (xsloader$b.startsWith(prefix, ".") || xsloader$b.startsWith(prefix, "/")) {
+      if (L$a.startsWith(prefix, ".") || L$a.startsWith(prefix, "/")) {
         throw new Error("modulePrefix can not start with '.' or '/'(" + prefix + ")");
       }
 
@@ -4779,15 +4772,15 @@
       for (var k in option.urlArgs) {
         var url = k;
 
-        if (utils.isJsFile(url)) {
-          if (xsloader$b.startsWith(url, ".") || xsloader$b.startsWith(url, "/") && !xsloader$b.startsWith(url, "//")) {
-            url = utils.getPathWithRelative(script.theLoaderUrl, url);
+        if (U.isJsFile(url)) {
+          if (L$a.startsWith(url, ".") || L$a.startsWith(url, "/") && !L$a.startsWith(url, "//")) {
+            url = U.getPathWithRelative(script.theLoaderUrl, url);
           } else {
-            var absolute = utils.dealPathMayAbsolute(url);
+            var absolute = U.dealPathMayAbsolute(url);
 
             if (absolute.absolute) {
               url = absolute.path;
-            } else if (!xsloader$b.startsWith(url, "*]")) {
+            } else if (!L$a.startsWith(url, "*]")) {
               url = option.baseUrl + url;
             }
           }
@@ -4806,12 +4799,12 @@
           var urlArgObj = urlArgsArr[i];
           var starP = "";
 
-          if (xsloader$b.startsWith(urlArgObj.url, "*[")) {
+          if (L$a.startsWith(urlArgObj.url, "*[")) {
             starP = "*[";
             urlArgObj.url = urlArgObj.url.substring(2);
           }
 
-          if (xsloader$b.startsWith(urlArgObj.url, _prefix)) {
+          if (L$a.startsWith(urlArgObj.url, _prefix)) {
             urlArgObj.url = replaceStr + urlArgObj.url.substring(_prefix.length);
           }
 
@@ -4836,13 +4829,13 @@
     for (var _k in option.urlArgs) {
       var _url = _k;
 
-      if (xsloader$b.startsWith(_url, "*[")) {
+      if (L$a.startsWith(_url, "*[")) {
         var strfix = _url.substring(2);
 
-        if (xsloader$b.startsWith(strfix, ".") || xsloader$b.startsWith(strfix, "/") && !xsloader$b.startsWith(strfix, "//")) {
-          strfix = utils.getPathWithRelative(script.theLoaderUrl, strfix);
+        if (L$a.startsWith(strfix, ".") || L$a.startsWith(strfix, "/") && !L$a.startsWith(strfix, "//")) {
+          strfix = U.getPathWithRelative(script.theLoaderUrl, strfix);
         } else {
-          var _absolute = utils.dealPathMayAbsolute(strfix);
+          var _absolute = U.dealPathMayAbsolute(strfix);
 
           if (_absolute.absolute) {
             strfix = _absolute.path;
@@ -4857,7 +4850,7 @@
         });
 
         delete option.urlArgs[_k];
-      } else if (xsloader$b.startsWith(_url, "*]")) {
+      } else if (L$a.startsWith(_url, "*]")) {
         _urlArgs_suffix.push({
           strfix: _url.substring(2),
           value: option.urlArgs[_k]
@@ -4871,10 +4864,10 @@
       for (var _i2 = 0; _i2 < _urlArgs_prefix.length; _i2++) {
         var strfixObj = _urlArgs_prefix[_i2];
 
-        if (xsloader$b.startsWith(urlOrName, strfixObj.strfix)) {
+        if (L$a.startsWith(urlOrName, strfixObj.strfix)) {
           var value = void 0;
 
-          if (xsloader$b.isFunction(strfixObj.value)) {
+          if (L$a.isFunction(strfixObj.value)) {
             value = strfixObj.value.call(this, urlOrName);
           } else {
             value = strfixObj.value;
@@ -4887,10 +4880,10 @@
       for (var _i3 = 0; _i3 < _urlArgs_suffix.length; _i3++) {
         var _strfixObj = _urlArgs_suffix[_i3];
 
-        if (xsloader$b.endsWith(urlOrName, _strfixObj.strfix)) {
+        if (L$a.endsWith(urlOrName, _strfixObj.strfix)) {
           var _value = void 0;
 
-          if (xsloader$b.isFunction(_strfixObj.value)) {
+          if (L$a.isFunction(_strfixObj.value)) {
             _value = _strfixObj.value.call(this, urlOrName);
           } else {
             _value = _strfixObj.value;
@@ -4902,17 +4895,17 @@
     };
 
     for (var name in option.paths) {
-      utils.replaceModulePrefix(option, option.paths[name]);
+      U.replaceModulePrefix(option, option.paths[name]);
     }
 
     for (var _name in option.depsPaths) {
-      utils.replaceModulePrefix(option, option.depsPaths[_name]);
+      U.replaceModulePrefix(option, option.depsPaths[_name]);
     }
 
     var dealtDeps = option.dealtDeps;
 
     var pushDeps = function pushDeps(dealtDepArray, depsArray) {
-      utils.each(depsArray, function (dep) {
+      U.each(depsArray, function (dep) {
         dealtDepArray.push(dep);
       });
     };
@@ -4920,7 +4913,7 @@
     var _loop = function _loop(keyName) {
       var paths = keyName.split('::');
       var depsArray = option.deps[keyName];
-      utils.each(paths, function (path) {
+      U.each(paths, function (path) {
         if (path == '*') {
           for (var m in option.depsPaths) {
             var dealtDepArray = dealtDeps[m] = dealtDeps[m] || [];
@@ -4944,22 +4937,22 @@
     return theConfig;
   });
 
-  var global$b = utils.global;
-  var xsloader$c = global$b.xsloader;
+  var G$6 = U.global;
+  var L$b = G$6.xsloader;
   var defineHandle = script.initDefine(function theRealDefine(defines) {
     var loaded = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
-    utils.each(defines, function (defineObject) {
-      if (xsloader$c.isFunction(defineObject.callback)) {
+    U.each(defines, function (defineObject) {
+      if (L$b.isFunction(defineObject.callback)) {
         var originCallback = defineObject.callback;
 
         defineObject.callback = function () {
-          var config = xsloader$c.config();
+          var config = L$b.config();
           var rt;
           var defineFun;
-          utils.each(defineObject.names, function (name) {
+          U.each(defineObject.names, function (name) {
             var fun = config.defineFunction[name];
 
-            if (xsloader$c.isFunction(fun)) {
+            if (L$b.isFunction(fun)) {
               defineFun = fun;
               return false;
             }
@@ -5007,10 +5000,10 @@
       defineObject.pushName(ifmodule.selfname);
     }
 
-    utils.each(defineObject.names, function (name) {
+    U.each(defineObject.names, function (name) {
       moduleScript.setModule(name, ifmodule);
 
-      if (xsloader$c.ignoreAspect_[name]) {
+      if (L$b.ignoreAspect_[name]) {
         ifmodule.ignoreAspect = true;
       }
     });
@@ -5026,7 +5019,7 @@
     }
 
     module.setState("loaded");
-    module.setInstanceType(defineObject.handle.instance || xsloader$c.config().instance);
+    module.setInstanceType(defineObject.handle.instance || L$b.config().instance);
 
     if (module.deps.length == 0) {
       try {
@@ -5039,7 +5032,7 @@
         moduleScript.everyRequired(defineObject, module, function (depModules) {
           var args = [];
           var depModuleArgs = [];
-          utils.each(depModules, function (depModule) {
+          U.each(depModules, function (depModule) {
             depModuleArgs.push(depModule);
             args.push(depModule && depModule.moduleObject());
           });
@@ -5072,7 +5065,7 @@
   };
 
   require.get = function (name) {
-    if (!xsloader$c.isString(name)) {
+    if (!L$b.isString(name)) {
       throw new Error("expected string type for module name");
     } else {
       return require.call(this, name);
@@ -5097,17 +5090,16 @@
     return true;
   };
 
-  xsloader$c.define = define;
-  xsloader$c.defineAsync = define;
-  xsloader$c.require = require;
-  global$b.define = define;
-  global$b.require = require;
+  L$b.define = define;
+  L$b.defineAsync = define;
+  L$b.require = require;
+  G$6.define = define;
+  G$6.require = require;
   define.amd = true;
   define("exports", function () {});
 
-  var global$c = utils.global;
-  var xsloader$d = global$c.xsloader;
-  xsloader$d.define(script.INNER_DEPS_PLUGIN, {
+  var L$c = U.global.xsloader;
+  L$c.define(script.INNER_DEPS_PLUGIN, {
     pluginMain: function pluginMain(depId, onload, onerror, config) {
       var depsObj = script.innerDepsMap[depId];
       var deps = depsObj.deps;
@@ -5128,7 +5120,7 @@
       }).then({
         orderDep: depsObj.orderDep,
         error: function error(err, invoker) {
-          onerror(new utils.PluginError(err, invoker));
+          onerror(new U.PluginError(err, invoker));
         }
       });
     },
@@ -5137,19 +5129,17 @@
     }
   });
 
-  var global$d = utils.global;
-  var xsloader$e = global$d.xsloader;
-  xsloader$e.define("ready", {
+  var L$d = U.global.xsloader;
+  L$d.define("ready", {
     pluginMain: function pluginMain(depId, onload, onerror, config) {
-      xsloader$e.onReady(function () {
+      L$d.onReady(function () {
         onload();
       });
     }
   });
 
-  var global$e = utils.global;
-  var xsloader$f = global$e.xsloader;
-  xsloader$f.define("try", {
+  var L$e = U.global.xsloader;
+  L$e.define("try", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       var dep = arg;
@@ -5168,9 +5158,8 @@
     }
   });
 
-  var global$f = utils.global;
-  var xsloader$g = global$f.xsloader;
-  xsloader$g.define("nodeps", {
+  var L$f = U.global.xsloader;
+  L$f.define("nodeps", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       this.invoker().withAbsUrl().require([arg], function (mod, depModuleArgs) {
@@ -5185,9 +5174,8 @@
     }
   });
 
-  var global$g = utils.global;
-  var xsloader$h = global$g.xsloader;
-  xsloader$h.define("exists", {
+  var L$g = U.global.xsloader;
+  L$g.define("exists", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       var vars = arg.split("|");
@@ -5238,9 +5226,8 @@
     }
   });
 
-  var global$h = utils.global;
-  var xsloader$i = global$h.xsloader;
-  xsloader$i.define("name", {
+  var L$h = U.global.xsloader;
+  L$h.define("name", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       var index = arg.indexOf("=>>");
@@ -5287,9 +5274,8 @@
     }
   });
 
-  var global$i = utils.global;
-  var xsloader$j = global$i.xsloader;
-  xsloader$j.define("css", function () {
+  var L$i = U.global.xsloader;
+  L$i.define("css", function () {
     var lastDom;
 
     var Node = function () {
@@ -5363,7 +5349,7 @@
           }
 
           if (!anchorDom) {
-            anchorDom = lastDom ? lastDom.nextSibling : xsloader$j.script().nextSibling;
+            anchorDom = lastDom ? lastDom.nextSibling : L$i.script().nextSibling;
           }
 
           return anchorDom;
@@ -5431,7 +5417,7 @@
           lastDom = dom;
         }
       } else {
-        xsloader$j.appendHeadDom(dom);
+        L$i.appendHeadDom(dom);
       }
     }
 
@@ -5538,23 +5524,22 @@
     };
 
     cssAPI.loadCss = function (cssPath, callback) {
-      (useImportLoad ? importLoad : linkLoad)(xsloader$j.getUrl(cssPath), callback);
+      (useImportLoad ? importLoad : linkLoad)(L$i.getUrl(cssPath), callback);
     };
 
     cssAPI.loadCsses = function () {
       var args = arguments;
 
       for (var i = 0; i < args.length; i++) {
-        (useImportLoad ? importLoad : linkLoad)(xsloader$j.getUrl(args[i]), null);
+        (useImportLoad ? importLoad : linkLoad)(L$i.getUrl(args[i]), null);
       }
     };
 
     return cssAPI;
   });
 
-  var global$j = utils.global;
-  var xsloader$k = global$j.xsloader;
-  xsloader$k.define("text", ["xshttp"], {
+  var L$j = U.global.xsloader;
+  L$j.define("text", ["xshttp"], {
     isSingle: true,
     pluginMain: function pluginMain(name, onload, onerror, config, http) {
       var url = this.invoker().getUrl(name, true);
@@ -5566,9 +5551,8 @@
     }
   });
 
-  var global$k = utils.global;
-  var xsloader$l = global$k.xsloader;
-  xsloader$l.define("window", {
+  var L$k = U.global.xsloader;
+  L$k.define("window", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config, http) {
       var index = arg.indexOf("=>>");
@@ -5588,9 +5572,8 @@
     }
   });
 
-  var global$l = utils.global;
-  var xsloader$m = global$l.xsloader;
-  xsloader$m.define("withdeps", {
+  var L$l = U.global.xsloader;
+  L$l.define("withdeps", {
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       var index = arg.indexOf("=>>");
 
@@ -5604,9 +5587,9 @@
       var deps;
 
       try {
-        deps = xsloader$m.xsParseJson(depsStr);
+        deps = L$l.xsParseJson(depsStr);
 
-        if (!xsloader$m.isArray(deps)) {
+        if (!L$l.isArray(deps)) {
           onerror("deps is not Array:" + depsStr);
           return;
         }
@@ -5623,9 +5606,8 @@
     }
   });
 
-  var global$m = utils.global;
-  var xsloader$n = global$m.xsloader;
-  xsloader$n.define("json", ["xshttp"], {
+  var L$m = U.global.xsloader;
+  L$m.define("json", ["xshttp"], {
     isSingle: true,
     pluginMain: function pluginMain(name, onload, onerror, config, http) {
       var url = this.invoker().getUrl(name, true);
@@ -5637,8 +5619,7 @@
     }
   });
 
-  var global$n = utils.global;
-  var xsloader$o = global$n.xsloader;
+  var L$n = U.global.xsloader;
   var progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
 
   function httpRequest(option) {
@@ -5766,8 +5747,8 @@
         for (var x in option.params) {
           var value = option.params[x];
 
-          if (xsloader$o.isArray(value)) {
-            formData.append(x, xsloader$o.xsJson2String(value));
+          if (L$n.isArray(value)) {
+            formData.append(x, L$n.xsJson2String(value));
           } else {
             formData.append(x, value);
           }
@@ -5785,7 +5766,7 @@
           }
 
           if (_typeof(_value) == "object") {
-            _value = xsloader$o.xsJson2String(_value);
+            _value = L$n.xsJson2String(_value);
           }
 
           body += "&" + encodeURIComponent(_x) + "=" + encodeURIComponent(_value);
@@ -5804,7 +5785,7 @@
 
       xhr.open(option.method, option.url, option.async);
 
-      if ((option.method == "POST" || option.method == "PUT") && !option.multiPart && !option.headers.hasOwnProperty("Content-Type")) {
+      if ((option.method == "POST" || option.method == "PUT") && !option.multiPart && option.headers["Content-Type"] === undefined) {
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
       }
 
@@ -5860,7 +5841,7 @@
 
             if (option.handleType === "json") {
               try {
-                result = xsloader$o.xsParseJson(xhr.responseText);
+                result = L$n.xsParseJson(xhr.responseText);
               } catch (e) {
                 _doOnFailResponseHook(option, xhr, new Error("parse-json-error:" + e), "parse-json-error");
 
@@ -6014,15 +5995,14 @@
   };
 
   window._xshttp_request_ = httpRequest;
-  xsloader$o.define("xshttp", [], function () {
+  L$n.define("xshttp", [], function () {
     return httpRequest;
   });
 
-  var global$o = utils.global;
-  var xsloader$p = global$o.xsloader;
-  xsloader$p.define("request", ["xshttp"], function (http) {
+  var L$o = U.global.xsloader;
+  L$o.define("request", ["xshttp"], function (http) {
     var Request = function Request(option) {
-      option = xsloader$p.extend({
+      option = L$o.extend({
         params: undefined,
         headers: undefined,
         method: undefined,
@@ -6047,8 +6027,7 @@
     return Request;
   });
 
-  var global$p = utils.global;
-  var xsloader$q = global$p.xsloader;
+  var L$p = U.global.xsloader;
 
   try {
     var isDebug = function isDebug(type) {
@@ -6232,7 +6211,7 @@
 
         this.send = function (data) {
           var msg = {
-            id: xsloader$q.randId(),
+            id: L$p.randId(),
             data: data
           };
           msgQueue.append(msg);
@@ -6353,8 +6332,8 @@
       };
 
       var _connectWindow = function _connectWindow(winObjOrCallback, option, notActive) {
-        var gconfig = xsloader$q.config().plugins.xsmsg;
-        option = xsloader$q.extendDeep({
+        var gconfig = L$p.config().plugins.xsmsg;
+        option = L$p.extendDeep({
           cmd: "default-cmd",
           listener: null,
           connected: null,
@@ -6455,7 +6434,7 @@
             osource: source,
             active: isActive,
             connectingSource: connectingSource,
-            id: xsloader$q.randId(),
+            id: L$p.randId(),
             refused: {}
           };
 
@@ -6630,7 +6609,7 @@
             console.log(msg);
           }
 
-          source.postMessage(xsloader$q.xsJson2String(msg), "*");
+          source.postMessage(L$p.xsJson2String(msg), "*");
         }
 
         window.addEventListener('message', function (event) {
@@ -6643,7 +6622,7 @@
             var data;
 
             try {
-              data = xsloader$q.xsParseJson(event.data);
+              data = L$p.xsParseJson(event.data);
             } catch (e) {
               console.warn("error data:", event.data);
               console.warn(e);
@@ -6712,19 +6691,18 @@
         isXsMsgDebug = isDebug;
       };
 
-      xsloader$q.define("xsmsg", handleApi);
+      L$p.define("xsmsg", handleApi);
     }
 
-    xsloader$q.define("XsLinkedList", function () {
+    L$p.define("XsLinkedList", function () {
       return LinkedList;
     });
   } catch (e) {
     console.error(e);
   }
 
-  var global$q = utils.global;
-  var xsloader$r = global$q.xsloader;
-  xsloader$r.define("image", {
+  var L$q = U.global.xsloader;
+  L$q.define("image", {
     pluginMain: function pluginMain(name, onload, onerror, config) {
       var src = this.invoker().getUrl(name, false);
       var img = new Image();
@@ -6746,7 +6724,7 @@
       };
 
       img.src = src;
-      xsloader$r.asyncCall(function () {
+      L$q.asyncCall(function () {
         if (img) {
           setTimeout(function () {
             if (img) {
@@ -6758,15 +6736,14 @@
     }
   });
 
-  var global$r = utils.global;
-  var xsloader$s = global$r.xsloader;
-  xsloader$s.define("default", {
+  var L$r = U.global.xsloader;
+  L$r.define("default", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
       var dep = arg;
 
       var handle = this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-        if (xsloader$s.isObject(mod)) {
+        if (L$r.isObject(mod)) {
           mod = mod["default"];
 
           if (mod === undefined) {
@@ -6783,16 +6760,15 @@
     }
   });
 
-  var global$s = utils.global;
-  var xsloader$t = global$s.xsloader;
-  xsloader$t.define("xsloader4j-server-bridge", [], function () {
-    var base64 = new xsloader$t.Base64();
+  var L$s = U.global.xsloader;
+  L$s.define("xsloader4j-server-bridge", [], function () {
+    var base64 = new L$s.Base64();
     var isDebug = false;
 
     function __renderJsx(vm) {
       return function (component, props) {
         if (!vm || !vm.$createElement) {
-          var Vue = xsloader$t.require.get("vue");
+          var Vue = L$s.require.get("vue");
 
           vm = new Vue();
         }
@@ -6828,7 +6804,7 @@
       },
       getVueCompiler: function getVueCompiler(thiz) {
         var rt = function rt(exports) {
-          var Vue = xsloader$t.require("vue");
+          var Vue = L$s.require("vue");
 
           var _default = exports['default'] || exports;
 
@@ -6850,7 +6826,7 @@
                   var rurl = rs[group].trim();
                   result += str.substring(0, rs.index);
 
-                  if (xsloader$t.startsWith(rurl, "url(")) {
+                  if (L$s.startsWith(rurl, "url(")) {
                     result += rs[0];
                   } else {
                     result += fun(rs, thiz.getUrl(rurl, appendArgs));
@@ -6913,7 +6889,7 @@
       getStyleBuilder: function getStyleBuilder(thiz) {
         return function (cssContent) {
           if (cssContent) {
-            var id = xsloader$t.randId();
+            var id = L$s.randId();
             var count = 0;
             var styleDom = document.createElement("style");
             styleDom.setAttribute("id", id);
@@ -6922,7 +6898,7 @@
             var obj = {
               init: function init() {
                 if (count <= 0) {
-                  xsloader$t.appendHeadDom(styleDom);
+                  L$s.appendHeadDom(styleDom);
                 }
 
                 count++;
@@ -6952,9 +6928,9 @@
     return mod;
   });
 
-  var global$t = utils.global;
-  var xsloader$u = global$t.xsloader;
-  var http = global$t._xshttp_request_;
+  var G$7 = U.global;
+  var L$t = G$7.xsloader;
+  var http = G$7._xshttp_request_;
   var DATA_CONF = "data-conf",
       DATA_CONFX = "data-xsloader-conf";
   var DATA_CONF2 = "data-conf2",
@@ -6963,9 +6939,9 @@
       DATA_MAINX = "data-xsloader-main";
   var DATA_CONF_TYPE = "data-conf-type";
   var serviceConfigUrl;
-  var dataConf = xsloader$u.script().getAttribute(DATA_CONF) || xsloader$u.script().getAttribute(DATA_CONFX);
-  var dataMain = xsloader$u.script().getAttribute(DATA_MAIN) || xsloader$u.script().getAttribute(DATA_MAINX);
-  var dataConfType = xsloader$u.script().getAttribute(DATA_CONF_TYPE);
+  var dataConf = L$t.script().getAttribute(DATA_CONF) || L$t.script().getAttribute(DATA_CONFX);
+  var dataMain = L$t.script().getAttribute(DATA_MAIN) || L$t.script().getAttribute(DATA_MAINX);
+  var dataConfType = L$t.script().getAttribute(DATA_CONF_TYPE);
 
   if (dataConfType !== "json" && dataConfType != "js") {
     dataConfType = "auto";
@@ -6982,7 +6958,7 @@
         name = "index";
       }
 
-      if (xsloader$u.endsWith(name, ".html")) {
+      if (L$t.endsWith(name, ".html")) {
         name = name.substring(0, name.length - 5);
       }
 
@@ -6995,7 +6971,7 @@
     }
 
     function extendConfig(config) {
-      config = xsloader$u.extendDeep({
+      config = L$t.extendDeep({
         properties: {},
         main: {
           getPath: function getPath() {
@@ -7035,14 +7011,14 @@
           var conf;
 
           if (dataConfType == "js") {
-            conf = xsloader$u.xsEval(confText);
+            conf = L$t.xsEval(confText);
           } else if (dataConfType == "json") {
-            conf = xsloader$u.xsParseJson(confText);
+            conf = L$t.xsParseJson(confText);
           } else {
-            if (xsloader$u.startsWith(url, location.protocol + "//" + location.host + "/")) {
-              conf = xsloader$u.xsEval(confText);
+            if (L$t.startsWith(url, location.protocol + "//" + location.host + "/")) {
+              conf = L$t.xsEval(confText);
             } else {
-              conf = xsloader$u.xsParseJson(confText);
+              conf = L$t.xsParseJson(confText);
             }
           }
 
@@ -7052,13 +7028,13 @@
             conf.beforeDealProperties();
           }
 
-          conf = xsloader$u.dealProperties(conf, conf.properties);
+          conf = L$t.dealProperties(conf, conf.properties);
 
           if (isLocal && conf.service.hasGlobal) {
             loadServiceConfig("global servie", conf.service.confUrl, function (globalConfig) {
               var localConfig = conf;
-              global$t[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
-              global$t[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
+              G$7[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
+              G$7[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
               var mainName, mainPath, loaderName;
               loaderName = globalConfig.chooseLoader.call(globalConfig, localConfig);
               var conf;
@@ -7066,7 +7042,7 @@
 
               if (loaderName != null) {
                 mainName = globalConfig.main.name;
-                mainPath = utils.getPathWithRelative(location.href, getMainPath(globalConfig));
+                mainPath = U.getPathWithRelative(location.href, getMainPath(globalConfig));
                 loader = globalConfig.loader[loaderName];
                 conf = globalConfig;
 
@@ -7078,7 +7054,7 @@
               if (!loader) {
                 loaderName = localConfig.chooseLoader.call(localConfig, null);
                 mainName = localConfig.main.name;
-                mainPath = utils.getPathWithRelative(location.href, getMainPath(localConfig));
+                mainPath = U.getPathWithRelative(location.href, getMainPath(localConfig));
                 loader = localConfig.loader[loaderName];
                 conf = localConfig;
 
@@ -7106,7 +7082,7 @@
 
     function startLoad() {
       loadServiceConfig("local", serviceConfigUrl, function (localConfig) {
-        global$t[localConfig.main.localConfigVar] = localConfig;
+        G$7[localConfig.main.localConfigVar] = localConfig;
         var mainName = localConfig.main.name;
         var href = location.href;
         var index = href.lastIndexOf("?");
@@ -7116,7 +7092,7 @@
         }
 
         var mainPath = getMainPath(localConfig);
-        mainPath = mainPath.indexOf("!") == -1 ? utils.getPathWithRelative(href, mainPath) : mainPath;
+        mainPath = mainPath.indexOf("!") == -1 ? U.getPathWithRelative(href, mainPath) : mainPath;
         var loaderName = localConfig.chooseLoader.call(localConfig, null);
         var loader = localConfig.loader[loaderName];
 
@@ -7137,10 +7113,10 @@
       conf.service.resUrls && Array.pushAll(resUrls, conf.service.resUrls);
       localConfig !== conf && localConfig.service.resUrls && Array.pushAll(resUrls, localConfig.service.resUrls);
 
-      xsloader$u.resUrlBuilder = function (groupModule) {
+      L$t.resUrlBuilder = function (groupModule) {
         var as = [];
-        utils.each(resUrls, function (url) {
-          as.push(xsloader$u.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
+        U.each(resUrls, function (url) {
+          as.push(L$t.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
         });
         return as;
       };
@@ -7150,7 +7126,7 @@
       loader.depsPaths = loader.depsPaths || {};
 
       if (mainPath.indexOf("!") != -1) {
-        var theConfig = xsloader$u(loader);
+        var theConfig = L$t(loader);
         mainName = "_plugin_main_";
         var deps = [];
 
@@ -7165,31 +7141,31 @@
         }
 
         deps.push(mainPath);
-        xsloader$u.define(mainName, deps, function () {}).then({
+        L$t.define(mainName, deps, function () {}).then({
           absUrl: pageHref
         });
-      } else if (!xsloader$u.hasDefine(mainName)) {
+      } else if (!L$t.hasDefine(mainName)) {
         loader.depsPaths[mainName] = mainPath;
-        xsloader$u(loader);
+        L$t(loader);
       } else {
-        xsloader$u(loader);
+        L$t(loader);
       }
 
       loader.defineFunction[mainName] = function (originCallback, originThis, originArgs) {
-        if (xsloader$u.isFunction(conf.main.before)) {
+        if (L$t.isFunction(conf.main.before)) {
           conf.main.before.call(conf, mainName);
         }
 
         var rt = originCallback.apply(originThis, originArgs);
 
-        if (xsloader$u.isFunction(conf.main.after)) {
+        if (L$t.isFunction(conf.main.after)) {
           conf.main.after.call(conf, mainName);
         }
 
         return rt;
       };
 
-      xsloader$u.require([mainName], function (main) {}).error(function (err, invoker) {
+      L$t.require([mainName], function (main) {}).error(function (err, invoker) {
         if (invoker) {
           console.error("error occured:invoker.url=", invoker.getUrl());
         }
@@ -7199,20 +7175,20 @@
       });
     }
 
-    xsloader$u.asyncCall(startLoad, true);
+    L$t.asyncCall(startLoad, true);
   };
 
   if (dataConf) {
-    serviceConfigUrl = utils.getPathWithRelative(location.href, dataConf);
-  } else if (dataConf = xsloader$u.script().getAttribute(DATA_CONF2) || xsloader$u.script().getAttribute(DATA_CONF2X)) {
-    serviceConfigUrl = utils.getPathWithRelative(xsloader$u.scriptSrc(), dataConf);
+    serviceConfigUrl = U.getPathWithRelative(location.href, dataConf);
+  } else if (dataConf = L$t.script().getAttribute(DATA_CONF2) || L$t.script().getAttribute(DATA_CONF2X)) {
+    serviceConfigUrl = U.getPathWithRelative(L$t.scriptSrc(), dataConf);
   } else {
     initFun = null;
   }
 
   initFun && initFun();
 
-  utils.loaderEnd();
+  U.loaderEnd();
 
 }());
 //# sourceMappingURL=xsloader.js.map
