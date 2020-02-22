@@ -212,3 +212,17 @@ import sdk from "xsdk";
 import A from "./a.js";
 
 ```
+
+## 其他说明
+
+### 1、打包说明
+- 安装包会增加30Mb左右。
+- 默认打包会将windows与linux环境下的v8引擎依赖打包进去（j2v8_win32_x86_64，j2v8_linux_x86_64）。
+- 若在mac下运行，需要自行加入依赖：
+```xml
+ <dependency>
+    <groupId>com.eclipsesource.j2v8</groupId>
+    <artifactId>j2v8_macosx_x86_64</artifactId>
+    <version>4.6.0</version>
+</dependency>
+```
