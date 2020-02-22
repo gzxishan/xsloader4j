@@ -37,7 +37,7 @@
 
 ### 1、启动配置
 在资源目录（如src/main/resources）下新建xsloader4j.properties：
-- xsloader.js加载器访问路径为：/xsloader.js
+- xsloader.js加载器访问路径为：/contextPath/xsloader.js
 
 ```properties
 xsloader.min=true
@@ -58,7 +58,7 @@ xsloader.conf.properties.prop1=xxx
 
 ### 2、xsloader配置
 在资源目录（如src/main/resources）下新建xsloader-conf.js,参考内容如下：
-- 该配置文件的访问路径为：/xsloader.conf
+- 该配置文件的访问路径为：/contextPath/xsloader.conf
 - 注意此配置文件为JS版的json对象，支持JS脚本。
 - 关于此文件配置的更详细说明见：[xsloader模块加载器配置](https://github.com/gzxishan/xsloader/wiki/7.xsloader配置服务)
 - 通过`#{propName}`引用配置参数，contextPath默认为当前servlet的context path参数。
@@ -81,8 +81,8 @@ xsloader.conf.properties.prop1=xxx
          }
 	},
 	"main":{
-		getPath:function(dataMain){//获取主模块的路径，默认为"./main/当前网页名.js"
-    		return dataMain||"./es-main/{name}.js+";
+		getPath:function(dataMain){
+    		return dataMain||"./es-main/{name}.js";
     	},
 		"before":function(){
 			console.log("before:" + name);
@@ -91,15 +91,15 @@ xsloader.conf.properties.prop1=xxx
 			console.log("after:" + name);
 		}
 	},
-	"chooseLoader":function(localConfig){//返回一个configName；当此函数为service全局配置的函数时，localConfig为应用的配置对象;本地配置调用时，localConfig为null。
+	"chooseLoader":function(localConfig){
 		var path=this.getPagePath();
         if(startsWith(path,"/mobile/")){
             return "framework7";
         }
-        return "antd-vue-back";
+        return "test";
 	},
 	"loader":{
-		"antd-vue-back":{
+		"test":{
             "baseUrl":"${contextPath}/",
             "modulePrefix":"$[libReplace]",
              "urlArgs":{
@@ -109,25 +109,10 @@ xsloader.conf.properties.prop1=xxx
                 "*[libui/":"v=190109-26"
             },
             "paths":{
-                    "all":"aspect/all.js",
-                    "echarts":"lib/echarts/4.2.1-rc.1/echarts.min.js",
-                    "ReconnectingWebSocket":"lib/io/reconnecting-websocket.js",
-                    "overpage":"aspect/overpage.js",
-                    "xsdk":"libxs/ui/ant-design-vue/1.3.x/sdk#{js-debug}.js",
-                    "xstree":"libxs/ui/layui2/xstree.js",
-                    "qrcode":"lib/jquery/jquery.qrcode.min.js",
-                    "clipboard":"lib/clipboard.js/clipboard.min.js",
-                    "service-image":"libxs/service-ui/example/image.js",
-                    "service-provider":"libxs/service-ui/service-provider.js",
-                    "service-invoker":"libxs/service-ui/service-invoker.js",
-                    "article-show":"libxs/service-ui/example/article-show.js",
-                    "article-editor":"libxs/service-ui/example/article-editor.js",
-                    "ptp-common-lib":  "${contextPath}/#{oftenContext}/G2Sdk/**=appid=${baseAppid}/common-lib/widgets-pc.js"
+                    "vue":"static/vue/vue.min.js"
             },
             "deps":{
-                "all":["xsdk","ptp-common-lib","aspect/vue-utils.js","css!aspect/all-pc.scss"],
-                "ptp-common-lib":"xsdk",
-                "*":["all"]
+				"*":"vue"//当有vue组件或jsx语法时，一定要先加载vue模块
             }
         },
 		"framework7":{
@@ -140,27 +125,13 @@ xsloader.conf.properties.prop1=xxx
                 "*[libui/":"v=190109-26"
             },
             "paths":{
-                    "all":"aspect/all.js",
-                    "echarts":"lib/echarts/4.2.1-rc.1/echarts.min.js",
-                    "ReconnectingWebSocket":"lib/io/reconnecting-websocket.js",
-                    "xsdk":"libxs/ui/noui/sdk-zepto.js",
-                    "selectpage":"libui/selectpage/2.18/selectpage.js",
-                    "datepicker":"libui/m/datepicker/datePicker.js",
-                    "iscroll5":"lib/iscroll/5.2.0/iscroll-probe.js",
-                    "service-provider":"libxs/service-ui/service-provider.js",
-                    "service-invoker":"libxs/service-ui/service-invoker.js",
-                    "article-show":"libxs/service-ui/example/article-show.js",
-                    "framework7":"libui/framework7/v3.6.7/js/framework7.min.js",
-                    "myapp":"aspect/my-app.js"
+                   "vue":"static/vue/vue.min.js"
             },
             "depsPaths":{
 
             },
             "deps":{
-                "all":["xsdk",["framework7","css!libui/framework7/v3.6.7/css/framework7.min.css",
-                        "css!libui/framework7/icons-2.3.0/css/framework7-icons.css"]],
-                "selectpage":"css!libui/selectpage/2.18/selectpage.css",
-                "*":["all"]
+
             }
         }
 	},
@@ -168,24 +139,33 @@ xsloader.conf.properties.prop1=xxx
 		var path=location.pathname.substring(this.properties.contextPath.length);
 		return path;
 	},
-	"porter":"${contextPath}/#{oftenContext}/",
 	"sporter":"${contextPath}/",
-	"sdkPorter":"${contextPath}/#{oftenContext}/G2Sdk/",
 	"fromPath":function(path){
-		//return this.sporter+path;
 		return location.protocol+"//"+location.host+this.sporter+path;
 	},
      "beforeDealProperties":function(){
-        
+
      }
 }
 ```
 ## 使用
+- xsloader脚本引入：
+```html
+<script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
+```
+- 配置文件引入：直接在xsloader.js的script标签上，设置属性data-conf2
+```
+data-conf2="./xsloader.conf"
+```
+- 详细例子可以参考demo1项目
+
 目录结构：
 ```
-网站根目录 /
-          /es-main/index.js
-          /index.html
+/test1/
+/test1/index.html
+/test1/es-main/index.js
+/test1/es-main/vue/comp1.vue
+/test1/es-main/jsx/comp2.jsx
 ```
 
 ### index.html
@@ -193,24 +173,81 @@ xsloader.conf.properties.prop1=xxx
 <!DOCTYPE html>
 <html>
 
-	<head>
-	    <!--引入xsloader脚本-->
-		<script src="./xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
-	</head>
+<head>
+    <title>测试1</title>
+    <meta charset="UTF-8">
+    <!--引入xsloader脚本-->
+    <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
+</head>
 
-	<body>
-		
-	</body>
+<body>
+<div id="vue-app">
+
+</div>
+<script id="app-template" type="text/x-template">
+    <div style="text-align:center;">
+        <comp1/>
+        <comp2/>
+    </div>
+</script>
+</body>
 
 </html>
+```
+
+### comp1.vue
+```vue
+<template>
+    <h1>{{info}}</h1>
+</template>
+
+<script>
+    export default{
+        data(){
+            return {
+                   info:"HelloWorld"
+            }
+        }
+    }
+</script>
+
+<style lang="scss" scoped="true">
+    &{
+        margin:2em;
+    }
+</style>
+```
+
+### comp2.jsx
+```jsx
+
+export default {
+	render(){
+		return (
+               <div
+               style={{
+                   margin:"2em auto"
+               }}>
+                   <p>这是一个jsx语法的组件</p>
+               </div>)
+	}
+}
+
 ```
 
 ### index.js
 ```JavaScript
 import Vue from "vue";
-import sdk from "xsdk";
-import A from "./a.js";
+import comp1 from "./vue/comp1.vue";//需要加入文件后缀，当前目录需要用"./"、否则是相对于baseUrl
 
+new Vue({
+    el:"#vue-app",
+    template:"#app-template",
+    components:{
+        comp1,
+        comp2:()=>import("./jsx/comp2.jsx")//支持异步加载
+    }
+});
 ```
 
 ## 其他说明
@@ -226,3 +263,30 @@ import A from "./a.js";
     <version>4.6.0</version>
 </dependency>
 ```
+### 2、代码转换说明
+
+#### 1）*.js
+- 语法支持到es2017
+- 支持jsx语法（需要全局配置vue模块）
+- 自动判断js文件语法，当具有一下语句之一时，则会进行转换：
+```
+let ...
+import ...
+export ...
+const ...
+```
+
+#### 2）*.vue
+- 支持的js语法同js
+- 支持jsx语法
+- 需要全局配置vue模块
+- style标签支持多个，默认语言为scss
+
+#### 3）*.scss
+支持scss语法
+
+#### 4）*.less
+支持less语法
+
+#### 5）*.jsx
+- 效果与*.js文件效果是一样的

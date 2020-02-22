@@ -11,6 +11,7 @@
     <modules>
         <module>xsloader4j-core</module>
         <module>xsloader4j-spring-boot-embed-starter</module>
+        <module>demo1</module>
     </modules>
 
     <name>xsloader4j</name>
