@@ -33,7 +33,12 @@ public interface IPathDealt
     Pattern DEFAULT_ES6_PATTERN = Pattern.compile("((^|\\n)[\\s]*let[\\s]+)|((^|\\n)[\\s]*import[\\s]+)|((^|\\n)" +
             "[\\s]*export[\\s]+)|((^|\\n)[\\s]*const[\\s]+)");
 
-
+    /**
+     * 用于处理path，返回实际的。
+     * @param servletContext
+     * @param path
+     * @return
+     */
     default String dealPath(ServletContext servletContext,String path)
     {
         return path;
@@ -61,6 +66,12 @@ public interface IPathDealt
         return DEFAULT_ES6_PATTERN.matcher(script).find();
     }
 
+    /**
+     * 根据路径返回实际文件。
+     * @param servletContext
+     * @param path
+     * @return
+     */
     default File getRealFile(ServletContext servletContext, String path)
     {
         String realPath = servletContext.getRealPath(path);
@@ -80,6 +91,15 @@ public interface IPathDealt
         return false;
     }
 
+    /**
+     * 对内容进行预处理。
+     * @param servletContext
+     * @param path
+     * @param realFile
+     * @param content
+     * @return
+     * @throws IOException
+     */
     default String preDealContent(ServletContext servletContext, String path, File realFile, String content) throws IOException
     {
         return content;

@@ -3,6 +3,7 @@ package cn.xishan.global.xsloaderjs.es6;
 import cn.xishan.global.xsloaderjs.Version;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
+import cn.xishan.oftenporter.porter.core.exception.InitException;
 import cn.xishan.oftenporter.porter.core.exception.OftenCallException;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
@@ -49,6 +50,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(value = "xsloader.es6.replaceType", defaultVal = "require")//
     private String replaceType;
 
+    @Property(value = "xsloader.es6.dealt")//
+    private String dealt;
+
     @Property(value = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
 
@@ -58,8 +62,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @AutoSet
     ServletContext servletContext;
 
-    @AutoSet(nullAble = true)
-    IPathDealt pathDealt;
+    private IPathDealt pathDealt;
 
 
     public static final Version VERSION_NEED_REPLACE_REQUIRE = new Version("1.1.10");
@@ -130,12 +133,22 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     public void setOk()
     {
         JsScriptUtil.init();
-        if (pathDealt == null)
+        if (OftenTool.isEmpty(dealt))
         {
             pathDealt = new IPathDealt()
             {
             };
+        } else
+        {
+            try
+            {
+                pathDealt = OftenTool.newObject(dealt);
+            } catch (Exception e)
+            {
+                throw new InitException(e);
+            }
         }
+
         CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
                 HashUtil.md5(servletContext.getRealPath("/").getBytes(Charset.defaultCharset())));
         if (forceCacheSeconds == -1)
