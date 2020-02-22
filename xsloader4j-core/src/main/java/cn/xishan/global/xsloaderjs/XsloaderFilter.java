@@ -12,6 +12,8 @@ import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
 import cn.xishan.oftenporter.servlet.Filterer;
 import cn.xishan.oftenporter.servlet.HttpCacheUtil;
 import cn.xishan.oftenporter.servlet.WrapperFilterManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.*;
 import javax.servlet.annotation.WebFilter;
@@ -34,6 +36,8 @@ import java.util.Map;
 )
 public class XsloaderFilter implements Filterer
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
+
     private byte[] content;
     private byte[] map;
     private String etag;
@@ -92,6 +96,11 @@ public class XsloaderFilter implements Filterer
     IAutoSetter autoSetter;
     @AutoSet
     ServletContext servletContext;
+
+    public XsloaderFilter()
+    {
+        LOGGER.info("XsloaderFilter is new");
+    }
 
     @Override
     public String oftenContext()

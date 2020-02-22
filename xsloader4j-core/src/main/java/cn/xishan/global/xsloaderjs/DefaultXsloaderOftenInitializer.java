@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * @author Created by https://github.com/CLovinr on 2020/2/2.
  */
-@ImportProperties("/xs-application.properties")
+@ImportProperties("/xsloader4j.properties")
 public class DefaultXsloaderOftenInitializer implements OftenInitializer
 {
 

@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/26.

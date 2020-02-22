@@ -38,26 +38,38 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsFilter.class);
 
-    @Property(value = "xsloader.es6.encoding", defaultVal = "utf-8")//
+    @Property(name = "xsloader.es6.debug", defaultVal = "false")
+    private static Boolean isDebug;
+
+    @Property(name = "xsloader.sourcemap", defaultVal = "true")
+    private static Boolean hasSourceMap;
+
+    @Property(name = "xsloader.es6.encoding", defaultVal = "utf-8")//
     private String encoding;
 
-    @Property(value = "xsloader.es6.forceCacheSeconds", defaultVal = "-1")//
+    @Property(name = "xsloader.es6.forceCacheSeconds", defaultVal = "-1")//
     private Integer forceCacheSeconds;
 
     /**
      * require.get或require
      */
-    @Property(value = "xsloader.es6.replaceType", defaultVal = "require")//
+    @Property(name = "xsloader.es6.replaceType", defaultVal = "require")//
     private String replaceType;
 
-    @Property(value = "xsloader.es6.dealt")//
+    @Property(name = "xsloader.es6.dealt")//
     private String dealt;
 
-    @Property(value = "xsloader.es6.debug", defaultVal = "false")
-    private static Boolean isDebug;
+    /**
+     * 默认忽略检测的开始路径（以/开头，不含contextPath）。
+     */
+    @Property(name = "xsloader.es6.dealt.ignores")
+    private String[] ignores;
 
-    @Property(value = "xsloader.sourcemap", defaultVal = "true")
-    private static Boolean hasSourceMap;
+    /**
+     * 存放在资源路径下的静态路径前缀，如"/static"
+     */
+    @Property(name = "xsloader.es6.dealt.static")
+    private String staticPath;
 
     @AutoSet
     ServletContext servletContext;
@@ -133,11 +145,12 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     public void setOk()
     {
         JsScriptUtil.init();
+        CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
+                HashUtil.md5(servletContext.getRealPath("/").getBytes(Charset.defaultCharset())));
+
         if (OftenTool.isEmpty(dealt))
         {
-            pathDealt = new IPathDealt()
-            {
-            };
+            pathDealt = new DefaultPathDealt(staticPath, ignores);
         } else
         {
             try
@@ -149,8 +162,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             }
         }
 
-        CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
-                HashUtil.md5(servletContext.getRealPath("/").getBytes(Charset.defaultCharset())));
         if (forceCacheSeconds == -1)
         {
             if (isDebug)
