@@ -16,6 +16,11 @@
 - Windows,Linux,Mac
 - maven3
 
+#### 已测试通过
+- Jdk8
+- Windows10
+- CentOS 7.4，7.5
+
 ## 安装
 - spring boot嵌入式版（内嵌tomcat等容器，通过main函数启动）
 ```xml
@@ -254,7 +259,7 @@ new Vue({
 
 ### 1、打包说明
 - 安装包会增加30Mb左右。
-- 默认打包会将windows与linux环境下的v8引擎依赖打包进去（j2v8_win32_x86_64，j2v8_linux_x86_64）。
+- 默认打包会将windows与linux环境下的v8引擎依赖打包进去（j2v8_win32_x86_64，j2v8_linux_x86_64），生产环境可手动删除非对应系统的v8引擎jar包。
 - 若在mac下运行，需要自行加入依赖：
 ```xml
  <dependency>
