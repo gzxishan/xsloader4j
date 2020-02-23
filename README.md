@@ -26,7 +26,7 @@
 ```xml
 <dependency>
     <groupId>com.xishankeji</groupId>
-    <artifactId>xsloader4j-spring-boot-starter</artifactId>
+    <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
     <version>1.1.0</version>
 </dependency>
 ```
