@@ -296,3 +296,14 @@ const ...
 
 #### 5）*.jsx
 - 效果与*.js文件效果是一样的
+
+### 3、xsloader.js说明
+该插件是基于AMD协议开发的模块加载器（借鉴了requirejs，但从1.2.x开始进行了重构），支持异步模块加载、插件开发、更灵活的依赖配置、脚本版本配置等。
+
+内置插件包括：css、imgage、json、text、request等。
+
+#### 使用情况
+- xsloader.js：已完全在公司线上产品中使用
+- xsloader4j：已覆盖公司80%以上的项目
+
+[xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
