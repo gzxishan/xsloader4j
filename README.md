@@ -297,7 +297,16 @@ const ...
 #### 5）*.jsx
 - 效果与*.js文件效果是一样的
 
-### 3、xsloader.js说明
+### 3、polyfill
+您可能需要使用polyfill来更好的使用es6+代码，如Map、array.includes、string.startsWith等
+- 在本项目polyfill/目录下下载了些版本的js文件
+- 可以去https://babeljs.io/docs/en/babel-polyfill/下载
+```bash
+cnpm install --save @babel/polyfill
+在node_modules/下对应目录下去复制polyfill.js文件
+```
+
+### 4、xsloader.js说明
 该插件是基于AMD协议开发的模块加载器（借鉴了requirejs，但从1.2.x开始进行了重构），支持异步模块加载、插件开发、更灵活的依赖配置、脚本版本配置等。
 
 内置插件包括：css、imgage、json、text、request等。
