@@ -86,7 +86,7 @@ public class XsloaderFilter implements Filterer
     @Property(name = "xsloader.conf.requestPath", defaultVal = "/xsloader.conf")
     private String requestPath;
 
-    @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties")
+    @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties.")
     private String propertiesPrefix;
 
 
