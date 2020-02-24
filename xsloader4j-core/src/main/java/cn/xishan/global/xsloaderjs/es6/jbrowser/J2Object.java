@@ -8,11 +8,13 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.*;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/29.
  */
-public abstract class J2Object
+public abstract class J2Object implements AutoCloseable
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(J2Object.class);
@@ -37,31 +39,54 @@ public abstract class J2Object
         boolean isRootFun() default false;
     }
 
-    protected V8 v8;
+    protected V8 _v8;
+    protected J2Object root;
     protected V8Object v8Object;
 
-    public J2Object(V8 v8)
+    private List<Releasable> releasableList;
+
+    protected J2Object(J2Object root)
     {
-        this(v8, false);
+        this(root, false);
     }
 
     /**
-     * @param v8
+     * @param root
      * @param autoRegisterMethod 是否自动注册注解了@{@link JsBridgeMethod}的java函数。
      */
-    public J2Object(V8 v8, boolean autoRegisterMethod)
+    public J2Object(J2Object root, boolean autoRegisterMethod)
     {
-        this.v8 = v8;
-        this.v8Object = newObject();
+        this.root = root;
+        this.v8Object = newV8Object();
         if (autoRegisterMethod)
         {
             autoRegisterMethod();
         }
     }
 
+    private J2Object()
+    {
+
+    }
+
+    public J2Object getRoot()
+    {
+        return root;
+    }
+
+    public static J2Object newRootObject(V8 v8)
+    {
+        J2Object j2Object = new J2Object()
+        {
+        };
+        j2Object._v8 = v8;
+        j2Object.releasableList = new ArrayList<>();
+        return j2Object;
+    }
+
     public V8 getV8()
     {
-        return v8;
+        return root == null ? _v8 : root._v8;
     }
 
     public V8Object getV8Object()
@@ -69,17 +94,23 @@ public abstract class J2Object
         return v8Object;
     }
 
-    public V8Object newObject()
+    public V8Object newV8Object()
     {
-        V8Object v8Object = new V8Object(v8);
-        v8.registerResource(v8Object);
+        V8Object v8Object = new V8Object(getV8());
+        if (root != null)
+        {
+            root.addReleasable(v8Object);
+        }
         return v8Object;
     }
 
-    public V8Array newArray()
+    public V8Array newV8Array()
     {
-        V8Array v8Array = new V8Array(v8);
-        v8.registerResource(v8Array);
+        V8Array v8Array = new V8Array(getV8());
+        if (root != null)
+        {
+            root.addReleasable(v8Array);
+        }
         return v8Array;
     }
 
@@ -102,17 +133,18 @@ public abstract class J2Object
         V8Object v8Object;
         if (jsMethod.isRootFun())
         {
-            v8Object = this.v8;
+            v8Object = this.getV8();
         } else
         {
             v8Object = this.v8Object;
         }
         method.setAccessible(true);
         v8Object.registerJavaMethod((receiver, parameters) -> {
+            int length = parameters.length();
             try
             {
-                Object[] args = new Object[parameters.length()];
-                for (int i = 0; i < args.length; i++)
+                Object[] args = new Object[length];
+                for (int i = 0; i < length; i++)
                 {
                     args[i] = getArrayItem(parameters, i);
                 }
@@ -121,8 +153,30 @@ public abstract class J2Object
             {
                 LOGGER.error(e.getMessage(), e);
                 throw new RuntimeException(e);
+            } finally
+            {
+                for (int i = 0; i < length; i++)
+                {
+                    release(parameters.get(i));
+                }
+                release(receiver);
+                release(parameters);
             }
         }, jsName);
+    }
+
+    private void release(Object object)
+    {
+        if (object instanceof Releasable)
+        {
+            try
+            {
+                ((Releasable) object).release();
+            } catch (Exception e)
+            {
+                LOGGER.warn(e.getMessage(), e);
+            }
+        }
     }
 
     public static void add(V8Object v8Object, String name, Object javaValue)
@@ -170,7 +224,6 @@ public abstract class J2Object
                 case V8Value.V8_TYPED_ARRAY:
                     return array.getArray(index);
                 case V8Value.V8_OBJECT:
-                    return array.getObject(index);
                 case V8Value.V8_FUNCTION:
                     return array.getObject(index);
                 case V8Value.V8_ARRAY_BUFFER:
@@ -183,5 +236,37 @@ public abstract class J2Object
             // do nothing
         }
         return null;
+    }
+
+
+    private void addReleasable(Releasable releasable)
+    {
+        releasableList.add(releasable);
+    }
+
+    public void release()
+    {
+        if (releasableList != null)
+        {
+            for (Releasable releasable : releasableList)
+            {
+                if (releasable != null)
+                {
+                    try
+                    {
+                        releasable.release();
+                    } catch (Exception e)
+                    {
+                        LOGGER.warn(e.getMessage(), e);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void close()
+    {
+        this.release();
     }
 }

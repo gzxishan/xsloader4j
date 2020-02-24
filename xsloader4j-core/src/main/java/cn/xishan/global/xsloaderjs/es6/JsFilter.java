@@ -40,6 +40,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
     @Property(name = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
+    @Property(name = "xsloader.es6.useCache", defaultVal = "true")//
+    private static Boolean useCache;
 
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
@@ -208,60 +210,56 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @return
      * @throws IOException
      */
-    private static CachedResource parse(boolean isSourceMap, String requestUrl, String path, File file,
-            IFileContentGetter fileContentGetter,
+    private static CachedResource parse(CachedResource cachedResource, boolean isSourceMap, String requestUrl,
+            String path, File file, IFileContentGetter fileContentGetter,
             String encoding, String replaceType) throws IOException
     {
-        CachedResource cachedResource = CachedResource.getByPath(isSourceMap, path);
-        if (cachedResource == null || cachedResource.needReload(file, isDebug))
+        if (cachedResource != null)
         {
-            if (cachedResource != null)
-            {
-                cachedResource.clearCache();
-            }
-            IFileContentGetter.Result cresult = fileContentGetter.getResult(file, encoding);
-
-            if (cresult == null)
-            {
-                throw new IOException("not found:" + path);
-            }
-            String fileContent = cresult.getContent();
-
-            String suffix = OftenStrUtil.getSuffix(path);
-            String realPath = file.getAbsolutePath();
-            if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx"))
-            {
-                Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
-                Es6Wrapper.Result<String> result = es6Wrapper
-                        .parseEs6(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
-                cachedResource = CachedResource
-                        .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
-                                result);
-            } else if (suffix.equals("vue"))
-            {
-                Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
-                Es6Wrapper.Result<String> result = es6Wrapper
-                        .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
-                cachedResource = CachedResource
-                        .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
-                                result);
-            } else if (suffix.equals("scss") || suffix.equals("sass"))
-            {
-                Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
-                Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
-                cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
-                        result);
-            } else if (suffix.equals("less"))
-            {
-                Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
-                Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
-                cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
-                        result);
-            } else
-            {
-                throw new IOException("unknown suffix:" + suffix);
-            }
+            cachedResource.clearCache();
         }
+        IFileContentGetter.Result cresult = fileContentGetter.getResult(file, encoding);
+
+        if (cresult == null)
+        {
+            throw new IOException("not found:" + path);
+        }
+        String fileContent = cresult.getContent();
+
+        String suffix = OftenStrUtil.getSuffix(path);
+        String realPath = file.getAbsolutePath();
+        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx"))
+        {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+            Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
+                    hasSourceMap, replaceType);
+            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(),
+                    encoding, "application/javascript", result);
+        } else if (suffix.equals("vue"))
+        {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+            Es6Wrapper.Result<String> result = es6Wrapper
+                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
+            cachedResource = CachedResource
+                    .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
+                            result);
+        } else if (suffix.equals("scss") || suffix.equals("sass"))
+        {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+            Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
+            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
+                    result);
+        } else if (suffix.equals("less"))
+        {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+            Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
+            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
+                    result);
+        } else
+        {
+            throw new IOException("unknown suffix:" + suffix);
+        }
+
         return cachedResource;
     }
 
@@ -325,8 +323,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                     }
                 }
             }
-
-
         }
 
 
@@ -348,8 +344,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         } else
         {
             realFile = pathDealt.getRealFile(servletContext, path);
-
         }
+
         if (realFile == null || !realFile.exists())
         {
             return null;
@@ -362,34 +358,40 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             }
 
             String finalPath = path;
-            CachedResource cachedResource = parse(isSourceMap, requestUrl, path, realFile, new IFileContentGetter()
-            {
 
-                @Override
-                public Result getResult(File file, String encoding) throws IOException
+            CachedResource cachedResource = !useCache ? null : CachedResource.getByPath(isSourceMap, path);
+            if (cachedResource == null || cachedResource.needReload(realFile, isDebug))
+            {
+                cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, realFile, new IFileContentGetter()
                 {
-                    Result result = null;
-                    for (IFileContentGetter contentGetter : contentGetterList)
+
+                    @Override
+                    public Result getResult(File file, String encoding) throws IOException
                     {
-                        result = contentGetter.getResult(file, encoding);
-                        if (result != null)
+                        Result result = null;
+                        for (IFileContentGetter contentGetter : contentGetterList)
                         {
+                            result = contentGetter.getResult(file, encoding);
+                            if (result != null)
+                            {
+                                String content = pathDealt
+                                        .preDealContent(servletContext, finalPath, realFile, result.getContent());
+                                result.setContent(content);
+                                break;
+                            }
+                        }
+                        if (result == null)
+                        {
+                            result = new Result(getContent(file, encoding));
                             String content = pathDealt
                                     .preDealContent(servletContext, finalPath, realFile, result.getContent());
                             result.setContent(content);
-                            break;
                         }
+                        return result;
                     }
-                    if (result == null)
-                    {
-                        result = new Result(getContent(file, encoding));
-                        String content = pathDealt
-                                .preDealContent(servletContext, finalPath, realFile, result.getContent());
-                        result.setContent(content);
-                    }
-                    return result;
-                }
-            }, encoding, replaceType);
+                }, encoding, replaceType);
+            }
+
             return cachedResource;
         }
     }

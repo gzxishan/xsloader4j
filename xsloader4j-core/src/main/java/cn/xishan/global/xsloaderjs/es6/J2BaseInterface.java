@@ -39,13 +39,16 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
 
     private ILoadFileListener fileListener;
     private IFileContentGetter fileContentGetter;
-    private ConcurrentKeyLock<String> keyLock;
+    private ConcurrentKeyLock lock;
 
-    public J2BaseInterface(ConcurrentKeyLock<String> keyLock,V8 v8)
+    public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod)
     {
-        super(v8);
-        this.keyLock=keyLock;
-        autoRegisterMethod();
+        super(newRootObject(v8));
+        lock = new ConcurrentKeyLock();
+        if (isAutoRegisterMethod)
+        {
+            autoRegisterMethod();
+        }
     }
 
     public ILoadFileListener getFileListener()
@@ -53,11 +56,11 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         return fileListener;
     }
 
-    public J2BaseInterface lock()
+    public J2BaseInterface acquire()
     {
-        keyLock.lock("v8");
+        lock.lock("v8");
         getV8().getLocker().acquire();
-        return this;
+        return new J2BaseInterface(getV8(), false);
     }
 
     public void release()
@@ -67,18 +70,14 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
             this.fileListener = null;
             this.fileContentGetter = null;
             threadLocal.remove();
+            root.release();
             getV8().getLocker().release();
         } finally
         {
-            keyLock.unlock("v8");
+            lock.unlock("v8");
         }
     }
 
-    @Override
-    public void close()
-    {
-        this.release();
-    }
 
     public void setFileListener(ILoadFileListener fileListener)
     {
@@ -245,7 +244,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                 {
                     stringBuilder.append(scriptContent, lastIndex, matcher.start());
                     String template = matcher.group(1);
-                    parameters = newArray().push(currentUrl).push(filepath).push(template).push(isDebug);
+                    parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
                     V8Object result = xsloaderServer.executeObjectFunction("compileVueTemplate", parameters);
                     int lastLn = stringBuilder.lastIndexOf("\n");
                     int currentLen = stringBuilder.length();
@@ -304,5 +303,10 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     public void warn(String str)
     {
         LOGGER.warn("js warn:\n{}", str);
+    }
+
+    public V8Object getRootObject(String name)
+    {
+        return getV8().getObject(name);
     }
 }

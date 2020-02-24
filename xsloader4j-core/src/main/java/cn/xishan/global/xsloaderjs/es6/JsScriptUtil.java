@@ -2,7 +2,6 @@ package cn.xishan.global.xsloaderjs.es6;
 
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Document;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Window;
-import cn.xishan.oftenporter.porter.core.util.ConcurrentKeyLock;
 
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
 import com.eclipsesource.v8.*;
@@ -55,7 +54,8 @@ public class JsScriptUtil
         return v8;
     }
 
-    static synchronized J2BaseInterface getInterface()
+
+    static synchronized J2BaseInterface getAndAcquire()
     {
         if (cachedInterface == null)
         {
@@ -64,7 +64,6 @@ public class JsScriptUtil
                 if (cachedInterface == null)
                 {
                     V8 v8 = null;
-                    ConcurrentKeyLock<String> keyLock = new ConcurrentKeyLock<String>();
                     try
                     {
                         String tempDir = CachedResource.getTempDir("v8");
@@ -80,10 +79,10 @@ public class JsScriptUtil
                         v8 = V8.createV8Runtime(null, tempDir);
                         v8.getLocker().acquire();
 
-                        J2BaseInterface j2BaseInterface = new J2BaseInterface(keyLock, v8);
+                        J2BaseInterface j2BaseInterface = new J2BaseInterface(v8, true);
                         v8.add("$jsBridge$", j2BaseInterface.getV8Object());
 
-                        J2Document j2Document = new J2Document(v8);
+                        J2Document j2Document = new J2Document(j2BaseInterface.getRoot());
                         v8.add("document", j2Document.getV8Object());
 
                         for (String script : scripts)
@@ -91,7 +90,7 @@ public class JsScriptUtil
                             v8.executeVoidScript(script);
                         }
 
-                        J2Window window = new J2Window(v8);
+                        J2Window window = new J2Window(j2BaseInterface.getRoot());
                         v8.add("window", window.getV8Object());
 
                         for (String script : scripts2)
@@ -108,13 +107,14 @@ public class JsScriptUtil
                 }
             }
         }
-        return cachedInterface;
+        return cachedInterface.acquire();
     }
 
     static void init()
     {
         String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.8.4/babel.js", "utf-8");
-        String vueScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
+        String vueScript = ResourceUtil
+                .getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
         JsScriptUtil.scripts = new String[]{
                 babelScript,
                 vueScript

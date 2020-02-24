@@ -9,7 +9,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.eclipsesource.v8.V8;
 import com.eclipsesource.v8.V8Array;
 import com.eclipsesource.v8.V8Object;
 
@@ -105,30 +104,23 @@ public class Es6Wrapper
             String replaceType)
     {
         LOGGER.debug("parse es6 code:url={},file={}", url, filepath);
-        J2BaseInterface j2BaseInterface = JsScriptUtil.getInterface();
-        V8 v8 = j2BaseInterface.getV8();
-        V8Object xsloaderServer = null;
-        V8Array parameters = null;
-        V8Object rs = null;
-        V8Object option = null;
-        try
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
         {
-            j2BaseInterface.lock();
             Result<String> result = new Result<>();
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
-            option = j2BaseInterface.newObject();
+            V8Object option = j2BaseInterface.newV8Object();
             option.add("replaceType", replaceType);
 
-            xsloaderServer = v8.getObject("XsloaderServer");
-            parameters = j2BaseInterface.newArray()
+            V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
+            V8Array parameters = j2BaseInterface.newV8Array()
                     .push(url).push(filepath)
                     .push(es6Content)
                     .push((String) null)
                     .push(hasSourceMap)
                     .push(option);
-            rs = xsloaderServer.executeObjectFunction("parseEs6", parameters);
+            V8Object rs = xsloaderServer.executeObjectFunction("parseEs6", parameters);
             String parsedCode = rs.getString("code");
             String sourceMap = rs.getString("sourceMap");
 
@@ -151,10 +143,6 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
-        } finally
-        {
-            JsScriptUtil.release(parameters, xsloaderServer, rs, option);
-            j2BaseInterface.release();
         }
     }
 
@@ -168,32 +156,25 @@ public class Es6Wrapper
             String replaceType)
     {
         LOGGER.debug("parse vue code:url={},file={}", url, filepath);
-        J2BaseInterface j2BaseInterface = JsScriptUtil.getInterface();
-        V8 v8 = j2BaseInterface.getV8();
-        V8Object xsloaderServer = null;
-        V8Array parameters = null;
-        V8Object rs = null;
-        V8Object option = null;
-        try
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
         {
-            j2BaseInterface.lock();
             Result<String> result = new Result<>();
             j2BaseInterface.threadLocal.set(result);
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
-            option = j2BaseInterface.newObject();
+            V8Object option = j2BaseInterface.newV8Object();
             option.add("replaceType", replaceType);
 
-            xsloaderServer = v8.getObject("XsloaderServer");
-            parameters = j2BaseInterface.newArray()
+            V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
+            V8Array parameters = j2BaseInterface.newV8Array()
                     .push(url)
                     .push(filepath)
                     .push(vueContent)
                     .push(hasSourceMap)
                     .push(option);
-
-            rs = xsloaderServer.executeObjectFunction("transformVue", parameters);
+            V8Object
+                    rs = xsloaderServer.executeObjectFunction("transformVue", parameters);
             String parsedCode = rs.getString("code");
             String sourceMap = rs.getString("sourceMap");
             JSONArray markedComments = JSON.parseArray(rs.getString("markedComments"));
@@ -231,10 +212,6 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
-        } finally
-        {
-            JsScriptUtil.release(parameters, xsloaderServer, rs, option);
-            j2BaseInterface.release();
         }
     }
 

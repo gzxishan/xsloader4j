@@ -1,5 +1,9 @@
 html,body{
 	width:100%;
 	height:100%;
-	background-color: rgb(233, 236, 243);
+	background-color: rgba(233, 236, 243,0.8);
+	&:hover{
+		background-color: rgba(233, 236, 243,1);
+		cursor:pointer;
+	}
 }

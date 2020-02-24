@@ -1,6 +1,5 @@
 package cn.xishan.global.xsloaderjs.es6.jbrowser;
 
-import com.eclipsesource.v8.V8;
 import org.jsoup.nodes.Element;
 
 /**
@@ -10,9 +9,9 @@ public class J2Element extends J2Object
 {
     private Element element;
 
-    public J2Element(V8 v8, Element element)
+    public J2Element(J2Object root, Element element)
     {
-        super(v8);
+        super(root);
         this.element = element;
         autoRegisterMethod();
     }
