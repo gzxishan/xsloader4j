@@ -56,11 +56,42 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         return fileListener;
     }
 
+    static class J2BaseInterfaceImpl extends J2BaseInterface
+    {
+        private J2BaseInterface superInterface;
+
+        public J2BaseInterfaceImpl(J2BaseInterface superInterface)
+        {
+            super(superInterface.getV8(), false);
+            this.superInterface = superInterface;
+        }
+
+        @Override
+        public void setFileContentGetter(IFileContentGetter fileContentGetter)
+        {
+            superInterface.fileContentGetter = fileContentGetter;
+        }
+
+        @Override
+        public void setFileListener(ILoadFileListener fileListener)
+        {
+            superInterface.fileListener = fileListener;
+        }
+
+        @Override
+        public void release()
+        {
+            superInterface.fileListener = null;
+            superInterface.fileContentGetter = null;
+            super.release();
+        }
+    }
+
     public J2BaseInterface acquire()
     {
         lock.lock("v8");
         getV8().getLocker().acquire();
-        return new J2BaseInterface(getV8(), false);
+        return new J2BaseInterfaceImpl(this);
     }
 
     public void release()
