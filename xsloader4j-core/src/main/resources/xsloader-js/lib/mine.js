@@ -216,7 +216,7 @@
 	 * 转换es6的代码。
 	 * 特殊指令：
 	 * staticInclude(relativePath)：在编译前导入静态页面内容（且被导入的页面依然支持静态导入）,relativePath相对于当前页面文件路径，如staticInclude("./include/a.js")
-	 * staticVueTemplate(`templateContent`):在服务器端进行vue的template编译，返回：“render:function(){...},staticRenderFns:[...]”
+	 * template:staticVueTemplate(`templateContent`):在服务器端进行vue的template编译，返回：“render:function(){...},staticRenderFns:[...]”
 	 * @param {Object} currentUrl
 	 * @param {Object} filepath
 	 * @param {Object} scriptContent

@@ -222,7 +222,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     }
 
     private static final Pattern PATTERN_STATIC_VUE_TEMPLATE = Pattern
-            .compile("staticVueTemplate\\s*\\(\\s*`([^`]+)`\\s*\\)");
+            .compile("(['\"]?template['\"]?\\s*:\\s*)?staticVueTemplate\\s*\\(\\s*`([^`]*)`\\s*\\)");
 
     @JsBridgeMethod
     public String staticVueTemplate(String currentUrl, String filepath, String scriptContent, boolean isDebug,
@@ -243,7 +243,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                 while (matcher.find())
                 {
                     stringBuilder.append(scriptContent, lastIndex, matcher.start());
-                    String template = matcher.group(1);
+                    String template = matcher.group(2);
                     parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
                     V8Object result = xsloaderServer.executeObjectFunction("compileVueTemplate", parameters);
                     int lastLn = stringBuilder.lastIndexOf("\n");
