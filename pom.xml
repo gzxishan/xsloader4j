@@ -9,9 +9,10 @@
     <packaging>pom</packaging>
     <version>1.1.4</version>
     <modules>
-        <module>xsloader4j-core</module>
-        <module>xsloader4j-spring-boot-embed-starter</module>
+        <module>xsloader4j-nodejs-core</module>
+        <module>xsloader4j-nodejs-spring-boot-embed-starter</module>
         <module>demo1</module>
+        <module>xsloader4j-embed-nodejs-win64</module>
     </modules>
 
     <name>xsloader4j</name>

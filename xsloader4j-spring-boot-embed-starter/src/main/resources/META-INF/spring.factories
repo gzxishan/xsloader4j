@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=cn.xishan.global.xsloaderjs.springboot.starter.Xsloader4jAutoConfiguration
