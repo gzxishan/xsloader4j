@@ -11553,7 +11553,7 @@
 
   function checkExpression (exp, text, warn, range) {
     try {
-      new Function(("return " + exp));
+      new (typeof CustomerFunction!="undefined" ? CustomerFunction : Function)(("return " + exp));
     } catch (e) {
       var keywordMatch = exp.replace(stripStringRE, '').match(prohibitedKeywordRE);
       if (keywordMatch) {
@@ -11654,7 +11654,6 @@
   }
 
   function createCompileToFunctionFn (compile) {
-    var cache = Object.create(null);
 
     return function compileToFunctions (
       template,
@@ -11681,14 +11680,6 @@
             );
           }
         }
-      }
-
-      // check cache
-      var key = options.delimiters
-        ? String(options.delimiters) + template
-        : template;
-      if (cache[key]) {
-        return cache[key]
       }
 
       // compile
@@ -11758,7 +11749,7 @@
         }
       }
 
-      return (cache[key] = res)
+      return res
     }
   }
 

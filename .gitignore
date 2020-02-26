@@ -11,7 +11,8 @@ buildNumber.properties
 .jsp-handle/
 *.iml
 .project
-*/src/main/webapp/WEB-INF/classes/
+.classpath
+.settings/*/src/main/webapp/WEB-INF/classes/
 .DS_Store
 node_modules/
 npm-debug.log

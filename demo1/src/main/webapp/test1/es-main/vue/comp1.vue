@@ -1,12 +1,16 @@
 <template>
-    <h1>{{info}}</h1>
+    <h1 :class="{...classNames}">{{info}}</h1>
 </template>
 
 <script>
     export default{
         data(){
             return {
-                   info:"HelloWorld"
+                   info:"HelloWorld",
+                   classNames:{
+                        teatA:true,
+                        testB:true,
+                   }
             }
         }
     }

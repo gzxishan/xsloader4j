@@ -51,12 +51,6 @@ public class XsloaderFilter implements Filterer
     private Boolean disabled;
 
     /**
-     * 是否使用新版，默认true。
-     */
-    @Property(name = "xsloader.latest", defaultVal = "true")
-    private Boolean useLatest;
-
-    /**
      * 用于开发。
      */
     @Property(name = "xsloader.latest.dir", choice = Property.Choice.FirstDir)
@@ -124,16 +118,10 @@ public class XsloaderFilter implements Filterer
             autoSetter.forInstance(new Object[]{jsFilter});
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
 
-            if (useLatest)
-            {
-                content = FileTool.getData(getClass().getResourceAsStream(
-                        "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js" : "xsloader.js")), 2048);
-                map = FileTool.getData(getClass().getResourceAsStream(
-                        "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js.map" : "xsloader.js.map")), 2048);
-            } else
-            {
-                content = FileTool.getData(getClass().getResourceAsStream("/xsloader-js/xsloader.js"), 2048);
-            }
+            content = FileTool.getData(getClass().getResourceAsStream(
+                    "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js" : "xsloader.js")), 2048);
+            map = FileTool.getData(getClass().getResourceAsStream(
+                    "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js.map" : "xsloader.js.map")), 2048);
             etag = HashUtil.md5(content);
         } catch (Exception e)
         {
