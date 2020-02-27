@@ -1,9 +1,9 @@
 ## 项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 版本
-当前最新版本为  [**1.1.4**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.5**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.4-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.5-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 ## 配置
@@ -67,6 +67,7 @@ xsloader.conf.properties.prop1=xxx
 - 注意此配置文件为JS版的json对象，支持JS脚本。
 - 关于此文件配置的更详细说明见：[xsloader模块加载器配置](https://github.com/gzxishan/xsloader/wiki/7.xsloader配置服务)
 - 通过`#{propName}`引用配置参数，contextPath默认为当前servlet的context path参数。
+- 此配置文件缓存时间为30秒，通过urlArgs可以控制其他资源的版本，从而有效避免缓存问题。
 
 ```JavaScript
 {
@@ -259,8 +260,25 @@ new Vue({
 ## 其他说明
 
 ### 1、打包说明
-- 安装包会增加30Mb左右。
-- 默认打包会将windows与linux环境下的v8引擎依赖打包进去（j2v8_win32_x86_64，j2v8_linux_x86_64），生产环境可手动删除非对应系统的v8引擎jar包。
+- 打包成指定系统的war包后会增加20Mb左右，例如打包到linux系统下运行，可在`pom.xml`的plugins里排除windows与mac的j2v8依赖包：
+```xml
+
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>3.2.2</version>
+            <configuration>
+                <packagingExcludes>
+                    <!--排除j2v8 windows与mac下的依赖包，默认打包后在linux下运行、减小压缩包-->
+                    WEB-INF/lib/j2v8_win**.jar,WEB-INF/lib/j2v8_macosx**.jar,
+                </packagingExcludes>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+
+```
 - 若在mac下运行，需要自行加入依赖：
 ```xml
  <dependency>

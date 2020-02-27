@@ -72,6 +72,12 @@
                 <plugin>
                     <artifactId>maven-war-plugin</artifactId>
                     <version>3.2.2</version>
+                    <configuration>
+                        <packagingExcludes>
+                            <!--排除j2v8 windows与mac下的依赖包，默认打包后在linux下运行、减小压缩包-->
+                            WEB-INF/lib/j2v8_win**.jar,WEB-INF/lib/j2v8_macosx**.jar,
+                        </packagingExcludes>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <artifactId>maven-install-plugin</artifactId>
