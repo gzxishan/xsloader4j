@@ -24,7 +24,7 @@
 	root.window.document = root.document;
 	root.window.location = root.location;
 	root.CustomerFunction = function (scriptStr) {
-		transformScript("function annonymous(){"+scriptStr+"}");
+		transformScript("function checkVueExpressionFun(){\n"+scriptStr+"\n}");
 	}
 	/////////////////////////////////
 

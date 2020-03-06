@@ -11553,7 +11553,7 @@
 
   function checkExpression (exp, text, warn, range) {
     try {
-      new (typeof CustomerFunction!="undefined" ? CustomerFunction : Function)(("return " + exp));
+      new (typeof CustomerFunction!="undefined" ? CustomerFunction : Function)(("return " + (exp ? exp.trim() : "")));
     } catch (e) {
       var keywordMatch = exp.replace(stripStringRE, '').match(prohibitedKeywordRE);
       if (keywordMatch) {
