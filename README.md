@@ -1,9 +1,9 @@
 ## 项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 版本
-当前最新版本为  [**1.1.7**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.9**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.7-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.9-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.9</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.7</version>
+    <version>1.1.9</version>
 </dependency>
 ```
 ## 配置
@@ -45,7 +45,7 @@
 - xsloader.js加载器访问路径为：/contextPath/xsloader.js
 
 ```properties
-xsloader.min=true
+xsloader.es6.polyfill=true
 xsloader.es6.debug=true
 xsloader.sourcemap=true
 xsloader.es6.dealt.ignores=
@@ -55,6 +55,7 @@ xsloader.conf.properties.staticUrlPrefix=https://xxxxx.cn/xxx
 xsloader.conf.properties.prop1=xxx
 
 ```
+- xsloader.es6.polyfill：是否使用polyfill，默认为true。
 - xsloader.es6.debug：是否为debug模式，当为true时，文件修改后会重新进行转换。
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
@@ -316,7 +317,7 @@ const ...
 - 效果与*.js文件效果是一样的
 
 ### 3、polyfill
-您可能需要使用polyfill来更好的使用es6+代码，如Map、array.includes、string.startsWith等
+您可能需要使用polyfill来更好的使用es6+代码，如Map、array.includes、string.startsWith、async/await等
 - 在本项目polyfill/目录下下载了些版本的js文件
 - 可以去https://babeljs.io/docs/en/babel-polyfill/下载
 ```bash

@@ -42,6 +42,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     private IFileContentGetter fileContentGetter;
     private ConcurrentKeyLock lock;
     private J2BaseInterfaceImpl impl;
+    static String polyfillPath;
 
     public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod)
     {
@@ -369,6 +370,13 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     public void warn(String str)
     {
         LOGGER.warn("js warn:\n{}", str);
+    }
+
+
+    @JsBridgeMethod
+    public String getPolyfillPath()
+    {
+        return polyfillPath;
     }
 
     public V8Object getRootObject(String name)

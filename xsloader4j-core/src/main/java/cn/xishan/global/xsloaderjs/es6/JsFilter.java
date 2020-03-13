@@ -5,10 +5,7 @@ import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.exception.InitException;
 import cn.xishan.oftenporter.porter.core.exception.OftenCallException;
-import cn.xishan.oftenporter.porter.core.util.FileTool;
-import cn.xishan.oftenporter.porter.core.util.HashUtil;
-import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
-import cn.xishan.oftenporter.porter.core.util.OftenTool;
+import cn.xishan.oftenporter.porter.core.util.*;
 import cn.xishan.oftenporter.servlet.*;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
@@ -38,6 +35,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsFilter.class);
 
+
     @Property(name = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
     @Property(name = "xsloader.es6.useCache", defaultVal = "true")//
@@ -45,6 +43,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
+
+
+    @Property(name = "xsloader.es6.polyfill", defaultVal = "true")
+    private Boolean usePolyfill;
 
     @Property(name = "xsloader.es6.encoding", defaultVal = "utf-8")//
     private String encoding;
@@ -77,6 +79,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     ServletContext servletContext;
 
     private IPathDealt pathDealt;
+    private byte[] polyfillData;
 
 
     public static final Version VERSION_NEED_REPLACE_REQUIRE = new Version("1.1.10");
@@ -144,7 +147,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     }
 
     @AutoSet.SetOk
-    public void setOk()
+    public void setOk() throws IOException
     {
         JsScriptUtil.init();
         CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
@@ -173,6 +176,13 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             {
                 forceCacheSeconds = 24 * 3600;
             }
+        }
+        if (usePolyfill)
+        {
+            String script=ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js","utf-8");
+            script="if(!window.__hasPolyfill){window.__hasPolyfill=true;"+script+"}";
+            polyfillData = script.getBytes("utf-8");
+            J2BaseInterface.polyfillPath = servletContext.getContextPath() + "/polyfill.js";
         }
     }
 
@@ -412,6 +422,14 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         {
             if (pathDealt.handleElse(request, response, pathDealt.dealPath(servletContext, path)))
             {
+                return true;
+            } else if (usePolyfill && path.endsWith("/polyfill.js"))
+            {
+                response.setContentType("application/javascript");
+                response.setCharacterEncoding("utf-8");
+                response.setContentLength(polyfillData.length);
+                HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
+                FileTool.in2out(new ByteArrayInputStream(polyfillData), response.getOutputStream(), 2048);
                 return true;
             } else
             {
