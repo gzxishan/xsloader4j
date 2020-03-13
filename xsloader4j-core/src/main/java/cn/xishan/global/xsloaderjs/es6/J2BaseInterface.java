@@ -3,6 +3,7 @@ package cn.xishan.global.xsloaderjs.es6;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Object;
 import cn.xishan.oftenporter.porter.core.annotation.MayNull;
 import cn.xishan.oftenporter.porter.core.util.*;
+import com.eclipsesource.v8.Releasable;
 import com.eclipsesource.v8.V8;
 import com.eclipsesource.v8.V8Array;
 import com.eclipsesource.v8.V8Object;
@@ -40,6 +41,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     private ILoadFileListener fileListener;
     private IFileContentGetter fileContentGetter;
     private ConcurrentKeyLock lock;
+    private J2BaseInterfaceImpl impl;
 
     public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod)
     {
@@ -64,6 +66,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         {
             super(superInterface.getV8(), false);
             this.superInterface = superInterface;
+            superInterface.impl = this;
         }
 
         @Override
@@ -83,6 +86,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         {
             superInterface.fileListener = null;
             superInterface.fileContentGetter = null;
+            superInterface.impl = null;
             super.release();
         }
     }
@@ -92,6 +96,39 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         lock.lock("v8");
         getV8().getLocker().acquire();
         return new J2BaseInterfaceImpl(this);
+    }
+
+    @Override
+    public V8Object newV8Object()
+    {
+        if (impl != null)
+        {
+            return impl.newV8Object();
+        }
+        return super.newV8Object();
+    }
+
+    @Override
+    public V8Array newV8Array()
+    {
+        if (impl != null)
+        {
+            return impl.newV8Array();
+        }
+        return super.newV8Array();
+    }
+
+    @Override
+    protected void addReleasable(Releasable releasable)
+    {
+        if (impl != null)
+        {
+            impl.addReleasable(releasable);
+        } else
+        {
+            super.addReleasable(releasable);
+
+        }
     }
 
     public void release()
@@ -267,7 +304,6 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
 
             V8 v8 = getV8();
             V8Object xsloaderServer = null;
-            V8Array parameters = null;
             try
             {
                 xsloaderServer = v8.getObject("XsloaderServer");
@@ -275,7 +311,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                 {
                     stringBuilder.append(scriptContent, lastIndex, matcher.start());
                     String template = matcher.group(2);
-                    parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
+                    V8Array parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
                     V8Object result = xsloaderServer.executeObjectFunction("compileVueTemplate", parameters);
                     int lastLn = stringBuilder.lastIndexOf("\n");
                     int currentLen = stringBuilder.length();
@@ -308,14 +344,13 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                     }
 
                     parameters.release();
-                    parameters = null;
                     result.release();
                     lastIndex = matcher.end();
                 }
 
             } finally
             {
-                JsScriptUtil.release(parameters, xsloaderServer);
+                JsScriptUtil.release(xsloaderServer);
             }
             stringBuilder.append(scriptContent, lastIndex, scriptContent.length());
             scriptContent = stringBuilder.toString();

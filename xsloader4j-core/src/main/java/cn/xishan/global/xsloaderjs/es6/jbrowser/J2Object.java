@@ -100,6 +100,9 @@ public abstract class J2Object implements AutoCloseable
         if (root != null)
         {
             root.addReleasable(v8Object);
+        } else
+        {
+            this.addReleasable(v8Object);
         }
         return v8Object;
     }
@@ -110,6 +113,9 @@ public abstract class J2Object implements AutoCloseable
         if (root != null)
         {
             root.addReleasable(v8Array);
+        } else
+        {
+            this.addReleasable(v8Array);
         }
         return v8Array;
     }
@@ -239,7 +245,7 @@ public abstract class J2Object implements AutoCloseable
     }
 
 
-    private void addReleasable(Releasable releasable)
+    protected void addReleasable(Releasable releasable)
     {
         releasableList.add(releasable);
     }
@@ -261,6 +267,7 @@ public abstract class J2Object implements AutoCloseable
                     }
                 }
             }
+            releasableList = null;
         }
     }
 
