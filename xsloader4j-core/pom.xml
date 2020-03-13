@@ -13,7 +13,7 @@
     <artifactId>xsloader4j-core</artifactId>
 
     <name>xsloader4j-core</name>
-    <description>让java web项目支持JavaScript ES6+、*.scss、*.less（暂不支持sourceMap）、*.vue、*.jsx。</description>
+    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017)、*.scss、*.less（暂不支持sourceMap）、*.vue、*.jsx。</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <properties>

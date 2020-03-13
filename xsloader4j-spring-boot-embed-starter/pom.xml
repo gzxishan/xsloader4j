@@ -12,7 +12,7 @@
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
 
     <name>xsloader4j-spring-boot-embed-starter</name>
-    <description>让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。（对spring boot嵌入模式的支持）</description>
+    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017)、*.scss、*.less、*.vue、*.jsx。（对spring boot嵌入模式的支持）</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <properties>
