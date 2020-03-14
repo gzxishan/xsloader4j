@@ -55,7 +55,7 @@ xsloader.conf.properties.staticUrlPrefix=https://xxxxx.cn/xxx
 xsloader.conf.properties.prop1=xxx
 
 ```
-- xsloader.es6.polyfill：是否使用polyfill，默认为true。
+- xsloader.es6.polyfill：是否使用polyfill，为true时、会自动加载polyfill（7.8.3），默认为true。
 - xsloader.es6.debug：是否为debug模式，当为true时，文件修改后会重新进行转换。
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
