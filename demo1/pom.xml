@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.xishankeji</groupId>
         <artifactId>xsloader4j</artifactId>
-        <version>1.1.9</version>
+        <version>1.1.10</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -103,7 +103,7 @@
                         <defaultsDescriptor>${project.basedir}/jetty/webdefault.xml</defaultsDescriptor><!--支持修改静态文件-->
                     </webApp>
                     <httpConnector>
-                        <port>8080</port>
+                        <port>8070</port>
                     </httpConnector>
                     <reload>manual</reload>
                 </configuration>
@@ -113,7 +113,7 @@
                 <artifactId>tomcat7-maven-plugin</artifactId>
                 <version>2.2</version>
                 <configuration>
-                    <port>8080</port>
+                    <port>8070</port>
                     <path>/</path>
                     <uriEncoding>utf-8</uriEncoding>
                     <contextReloadable>false</contextReloadable>

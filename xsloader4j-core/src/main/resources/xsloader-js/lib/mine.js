@@ -147,8 +147,9 @@
 				$jsBridge$.warn(str);
 			},
 			createFunction(code, errors) {
-				let parsed = parseScript(`function annonymous(){\n${code}\n}`);
-				return `(function(){${parsed};return annonymous;})()`;
+				let funName="__"+$jsBridge$.shortId();
+				let parsed = parseScript(`function ${funName}(){\n${code}\n}`);
+				return `(function(){${parsed}; return ${funName};})()`;
 			}
 		});
 		//String:res.render,res.staticRenderFns

@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.9</version>
+    <version>1.1.10</version>
     <modules>
         <module>xsloader4j-core</module>
         <module>xsloader4j-spring-boot-embed-starter</module>
