@@ -29,7 +29,7 @@
 
 	root.console = {
 		assert(condition, str) {
-			if(condition) {
+			if(!condition) {
 				$jsBridge$.warn(str);
 			}
 		}
