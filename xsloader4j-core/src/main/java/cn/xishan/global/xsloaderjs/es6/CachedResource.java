@@ -66,25 +66,33 @@ public class CachedResource
         return dir;
     }
 
-    private static File getConfFile(String path)
+    private static File newFile(String name, String suffix)
     {
         File dir = getDir();
-        return new File(dir.getAbsolutePath() + File.separator + HashUtil
-                .md5(path.getBytes(Charset.forName("utf-8"))) + VERSION + "-confg.json");
+
+        String prefix = HashUtil.md5(name.getBytes(Charset.forName("utf-8")));
+        File file = new File(dir.getAbsolutePath() + File.separator + prefix
+                .substring(0, 1) + File.separator + prefix + VERSION + suffix);
+        if (!file.getParentFile().exists())
+        {
+            file.getParentFile().mkdirs();
+        }
+        return file;
+    }
+
+    private static File getConfFile(String path)
+    {
+        return newFile(path, "-confg.json");
     }
 
     private static File getDataFile(String path)
     {
-        File dir = getDir();
-        return new File(dir.getAbsolutePath() + File.separator + HashUtil
-                .md5(path.getBytes(Charset.forName("utf-8"))) + VERSION + "-content.data");
+        return newFile(path, "-content.data");
     }
 
     private static File getMapFile(String path)
     {
-        File dir = getDir();
-        return new File(dir.getAbsolutePath() + File.separator + HashUtil
-                .md5(path.getBytes(Charset.forName("utf-8"))) + VERSION + "-content.data.map");
+        return newFile(path, "-content.data.map");
     }
 
     /**
