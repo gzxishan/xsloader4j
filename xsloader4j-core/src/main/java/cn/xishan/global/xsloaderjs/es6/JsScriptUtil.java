@@ -3,6 +3,7 @@ package cn.xishan.global.xsloaderjs.es6;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Document;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Window;
 
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
 import com.eclipsesource.v8.*;
 import org.slf4j.Logger;
@@ -18,6 +19,7 @@ public class JsScriptUtil
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsScriptUtil.class);
 
+    private static String v8flags;
     private static String[] scripts;
     private static String[] scripts2;
     private static J2BaseInterface cachedInterface = null;
@@ -73,9 +75,15 @@ public class JsScriptUtil
                         {
                             dir.mkdirs();
                         }
+
+                        String flags = "--use_strict --harmony";
+                        if (OftenTool.notEmpty(v8flags))
+                        {
+                            flags = v8flags.trim() + " " + flags;
+                        }
                         //https://github.com/v8/v8/blob/master/src/flags/flag-definitions.h
                         //https://github.com/thlorenz/v8-flags/blob/master/flags-0.11.md
-                        V8.setFlags("--use_strict --harmony");
+                        V8.setFlags(flags);
                         v8 = V8.createV8Runtime(null, tempDir);
                         v8.getLocker().acquire();
 
@@ -99,7 +107,7 @@ public class JsScriptUtil
                         }
                         cachedInterface = j2BaseInterface;
                         v8.getLocker().release();
-                    } catch (Exception e)
+                    } catch (Throwable e)
                     {
                         release(v8);
                         throw new RuntimeException(e);
@@ -110,10 +118,10 @@ public class JsScriptUtil
         return cachedInterface.acquire();
     }
 
-    static void init()
+    static void init(String v8flags)
     {
+        JsScriptUtil.v8flags = v8flags;
         String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.8.4/babel.js", "utf-8");
-
         String vueScript = ResourceUtil
                 .getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
         JsScriptUtil.scripts = new String[]{

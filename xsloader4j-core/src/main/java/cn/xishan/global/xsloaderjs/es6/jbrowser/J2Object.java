@@ -158,7 +158,8 @@ public abstract class J2Object implements AutoCloseable
             } catch (Throwable e)
             {
                 LOGGER.error(e.getMessage(), e);
-                throw new RuntimeException(e);
+                return null;
+                //throw new RuntimeException(e);
             } finally
             {
                 for (int i = 0; i < length; i++)

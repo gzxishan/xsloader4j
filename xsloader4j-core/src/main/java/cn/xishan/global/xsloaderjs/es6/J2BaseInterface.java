@@ -305,6 +305,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
 
             V8 v8 = getV8();
             V8Object xsloaderServer = null;
+            V8Object result = null;
             try
             {
                 xsloaderServer = v8.getObject("XsloaderServer");
@@ -313,7 +314,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                     stringBuilder.append(scriptContent, lastIndex, matcher.start());
                     String template = matcher.group(2);
                     V8Array parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
-                    V8Object result = xsloaderServer.executeObjectFunction("compileVueTemplate", parameters);
+                    result = xsloaderServer.executeObjectFunction("compileVueTemplate", parameters);
                     int lastLn = stringBuilder.lastIndexOf("\n");
                     int currentLen = stringBuilder.length();
                     String id = OftenKeyUtil.randomUUID();
@@ -344,14 +345,12 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                         stringBuilder.append("\n");
                     }
 
-                    parameters.release();
-                    result.release();
                     lastIndex = matcher.end();
                 }
 
             } finally
             {
-                JsScriptUtil.release(xsloaderServer);
+                JsScriptUtil.release(xsloaderServer, result);
             }
             stringBuilder.append(scriptContent, lastIndex, scriptContent.length());
             scriptContent = stringBuilder.toString();

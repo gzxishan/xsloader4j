@@ -44,6 +44,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
 
+    @Property(name = "xsloader.es6.v8flags")
+    private static String v8flags;
 
     @Property(name = "xsloader.es6.polyfill", defaultVal = "true")
     private Boolean usePolyfill;
@@ -149,7 +151,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @AutoSet.SetOk
     public void setOk() throws IOException
     {
-        JsScriptUtil.init();
+        JsScriptUtil.init(v8flags);
         CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
                 HashUtil.md5(servletContext.getRealPath("/").getBytes(Charset.defaultCharset())));
 
@@ -179,8 +181,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
         if (usePolyfill)
         {
-            String script=ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js","utf-8");
-            script="if(!window.__hasPolyfill){window.__hasPolyfill=true;"+script+"}";
+            String script = ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js", "utf-8");
+            script = "if(!window.__hasPolyfill){window.__hasPolyfill=true;" + script + "}";
             polyfillData = script.getBytes("utf-8");
             J2BaseInterface.polyfillPath = servletContext.getContextPath() + "/polyfill.js";
         }

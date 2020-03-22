@@ -143,6 +143,10 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
+        } catch (Throwable e)
+        {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -212,6 +216,10 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
+        } catch (Throwable e)
+        {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -339,7 +347,7 @@ public class Es6Wrapper
 
     public static void _initForTest()
     {
-        JsScriptUtil.init();
+        JsScriptUtil.init(null);
     }
 
     /**
