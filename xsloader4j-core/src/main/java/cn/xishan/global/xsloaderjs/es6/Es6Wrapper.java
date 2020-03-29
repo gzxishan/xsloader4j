@@ -103,7 +103,7 @@ public class Es6Wrapper
     public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
             String replaceType)
     {
-        LOGGER.debug("parse es6 code:url={},file={}", url, filepath);
+        LOGGER.info("parse es6 code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
         {
             Result<String> result = new Result<>();
@@ -159,7 +159,7 @@ public class Es6Wrapper
     public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap,
             String replaceType)
     {
-        LOGGER.debug("parse vue code:url={},file={}", url, filepath);
+        LOGGER.info("parse vue code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
         {
             Result<String> result = new Result<>();
