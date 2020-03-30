@@ -26,12 +26,12 @@ public class CachedResource
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedResource.class);
     private String path;
     private long lastModified;
-    private Long cachedLastModifed;
     private long updatetime;
     private String contentType;
     private String encoding;
     private JSONArray files;
-    private static String VERSION = "20190529";
+    private JSONArray filesLastModified;
+    private static String VERSION = "20200331";
     private static String tempId = "default";
     private boolean isSourceMap;
 
@@ -117,12 +117,14 @@ public class CachedResource
         cachedResource.lastModified = lastModified;
         cachedResource.path = path;
         JSONArray files = new JSONArray();
+        JSONArray filesLastModified = new JSONArray();
         cachedResource.files = files;
+        cachedResource.filesLastModified = filesLastModified;
         for (File file : result.getRelatedFiles())
         {
             files.add(file.getAbsolutePath());
+            filesLastModified.add(file.lastModified());
         }
-
 
         JSONObject conf = cachedResource.getConfig();
 
@@ -152,7 +154,6 @@ public class CachedResource
         dataFile.setLastModified(lastModified);
         confFile.setLastModified(lastModified);
 
-
         return cachedResource;
     }
 
@@ -163,6 +164,7 @@ public class CachedResource
         conf.put("type", contentType);
         conf.put("updatetime", updatetime);
         conf.put("files", files);
+        conf.put("filesLastModified", filesLastModified);
         return conf;
     }
 
@@ -182,6 +184,7 @@ public class CachedResource
             String contentType = conf.getString("type");
             String encoding = conf.getString("encoding");
             JSONArray files = conf.getJSONArray("files");
+            JSONArray filesLastModified = conf.getJSONArray("filesLastModified");
 
             CachedResource cachedResource = new CachedResource(isSourceMap);
             cachedResource.contentType = contentType;
@@ -189,6 +192,7 @@ public class CachedResource
             cachedResource.lastModified = dataFile.lastModified();
             cachedResource.path = path;
             cachedResource.files = files;
+            cachedResource.filesLastModified = filesLastModified;
 
             if (conf.containsKey("updatetime"))
             {
@@ -238,7 +242,6 @@ public class CachedResource
         File confFile = getConfFile(path);
         File dataFile = getDataFile(path);
         OftenTool.deleteFiles(confFile, dataFile);
-        cachedLastModifed = System.currentTimeMillis();
     }
 
     public String getContentType()
@@ -251,36 +254,6 @@ public class CachedResource
         this.contentType = contentType;
     }
 
-    /**
-     * 获取所有相关文件中最新的修改时间
-     *
-     * @return
-     */
-    public long getLastModified(boolean isDebug)
-    {
-        long last = lastModified;
-        if (isDebug && this.files != null)
-        {
-            if (cachedLastModifed != null)
-            {
-                last = cachedLastModifed;
-            } else
-            {
-                for (int i = 0; i < this.files.size(); i++)
-                {
-                    String file = this.files.getString(i);
-                    File f = new File(file);
-                    if (f.exists() && f.isFile() && f.lastModified() > last)
-                    {
-                        last = f.lastModified();
-                    }
-                }
-                cachedLastModifed = last;
-            }
-
-        }
-        return last;
-    }
 
     public boolean needReload(File realFile, boolean isDebug)
     {
@@ -289,13 +262,32 @@ public class CachedResource
 
     public boolean needReload(long lastModified, boolean isDebug)
     {
-        if (lastModified != getLastModified(isDebug))
+        if (this.lastModified != lastModified || isDebug && isFilesChange())
         {
             return true;
         } else
         {
             return false;
         }
+    }
+
+    /**
+     * 判断关联的文件是否变化了
+     *
+     * @return
+     */
+    private boolean isFilesChange()
+    {
+        for (int i = 0; i < this.files.size(); i++)
+        {
+            String file = this.files.getString(i);
+            File f = new File(file);
+            if (f.exists() && f.isFile() && f.lastModified() != filesLastModified.getLongValue(i))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setLastModified(long lastModified)
@@ -372,7 +364,7 @@ public class CachedResource
             response.sendError(404);
             return;
         }
-        long lastModified = this.getLastModified(isDebug);
+        long lastModified = this.lastModified;
         response.setCharacterEncoding(this.getEncoding());
         response.setContentType(isSourceMap() ? this.getSourceMapContentType() : this.getContentType());
         HttpCacheUtil.checkWithModified(lastModified, request, response)
