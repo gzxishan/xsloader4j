@@ -336,3 +336,11 @@ cnpm install --save @babel/polyfill
 - xsloader4j：已覆盖公司80%以上的项目
 
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
+
+## 发布记录
+###  v1.1.16 2020/3/31
+1. 修复vue模板中无法使用annonymous变量的问题；
+2. 修复后台转换时console.assert判断错误问题；
+3. 修改缓存文件保存目录；
+4. 完善异常处理；
+5. 修复某些js文件在静态导入其他子文件的情况下，导致缓存失效的问题；
