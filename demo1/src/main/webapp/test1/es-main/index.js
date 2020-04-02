@@ -3,6 +3,9 @@ import "css!static/test.less";
 import Vue from "vue";
 import comp1 from "./vue/comp1.vue";//需要加入文件后缀，当前目录需要用"./"、否则是相对于baseUrl
 
+console.log(thiz.getUrl());//http://localhost:8070/test1/es-main/index.js?v=20200130-02
+console.log(thiz.getUrl("./lib/other.js"));//http://localhost:8070/test1/es-main/lib/other.js?v=20200130-02
+
 new Vue({
     el:"#vue-app",
     template:"#app-template",

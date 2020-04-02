@@ -167,7 +167,9 @@ data-conf2="./xsloader.conf"
 ```
 - 详细例子可以参考demo1项目
 
-目录结构：
+- 执行jetty:run或tomcat7:run的maven插件，可运行demo。访问地址：[http://localhost:8070/](http://localhost:8070/)
+
+- test1目录结构：
 ```
 /test1/
 /test1/index.html
@@ -249,6 +251,9 @@ import "css!static/test.scss";//不是以“.”开头的路径相对于baseUrl
 import Vue from "vue";
 import comp1 from "./vue/comp1.vue";//需要加入文件后缀，当前目录需要用"./"、否则是相对于baseUrl
 
+console.log(thiz.getUrl());//http://localhost:8070/test1/es-main/index.js?v=20200130-02
+console.log(thiz.getUrl("./lib/other.js"));//http://localhost:8070/test1/es-main/lib/other.js?v=20200130-02
+
 new Vue({
     el:"#vue-app",
     template:"#app-template",
@@ -295,18 +300,35 @@ new Vue({
 - 语法支持到es2017
 - 支持jsx语法（需要全局配置vue模块）
 - 自动判断js文件语法，当具有以下语句之一时，则会进行转换：
-```
+```javascript
 let ...
 import ...
 export ...
 const ...
 ```
+- thiz变量指向当前模块，更多请见[xsloader的this](https://github.com/gzxishan/xsloader/wiki/2.define,require,invoker%E7%AD%89#5this%E4%B8%8E_invoker_)
 
 #### 2）*.vue
-- 支持的js语法同js
+```html
+<template>
+
+</template>
+<script>
+
+</script>
+
+<style>
+
+</style>
+```
+- \<script\>支持的js语法同*.js
 - 支持jsx语法
 - 需要全局配置vue模块
-- style标签支持多个，默认语言为scss
+- \<style\>：lang属性支持default（即css）、scss(推荐，也是默认值)、less；可包含多个style标签；scoped:true(scoped),false
+```
+1、注意这里scoped为true时，只是在根元素上添加一个随机的class。
+2、<style>标签支持多个
+```
 
 #### 3）*.scss
 支持scss语法
@@ -316,6 +338,9 @@ const ...
 
 #### 5）*.jsx
 - 效果与*.js文件效果是一样的
+
+#### 6）sourcemap源码
+转换的源码可在浏览器控制台Sources标签下，对应页面的`/$$xs-sources$$/`路径下找到，支持脚本断点调试。
 
 ### 3、polyfill
 您可能需要使用polyfill来更好的使用es6+代码，如Map、array.includes、string.startsWith、async/await等
