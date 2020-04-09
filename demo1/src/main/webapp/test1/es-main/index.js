@@ -9,6 +9,19 @@ console.log(thiz.getUrl("./lib/other.js"));//http://localhost:8070/test1/es-main
 new Vue({
     el:"#vue-app",
     template:"#app-template",
+    methods:{
+        getVnode(){
+            return (<p on={{click:this.onClickp}}>
+                来自函数
+            </p>);
+        },
+        onClickVnodex($event){
+            alert("onClickVnodex:"+$event);
+        },
+        onClickp($event){
+            alert("onClickp:"+$event);
+        }
+    },
     components:{
         comp1,
         comp2:()=>import("./jsx/comp2.jsx")//支持异步加载

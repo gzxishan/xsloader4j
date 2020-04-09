@@ -187,7 +187,8 @@ data-conf2="./xsloader.conf"
     <title>测试1</title>
     <meta charset="UTF-8">
     <!--引入xsloader脚本-->
-    <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
+    <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript"
+            charset="utf-8"></script>
 </head>
 
 <body>
@@ -198,6 +199,7 @@ data-conf2="./xsloader.conf"
     <div style="text-align:center;">
         <comp1/>
         <comp2/>
+        <jsx :x="getVnode" id="123" :name="'name'" @click="onClickVnodex" class="test-class"/>
     </div>
 </script>
 </body>
@@ -257,6 +259,19 @@ console.log(thiz.getUrl("./lib/other.js"));//http://localhost:8070/test1/es-main
 new Vue({
     el:"#vue-app",
     template:"#app-template",
+    methods:{
+        getVnode(){
+            return (<p on={{click:this.onClickp}}>
+                来自函数
+            </p>);
+        },
+        onClickVnodex($event){
+            alert("onClickVnodex:"+$event);
+        },
+        onClickp($event){
+            alert("onClickp:"+$event);
+        }
+    },
     components:{
         comp1,
         comp2:()=>import("./jsx/comp2.jsx")//支持异步加载
@@ -299,6 +314,12 @@ new Vue({
 #### 1）*.js
 - 语法支持到es2017
 - 支持jsx语法（需要全局配置vue模块）
+- 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象）可以直接显示编译后的jsx对象
+```
+<div>
+    <jsx :x="xxx" />
+</div>
+```
 - 自动判断js文件语法，当具有以下语句之一时，则会进行转换：
 ```javascript
 let ...

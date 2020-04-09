@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.12
+ * xsloader.js v1.1.13
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Feb 13 2020 18:06:40 GMT+0800 (GMT+08:00)
+ * build time:Thu Apr 09 2020 15:52:54 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2275,9 +2275,10 @@
         isGlobalReady = true;
       }
 
-      var br = new BindReady(callback);
-
-      if (!isGlobalReady) {
+      if (isGlobalReady) {
+        callback();
+      } else {
+        var br = new BindReady(callback);
         bindReadyQueue.push(br);
       }
     };
@@ -2291,13 +2292,13 @@
     } else {
       var addEventHandle;
 
-      if (G$4.addEventListener) {
+      if (document.addEventListener) {
         addEventHandle = function addEventHandle(type, callback) {
-          G$4.addEventListener(type, callback, false);
+          document.addEventListener(type, callback, false);
         };
-      } else if (G$4.attachEvent) {
+      } else if (document.attachEvent) {
         addEventHandle = function addEventHandle(type, callback) {
-          G$4.attachEvent("on" + type, callback);
+          document.attachEvent("on" + type, callback);
         };
       } else {
         addEventHandle = function addEventHandle(type, callback) {
@@ -2327,7 +2328,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.12"
+    version: "1.1.13"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -6197,226 +6198,11 @@
     };
 
     if (window.addEventListener) {
-      var CommunicationUnit = function CommunicationUnit(cmd, source, connectingSource, onfailed, isActive, conndata, timeout, sleep) {
-        var msgQueue = new LinkedList();
-        var SLEEP = sleep;
-        var starttime;
-        var isFailed = false;
-        var isConnected = false;
-        var isCanceled = false;
-        var thiz = this;
-        var handleId;
-        this.onConnectedListener = null;
-        this.onReceiveListener = null;
-
-        this.send = function (data) {
-          var msg = {
-            id: L$p.randId(),
-            data: data
-          };
-          msgQueue.append(msg);
-          sendTop();
-        };
-
-        this.send.release = function () {
-          postMessageBridge.remove(handleId);
-        };
-
-        function couldChat() {
-          return !isFailed && !isCanceled;
+      var initPostMessageBridge = function initPostMessageBridge() {
+        if (postMessageBridge) {
+          return;
         }
 
-        function _onConned(_source, data) {
-          if (couldChat()) {
-            thiz.onConnectedListener.call(thiz, data);
-            isConnected = true;
-            sendTop();
-          }
-        }
-
-        function _onMsg(data, msgid) {
-          if (couldChat()) {
-            try {
-              thiz.onReceiveListener.call(thiz, data);
-            } catch (e) {
-              console.warn(e);
-            }
-
-            postMessageBridge.sendResponse({
-              id: msgid
-            }, handleId);
-          }
-        }
-
-        function _onResponse(data) {
-          msgQueue.remove(function (elem) {
-            return elem.id = data.id;
-          });
-          couldChat() && sendTop();
-        }
-
-        function _onElse(type) {
-          if (type == "binded") {
-            isCanceled = true;
-            console.error("connect failed,that page already binded:" + cmd + ",my page:" + location.href);
-            onfailed("canceled");
-          }
-        }
-
-        function initListen() {
-          handleId = postMessageBridge.listen(cmd, conndata, connectingSource, source, isActive, _onConned, _onMsg, _onResponse, _onElse);
-        }
-
-        function sendTop() {
-          if (isConnected) {
-            var msg;
-
-            while (msg = msgQueue.pop()) {
-              postMessageBridge.send(msg.data, handleId, msg.id);
-            }
-          }
-        }
-
-        function isTimeout() {
-          var dt = new Date().getTime() - starttime;
-          return dt > timeout;
-        }
-
-        function initActively() {
-          if (isConnected || isTimeout() || isCanceled) {
-            if (!isConnected && !isCanceled) {
-              isFailed = true;
-              onfailed("timeout:connect");
-            }
-
-            return;
-          }
-
-          postMessageBridge.sendConn(handleId);
-          postMessageBridge.runAfter(SLEEP, initActively);
-        }
-
-        function checkPassively() {
-          if (isConnected || isTimeout() || isCanceled) {
-            if (!isConnected && !isCanceled) {
-              isFailed = true;
-              onfailed("timeout:wait connect");
-            }
-
-            return;
-          }
-
-          postMessageBridge.runAfter(SLEEP, checkPassively);
-        }
-
-        {
-          starttime = new Date().getTime();
-
-          if (source) {
-            initListen();
-            initActively();
-          } else if (!isActive) {
-            initListen();
-            checkPassively();
-          }
-        }
-
-        this.setSource = function (_source) {
-          source = _source;
-
-          if (source) {
-            initListen();
-            initActively();
-          }
-        };
-      };
-
-      var _connectWindow = function _connectWindow(winObjOrCallback, option, notActive) {
-        var gconfig = L$p.config().plugins.xsmsg;
-        option = L$p.extendDeep({
-          cmd: "default-cmd",
-          listener: null,
-          connected: null,
-          conndata: null,
-          timeout: gconfig.timeout,
-          sleep: gconfig.sleep,
-          connectingSource: function connectingSource(source, origin, conndata, callback) {
-            var mine = location.protocol + "//" + location.host;
-            callback(mine == origin, "default");
-          },
-          onfailed: function onfailed(errtype) {
-            if (errtype.indexOf("timeout:") == 0) {
-              console.warn("connect may timeout:cmd=" + option.cmd + " ,err='" + errtype + "' ,my page=" + location.href);
-            }
-          }
-        }, option);
-        var cmd = option.cmd;
-        var connectedCallback = option.connected;
-        var receiveCallback = option.listener;
-        var conndata = option.conndata;
-        var onfailed = option.onfailed;
-        var timeout = option.timeout;
-        var sleep = option.sleep;
-        var isActive = !notActive;
-        var connectingSource = option.connectingSource;
-        var unit;
-
-        if (typeof winObjOrCallback == "function") {
-          unit = new CommunicationUnit(cmd, null, connectingSource, onfailed, isActive, conndata, timeout, sleep);
-        } else {
-          unit = new CommunicationUnit(cmd, winObjOrCallback, connectingSource, onfailed, isActive, conndata, timeout, sleep);
-        }
-
-        connectedCallback = connectedCallback || function (sender, conndata) {
-          console.log((isActive ? "active" : "") + " connected:" + cmd);
-        };
-
-        if (connectedCallback) {
-          unit.onConnectedListener = function (conndata) {
-            try {
-              connectedCallback(this.send, conndata);
-            } catch (e) {
-              console.error(e);
-            }
-          };
-        }
-
-        if (receiveCallback) {
-          unit.onReceiveListener = function (data) {
-            try {
-              receiveCallback(data, this.send);
-            } catch (e) {
-              console.error(e);
-            }
-          };
-        }
-
-        if (typeof winObjOrCallback == "function") {
-          winObjOrCallback(function (winObj) {
-            unit.setSource(winObj);
-          });
-        }
-
-        return unit.send;
-      };
-
-      var _connectIFrame = function _connectIFrame(iframe, option) {
-        var winObj;
-
-        if (typeof iframe == "string") {
-          winObj = function winObj(callback) {
-            iframe.onload = function () {
-              callback(this.contentWindow);
-            };
-          };
-        } else {
-          winObj = iframe.contentWindow;
-        }
-
-        return _connectWindow(winObj, option);
-      };
-
-      var postMessageBridge = function () {
         var handle = {};
         var instanceMap = {};
         var cmd2ListenerMap = {};
@@ -6662,9 +6448,230 @@
           setTimeout(callback, time);
         };
 
-        return handle;
-      }();
+        postMessageBridge = handle;
+      };
 
+      var CommunicationUnit = function CommunicationUnit(cmd, source, connectingSource, onfailed, isActive, conndata, timeout, sleep) {
+        initPostMessageBridge();
+        var msgQueue = new LinkedList();
+        var SLEEP = sleep;
+        var starttime;
+        var isFailed = false;
+        var isConnected = false;
+        var isCanceled = false;
+        var thiz = this;
+        var handleId;
+        this.onConnectedListener = null;
+        this.onReceiveListener = null;
+
+        this.send = function (data) {
+          var msg = {
+            id: L$p.randId(),
+            data: data
+          };
+          msgQueue.append(msg);
+          sendTop();
+        };
+
+        this.send.release = function () {
+          postMessageBridge.remove(handleId);
+        };
+
+        function couldChat() {
+          return !isFailed && !isCanceled;
+        }
+
+        function _onConned(_source, data) {
+          if (couldChat()) {
+            thiz.onConnectedListener.call(thiz, data);
+            isConnected = true;
+            sendTop();
+          }
+        }
+
+        function _onMsg(data, msgid) {
+          if (couldChat()) {
+            try {
+              thiz.onReceiveListener.call(thiz, data);
+            } catch (e) {
+              console.warn(e);
+            }
+
+            postMessageBridge.sendResponse({
+              id: msgid
+            }, handleId);
+          }
+        }
+
+        function _onResponse(data) {
+          msgQueue.remove(function (elem) {
+            return elem.id = data.id;
+          });
+          couldChat() && sendTop();
+        }
+
+        function _onElse(type) {
+          if (type == "binded") {
+            isCanceled = true;
+            console.error("connect failed,that page already binded:" + cmd + ",my page:" + location.href);
+            onfailed("canceled");
+          }
+        }
+
+        function initListen() {
+          handleId = postMessageBridge.listen(cmd, conndata, connectingSource, source, isActive, _onConned, _onMsg, _onResponse, _onElse);
+        }
+
+        function sendTop() {
+          if (isConnected) {
+            var msg;
+
+            while (msg = msgQueue.pop()) {
+              postMessageBridge.send(msg.data, handleId, msg.id);
+            }
+          }
+        }
+
+        function isTimeout() {
+          var dt = new Date().getTime() - starttime;
+          return dt > timeout;
+        }
+
+        function initActively() {
+          if (isConnected || isTimeout() || isCanceled) {
+            if (!isConnected && !isCanceled) {
+              isFailed = true;
+              onfailed("timeout:connect");
+            }
+
+            return;
+          }
+
+          postMessageBridge.sendConn(handleId);
+          postMessageBridge.runAfter(SLEEP, initActively);
+        }
+
+        function checkPassively() {
+          if (isConnected || isTimeout() || isCanceled) {
+            if (!isConnected && !isCanceled) {
+              isFailed = true;
+              onfailed("timeout:wait connect");
+            }
+
+            return;
+          }
+
+          postMessageBridge.runAfter(SLEEP, checkPassively);
+        }
+
+        {
+          starttime = new Date().getTime();
+
+          if (source) {
+            initListen();
+            initActively();
+          } else if (!isActive) {
+            initListen();
+            checkPassively();
+          }
+        }
+
+        this.setSource = function (_source) {
+          source = _source;
+
+          if (source) {
+            initListen();
+            initActively();
+          }
+        };
+      };
+
+      var _connectWindow = function _connectWindow(winObjOrCallback, option, notActive) {
+        var gconfig = L$p.config().plugins.xsmsg;
+        option = L$p.extendDeep({
+          cmd: "default-cmd",
+          listener: null,
+          connected: null,
+          conndata: null,
+          timeout: gconfig.timeout,
+          sleep: gconfig.sleep,
+          connectingSource: function connectingSource(source, origin, conndata, callback) {
+            var mine = location.protocol + "//" + location.host;
+            callback(mine == origin, "default");
+          },
+          onfailed: function onfailed(errtype) {
+            if (errtype.indexOf("timeout:") == 0) {
+              console.warn("connect may timeout:cmd=" + option.cmd + " ,err='" + errtype + "' ,my page=" + location.href);
+            }
+          }
+        }, option);
+        var cmd = option.cmd;
+        var connectedCallback = option.connected;
+        var receiveCallback = option.listener;
+        var conndata = option.conndata;
+        var onfailed = option.onfailed;
+        var timeout = option.timeout;
+        var sleep = option.sleep;
+        var isActive = !notActive;
+        var connectingSource = option.connectingSource;
+        var unit;
+
+        if (typeof winObjOrCallback == "function") {
+          unit = new CommunicationUnit(cmd, null, connectingSource, onfailed, isActive, conndata, timeout, sleep);
+        } else {
+          unit = new CommunicationUnit(cmd, winObjOrCallback, connectingSource, onfailed, isActive, conndata, timeout, sleep);
+        }
+
+        connectedCallback = connectedCallback || function (sender, conndata) {
+          console.log((isActive ? "active" : "") + " connected:" + cmd);
+        };
+
+        if (connectedCallback) {
+          unit.onConnectedListener = function (conndata) {
+            try {
+              connectedCallback(this.send, conndata);
+            } catch (e) {
+              console.error(e);
+            }
+          };
+        }
+
+        if (receiveCallback) {
+          unit.onReceiveListener = function (data) {
+            try {
+              receiveCallback(data, this.send);
+            } catch (e) {
+              console.error(e);
+            }
+          };
+        }
+
+        if (typeof winObjOrCallback == "function") {
+          winObjOrCallback(function (winObj) {
+            unit.setSource(winObj);
+          });
+        }
+
+        return unit.send;
+      };
+
+      var _connectIFrame = function _connectIFrame(iframe, option) {
+        var winObj;
+
+        if (typeof iframe == "string") {
+          winObj = function winObj(callback) {
+            iframe.onload = function () {
+              callback(this.contentWindow);
+            };
+          };
+        } else {
+          winObj = iframe.contentWindow;
+        }
+
+        return _connectWindow(winObj, option);
+      };
+
+      var postMessageBridge;
       var handleApi = api;
 
       handleApi.connectIFrame = function (iframe, option) {
@@ -6764,6 +6771,7 @@
   L$s.define("xsloader4j-server-bridge", [], function () {
     var base64 = new L$s.Base64();
     var isDebug = false;
+    var hasRegVnodex = false;
 
     function __renderJsx(vm) {
       return function (component, props) {
@@ -6789,8 +6797,51 @@
       };
     }
 
+    function regVnodex() {
+      if (hasRegVnodex) {
+        return;
+      }
+
+      var Vue = L$s.require.get("vue");
+
+      Vue.component("jsx", {
+        props: {
+          x: {
+            type: [Object, Function],
+            required: true
+          }
+        },
+        render: function render() {
+          var $listeners = this.$listeners,
+              $attrs = this.$attrs;
+          delete $attrs.x;
+          var wrapProps = {
+            on: $listeners,
+            attrs: $attrs
+          };
+          var Comp = this.x;
+
+          if (L$s.isFunction(Comp)) {
+            Comp = Comp();
+          }
+
+          if (L$s.isObject(Comp)) {
+            var data = Comp.data || (Comp.data = {});
+
+            for (var k in wrapProps) {
+              data[k] = L$s.extend({}, data[k], wrapProps[k]);
+            }
+          }
+
+          return Comp;
+        }
+      });
+      hasRegVnodex = true;
+    }
+
     var mod = {
       getDefine: function getDefine(thiz) {
+        regVnodex();
         return thiz.define;
       },
       getRequire: function getRequire(thiz) {

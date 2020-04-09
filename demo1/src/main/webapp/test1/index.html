@@ -5,7 +5,8 @@
     <title>测试1</title>
     <meta charset="UTF-8">
     <!--引入xsloader脚本-->
-    <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
+    <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript"
+            charset="utf-8"></script>
 </head>
 
 <body>
@@ -16,6 +17,7 @@
     <div style="text-align:center;">
         <comp1/>
         <comp2/>
+        <jsx :x="getVnode" id="123" :name="'name'" @click="onClickVnodex" class="test-class"/>
     </div>
 </script>
 </body>
