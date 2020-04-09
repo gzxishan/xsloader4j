@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Apr 09 2020 15:52:54 GMT+0800 (GMT+08:00)
+ * build time:Thu Apr 09 2020 16:28:05 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2216,51 +2216,64 @@
       }
 
       var isReady = false;
+      var removeListener;
 
       function ready() {
         if (isReady) return;
         isReady = true;
         isGlobalReady = true;
+
+        if (removeListener) {
+          removeListener();
+          removeListener = null;
+        }
+
         callback();
       }
 
       if (document.addEventListener) {
-        var _fun;
+        var fun;
 
-        _fun = function fun() {
-          document.removeEventListener("DOMContentLoaded", _fun);
+        fun = function fun() {
           ready();
         };
 
-        document.addEventListener("DOMContentLoaded", _fun);
-      } else if (document.attachEvent) {
-        var _fun2;
+        removeListener = function removeListener() {
+          document.removeEventListener("DOMContentLoaded", fun);
+        };
 
-        _fun2 = function fun() {
+        document.addEventListener("DOMContentLoaded", fun);
+      } else if (document.attachEvent) {
+        var _fun;
+
+        _fun = function _fun() {
           if (document.readyState === "complete") {
-            document.detachEvent("onreadystatechange", _fun2);
             ready();
           }
         };
 
-        document.attachEvent("onreadystatechange", _fun2);
+        removeListener = function removeListener() {
+          document.detachEvent("onreadystatechange", _fun);
+        };
 
-        var _fun3;
+        document.attachEvent("onreadystatechange", _fun);
 
-        _fun3 = function fun2() {
+        var _fun2;
+
+        _fun2 = function fun2() {
           if (isReady) return;
 
           try {
             document.documentElement.doScroll("left");
           } catch (error) {
-            setTimeout(_fun3, 0);
+            setTimeout(_fun2, 0);
             return;
           }
 
           ready();
         };
 
-        if (document.documentElement.doScroll && typeof G$4.frameElement === "undefined") _fun3();
+        if (document.documentElement.doScroll && typeof G$4.frameElement === "undefined") _fun2();
       } else {
         L$5.asyncCall(null, true).next(function () {
           ready();
@@ -2283,32 +2296,64 @@
       }
     };
 
+    var _addEventHandle2;
+
     onReady(function () {
       isGlobalReady = true;
+
+      if (_addEventHandle2 && _addEventHandle2.remove) {
+        _addEventHandle2.remove();
+
+        _addEventHandle2 = null;
+      }
     });
 
     if (document.readyState === "complete") {
       isGlobalReady = true;
     } else {
-      var addEventHandle;
+      if (G$4.addEventListener) {
+        _addEventHandle2 = function addEventHandle(type, callback) {
+          var fun = function fun() {
+            _addEventHandle2.remove();
 
-      if (document.addEventListener) {
-        addEventHandle = function addEventHandle(type, callback) {
-          document.addEventListener(type, callback, false);
+            callback();
+          };
+
+          G$4.addEventListener(type, fun, false);
+
+          _addEventHandle2.remove = function () {
+            if (fun) {
+              G$4.removeEventListener(type, fun);
+              fun = null;
+            }
+          };
         };
-      } else if (document.attachEvent) {
-        addEventHandle = function addEventHandle(type, callback) {
-          document.attachEvent("on" + type, callback);
+      } else if (G$4.attachEvent) {
+        _addEventHandle2 = function _addEventHandle(type, callback) {
+          var fun = function fun() {
+            _addEventHandle2.remove();
+
+            callback();
+          };
+
+          G$4.attachEvent("on" + type, fun);
+
+          _addEventHandle2.remove = function () {
+            if (fun) {
+              G$4.detachEvent("on" + type, fun);
+              fun = null;
+            }
+          };
         };
       } else {
-        addEventHandle = function addEventHandle(type, callback) {
+        _addEventHandle2 = function _addEventHandle2(type, callback) {
           L$5.asyncCall(null, true).next(function () {
             callback();
           });
         };
       }
 
-      addEventHandle("load", function () {
+      _addEventHandle2("load", function () {
         isGlobalReady = true;
 
         while (bindReadyQueue.length) {
