@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Apr 09 2020 16:28:05 GMT+0800 (GMT+08:00)
+ * build time:Fri Apr 10 2020 10:08:18 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -6843,7 +6843,9 @@
     }
 
     function regVnodex() {
-      if (hasRegVnodex) {
+      var requiredVue = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      if (hasRegVnodex || !requiredVue && !L$s.hasDefine("vue")) {
         return;
       }
 
@@ -6896,11 +6898,25 @@
         return thiz.invoker();
       },
       renderJsx: function renderJsx(vm) {
+        try {
+          regVnodex(true);
+        } catch (e) {
+          console.error("jsx need vue!");
+          throw e;
+        }
+
         return __renderJsx(vm);
       },
       getVueCompiler: function getVueCompiler(thiz) {
         var rt = function rt(exports) {
-          var Vue = L$s.require("vue");
+          try {
+            regVnodex(true);
+          } catch (e) {
+            console.error("jsx need vue!");
+            throw e;
+          }
+
+          var Vue = L$s.require.get("vue");
 
           var _default = exports['default'] || exports;
 
