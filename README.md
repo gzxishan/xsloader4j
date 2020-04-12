@@ -375,7 +375,7 @@ cnpm install --save @babel/polyfill
 ### 4、xsloader.js说明
 该插件是基于AMD协议开发的模块加载器（借鉴了requirejs，但从1.2.x开始进行了重构），支持异步模块加载、插件开发、更灵活的依赖配置、脚本版本配置等。
 
-内置插件包括：css、imgage、json、text、request等。
+内置插件包括：css、image、json、text、request等。
 
 #### 使用情况
 - xsloader.js：已完全在公司线上产品中使用
@@ -384,6 +384,9 @@ cnpm install --save @babel/polyfill
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
 ## 发布记录
+### v1.1.19 2020/4/10
+1. 内置`<jsx>`组件，方便显示jsx；
+
 ###  v1.1.16 2020/3/31
 1. 修复vue模板中无法使用annonymous变量的问题；
 2. 修复后台转换时console.assert判断错误问题；
