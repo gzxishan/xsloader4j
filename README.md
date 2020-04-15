@@ -101,13 +101,16 @@ xsloader.conf.properties.prop1=xxx
 	},
 	"chooseLoader":function(localConfig){
 		var path=this.getPagePath();
-        if(startsWith(path,"/mobile/")){
-            return "framework7";
+        if(xsloader.startsWith(path,"/test1/")){
+            return "test1";
+        }else if(xsloader.startsWith(path,"/test2-no-vue/")){
+            return "test2-no-vue";
+        }else{
+            return "test1";
         }
-        return "test";
 	},
 	"loader":{
-		"test":{
+		"test1":{
             "baseUrl":"${contextPath}/",
             "modulePrefix":"$[libReplace]",
              "urlArgs":{
@@ -123,19 +126,16 @@ xsloader.conf.properties.prop1=xxx
 				"*":"vue"//当有vue组件或jsx语法时，一定要先加载vue模块
             }
         },
-		"framework7":{
+		"test2-no-vue":{
             "baseUrl":"${contextPath}/",
             "modulePrefix":"$[libReplace]",
-            "urlArgs":{
-                "*[${contextPath}/":"v=190107-3",
-                "*[libxs/":"v=190107-3",
+             "urlArgs":{
+                "*[${contextPath}/":"v=20200130-02",
+                "*[libxs/":"v=20200129-3",
                 "*[lib/":"v=190109-26",
                 "*[libui/":"v=190109-26"
             },
             "paths":{
-                   "vue":"static/vue/vue.min.js"
-            },
-            "depsPaths":{
 
             },
             "deps":{
