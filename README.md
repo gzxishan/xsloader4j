@@ -309,7 +309,13 @@ new Vue({
     <version>4.6.0</version>
 </dependency>
 ```
-### 2、代码转换说明
+
+### 2、引入其他库
+- 引入的第三方库需要遵循AMD规范
+- 一般打包的三方umd模块可以正常工作，可以参考项目`demo1`
+- `注意`:import其他组件或模块，不能省略后缀名，如"./app.vue","./router.js"
+
+### 3、代码转换说明
 
 #### 1）*.js
 - 语法支持到es2017
@@ -363,7 +369,7 @@ const ...
 #### 6）sourcemap源码
 转换的源码可在浏览器控制台Sources标签下，对应页面的`/$$xs-sources$$/`路径下找到，支持脚本断点调试。
 
-### 3、polyfill
+### 4、polyfill
 您可能需要使用polyfill来更好的使用es6+代码，如Map、array.includes、string.startsWith、async/await等
 - 在本项目polyfill/目录下下载了些版本的js文件
 - 可以去https://babeljs.io/docs/en/babel-polyfill/下载
@@ -372,7 +378,7 @@ cnpm install --save @babel/polyfill
 在node_modules/下对应目录下去复制polyfill.js文件
 ```
 
-### 4、xsloader.js说明
+### 5、xsloader.js说明
 该插件是基于AMD协议开发的模块加载器（借鉴了requirejs，但从1.2.x开始进行了重构），支持异步模块加载、插件开发、更灵活的依赖配置、脚本版本配置等。
 
 内置插件包括：css、image、json、text、request等。
