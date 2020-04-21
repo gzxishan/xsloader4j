@@ -50,6 +50,7 @@ xsloader.es6.debug=true
 xsloader.sourcemap=true
 xsloader.es6.dealt.ignores=
 xsloader.es6.dealt.static=
+xsloader.es6.extensions=
 xsloader.es6.v8flags=
 xsloader.conf.properties.staticUrlPrefix=https://xxxxx.cn/xxx
 xsloader.conf.properties.prop1=xxx
@@ -60,6 +61,7 @@ xsloader.conf.properties.prop1=xxx
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（应该在spring boot嵌入式版本中使用），如“/static”。
+- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx"，且取值只能是[.js,.jsx,.vue,.js+]中的值
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 

@@ -44,6 +44,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
 
+    @Property(name = "xsloader.es6.extensions", defaultVal = ".js,.vue,.jsx")
+    private static String[] extensions;
+
     @Property(name = "xsloader.es6.v8flags")
     private static String v8flags;
 
@@ -202,6 +205,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             case "less":
             case "map":
                 return true;
+            case "*":
+                return OftenTool.notEmptyOf(extensions);
             default:
                 return false;
         }
@@ -297,6 +302,27 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         if (!isSupport(path))
         {
             return null;
+        } else if (path.endsWith(".*"))
+        {//自动后缀
+            String autoPath = null;
+            for (String ext : extensions)
+            {
+                String rpath = path.substring(0, path.length() - 2) + ext;
+                File file = pathDealt.getRealFile(servletContext, rpath);
+                if (file != null && file.exists())
+                {
+                    autoPath = rpath;
+                    break;
+                }
+            }
+
+            if (autoPath != null)
+            {
+                path = autoPath;
+            } else
+            {
+                return null;
+            }
         }
 
 

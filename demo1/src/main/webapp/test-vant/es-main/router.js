@@ -10,21 +10,21 @@ const routes = [
   },
   {
     name: 'user',
-    component: () => import('./view/user/index.vue'),
+    component: () => import('./view/user/index'),
     meta: {
       title: '会员中心'
     }
   },
   {
     name: 'cart',
-    component: () => import('./view/cart/index.vue'),
+    component: () => import('./view/cart/index'),
     meta: {
       title: '购物车'
     }
   },
   {
     name: 'goods',
-    component: () => import('./view/goods/index.vue'),
+    component: () => import('./view/goods/index'),
     meta: {
       title: '商品详情'
     }

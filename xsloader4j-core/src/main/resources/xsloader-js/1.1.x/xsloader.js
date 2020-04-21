@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.13
+ * xsloader.js v1.1.14
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Fri Apr 10 2020 10:08:18 GMT+0800 (GMT+08:00)
+ * build time:Tue Apr 21 2020 15:35:38 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -136,7 +136,7 @@
 
   var ABSOLUTE_PROTOCOL_REG = /^(([a-zA-Z0-9_]*:\/\/)|(\/)|(\/\/))/;
   var ABSOLUTE_PROTOCOL_REG2 = /^([a-zA-Z0-9_]+:)\/\/([^/\s]+)/;
-  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue"];
+  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue", ".*"];
   var L = global$1.xsloader;
 
   function isJsFile(path) {
@@ -480,7 +480,9 @@
         m = index > 0 ? m.substring(0, index) : m;
         var is = isJsFile(m);
 
-        if (!is && !/\.[^\/\s]*$/.test(m) && (L.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
+        if (config.autoExt && /\/[^\/.]+$/.test(m)) {
+          deps[i] = m + ".*" + query + pluginParam;
+        } else if (!is && !/\.[^\/\s]*$/.test(m) && (L.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
           deps[i] = m + ".js" + query + pluginParam;
         }
       }
@@ -2373,7 +2375,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.13"
+    version: "1.1.14"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3294,7 +3296,9 @@
         }
       }
 
-      !isError && syncHandle && syncHandle();
+      if (!isError && syncHandle) {
+        syncHandle();
+      }
     }
 
     U.each(module.deps, function (dep, index, ary, syncHandle) {
@@ -3371,7 +3375,11 @@
           } else if (isJsFile) {
             urls = [dep];
           } else {
-            urls = [];
+            if (config.autoExt && /\/[^\/.]+$/.test(dep)) {
+              urls = [dep + ".*"];
+            } else {
+              urls = [];
+            }
           }
 
           if (urls.length == 0) {
@@ -4636,6 +4644,7 @@
       depsPaths: {},
       deps: {},
       jsExts: undefined,
+      autoExt: true,
       properties: {},
       modulePrefix: {},
       defineFunction: {},
