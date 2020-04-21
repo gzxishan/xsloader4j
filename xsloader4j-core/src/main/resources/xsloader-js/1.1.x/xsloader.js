@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.14
+ * xsloader.js v1.1.15
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Apr 21 2020 15:35:38 GMT+0800 (GMT+08:00)
+ * build time:Tue Apr 21 2020 16:06:43 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2375,7 +2375,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.14"
+    version: "1.1.15"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -5305,7 +5305,14 @@
           var lastM = moduleScript.getModule(newName);
 
           if (lastM && lastM.state != "init" && !lastM.preDependModule) {
-            existsMods.push("\tselfname=" + newName + ",state=" + lastM.state + ",src=" + lastM.src);
+            var errinfo = "\tselfname=" + newName + ",state=" + lastM.state + ",src=" + lastM.src;
+
+            if (lastM.id === depModuleArgs[0].module.id) {
+              console.info("already define name by self:" + errinfo);
+            } else {
+              existsMods.push(errinfo);
+            }
+
             continue;
           }
 
