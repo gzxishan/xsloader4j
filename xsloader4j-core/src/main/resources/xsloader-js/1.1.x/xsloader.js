@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.15
+ * xsloader.js v1.1.16
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Apr 21 2020 16:06:43 GMT+0800 (GMT+08:00)
+ * build time:Wed Apr 22 2020 15:18:59 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -481,7 +481,7 @@
         var is = isJsFile(m);
 
         if (config.autoExt && /\/[^\/.]+$/.test(m)) {
-          deps[i] = m + ".*" + query + pluginParam;
+          deps[i] = m + config.autoExtSuffix + query + pluginParam;
         } else if (!is && !/\.[^\/\s]*$/.test(m) && (L.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
           deps[i] = m + ".js" + query + pluginParam;
         }
@@ -2375,7 +2375,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.15"
+    version: "1.1.16"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3376,7 +3376,7 @@
             urls = [dep];
           } else {
             if (config.autoExt && /\/[^\/.]+$/.test(dep)) {
-              urls = [dep + ".*"];
+              urls = [dep + config.autoExtSuffix];
             } else {
               urls = [];
             }
@@ -4645,6 +4645,7 @@
       deps: {},
       jsExts: undefined,
       autoExt: true,
+      autoExtSuffix: ".*",
       properties: {},
       modulePrefix: {},
       defineFunction: {},

@@ -95,6 +95,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * 文件路径:是否为es6代码
      */
     private static Map<String, Es6Item> supportEs6Files = new ConcurrentHashMap<>();
+    private static final ThreadLocal<String> autoPathThreadLocal = new ThreadLocal<>();
 
 
     public static void addContentGetter(IFileContentGetter contentGetter)
@@ -118,13 +119,20 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     {
         try
         {
-            if (filter(request, response))
+            autoPathThreadLocal.remove();
+            if ("GET".equals(request.getMethod()) && filter(request, response))
             {
                 WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
                 wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
                 return wrapper;
             } else
             {
+                String path = autoPathThreadLocal.get();
+                if (path != null)
+                {//用于支持非es6代js脚本的自动后缀名
+                    request.getRequestDispatcher(path).forward(request, response);
+                }
+
                 return null;
             }
         } catch (OftenCallException e)
@@ -148,6 +156,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
             wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
             return wrapper;
+        } finally
+        {
+            autoPathThreadLocal.remove();
         }
     }
 
@@ -298,140 +309,159 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
             String path, String encoding, String replaceType) throws IOException
     {
+        CachedResource result = null;
         path = pathDealt.dealPath(servletContext, path);
-        if (!isSupport(path))
+        boolean isAuto = false;
+        end:
+        do
         {
-            return null;
-        } else if (path.endsWith(".*"))
-        {//自动后缀
-            String autoPath = null;
-            for (String ext : extensions)
+            if (!isSupport(path))
             {
-                String rpath = path.substring(0, path.length() - 2) + ext;
-                File file = pathDealt.getRealFile(servletContext, rpath);
-                if (file != null && file.exists())
+                break end;
+            } else if (path.endsWith(".*"))
+            {//自动后缀
+                String autoPath = null;
+                for (String ext : extensions)
                 {
-                    autoPath = rpath;
-                    break;
+                    String rpath = path.substring(0, path.length() - 2) + ext;
+                    File file = pathDealt.getRealFile(servletContext, rpath);
+                    if (file != null && file.exists())
+                    {
+                        autoPath = rpath;
+                        break;
+                    }
                 }
-            }
 
-            if (autoPath != null)
-            {
-                path = autoPath;
-            } else
-            {
-                return null;
-            }
-        }
-
-
-        if (path.endsWith(".js") || path.endsWith(".js.map"))
-        {//对js文件进行单独判断，是否为es6语法
-            String rpath = path.endsWith(".js") ? path : path.substring(0, path.length() - 4);
-            if (!pathDealt.detectESCode(rpath))
-            {
-                return null;
-            } else
-            {
-                File file = pathDealt.getRealFile(servletContext, rpath);
-
-                if (file == null || !file.exists())
+                if (autoPath != null)
                 {
-                    return null;
+                    path = autoPath;
+                    isAuto = true;
                 } else
                 {
-                    Es6Item item = supportEs6Files.get(file.getAbsolutePath());
-                    if (item == null)
+                    break end;
+                }
+            }
+
+            if (path.endsWith(".js") || path.endsWith(".js.map"))
+            {//对js文件进行单独判断，是否为es6语法
+                String rpath = path.endsWith(".js") ? path : path.substring(0, path.length() - 4);
+                if (!pathDealt.detectESCode(rpath))
+                {
+                    break end;
+                } else
+                {
+                    File file = pathDealt.getRealFile(servletContext, rpath);
+
+                    if (file == null || !file.exists())
                     {
-                        String script = FileTool.getString(file, encoding);
-                        boolean isEs6 = pathDealt.isESCode(path, script);
-                        item = new Es6Item(file.lastModified(), isEs6);
-                        supportEs6Files.put(file.getAbsolutePath(), item);
-                    } else if (isDebug && !item.isEs6() && file.lastModified() != item.getLastModified())
+                        break end;
+                    } else
                     {
-                        String script = FileTool.getString(file, encoding);
-                        boolean isEs6 = pathDealt.isESCode(path, script);
-                        item.setEs6(isEs6);
-                        item.setLastModified(file.lastModified());
-                    }
-                    if (!item.isEs6())
-                    {
-                        return null;
+                        Es6Item item = supportEs6Files.get(file.getAbsolutePath());
+                        if (item == null)
+                        {
+                            String script = FileTool.getString(file, encoding);
+                            boolean isEs6 = pathDealt.isESCode(path, script);
+                            item = new Es6Item(file.lastModified(), isEs6);
+                            supportEs6Files.put(file.getAbsolutePath(), item);
+                        } else if (isDebug && !item.isEs6() && file.lastModified() != item.getLastModified())
+                        {
+                            String script = FileTool.getString(file, encoding);
+                            boolean isEs6 = pathDealt.isESCode(path, script);
+                            item.setEs6(isEs6);
+                            item.setLastModified(file.lastModified());
+                        }
+                        if (!item.isEs6())
+                        {
+                            break end;
+                        }
                     }
                 }
             }
-        }
 
 
-        boolean isSourceMap = path.endsWith(".map");
-        if (isSourceMap)
-        {
-            File file = pathDealt.getRealFile(servletContext, path);
-            if (file != null && file.exists())
-            {//存在实际的map文件
-                return null;
+            boolean isSourceMap = path.endsWith(".map");
+            if (isSourceMap)
+            {
+                File file = pathDealt.getRealFile(servletContext, path);
+                if (file != null && file.exists())
+                {//存在实际的map文件
+                    break end;
+                }
+                path = path.substring(0, path.length() - 4);
             }
-            path = path.substring(0, path.length() - 4);
-        }
 
-        File realFile;
-        if (path.endsWith(".js+"))
-        {
-            realFile = pathDealt.getRealFile(servletContext, path.substring(0, path.length() - 1));
-        } else
-        {
-            realFile = pathDealt.getRealFile(servletContext, path);
-        }
+            File realFile;
+            if (path.endsWith(".js+"))
+            {
+                realFile = pathDealt.getRealFile(servletContext, path.substring(0, path.length() - 1));
+            } else
+            {
+                realFile = pathDealt.getRealFile(servletContext, path);
+            }
 
-        if (realFile == null || !realFile.exists())
+            if (realFile == null || !realFile.exists())
+            {
+                break end;
+            } else
+            {
+                if (requestUrl.endsWith(".map"))
+                {
+                    isSourceMap = true;
+                    requestUrl = requestUrl.substring(0, requestUrl.length() - 4);//.map
+                }
+
+                String finalPath = path;
+
+                CachedResource cachedResource = !useCache ? null : CachedResource.getByPath(isSourceMap, path);
+                if (cachedResource == null || cachedResource.needReload(realFile, isDebug))
+                {
+                    cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, realFile,
+                            new IFileContentGetter()
+                            {
+
+                                @Override
+                                public Result getResult(File file, String encoding) throws IOException
+                                {
+                                    Result result = null;
+                                    for (IFileContentGetter contentGetter : contentGetterList)
+                                    {
+                                        result = contentGetter.getResult(file, encoding);
+                                        if (result != null)
+                                        {
+                                            String content = pathDealt
+                                                    .preDealContent(servletContext, finalPath, realFile,
+                                                            result.getContent());
+                                            result.setContent(content);
+                                            break;
+                                        }
+                                    }
+                                    if (result == null)
+                                    {
+                                        result = new Result(getContent(file, encoding));
+                                        String content = pathDealt
+                                                .preDealContent(servletContext, finalPath, realFile,
+                                                        result.getContent());
+                                        result.setContent(content);
+                                    }
+                                    return result;
+                                }
+                            }, encoding, replaceType);
+                }
+
+                result = cachedResource;
+            }
+        } while (false);
+
+        if (result == null && isAuto && path != null)
         {
+            autoPathThreadLocal.set(path);
             return null;
         } else
         {
-            if (requestUrl.endsWith(".map"))
-            {
-                isSourceMap = true;
-                requestUrl = requestUrl.substring(0, requestUrl.length() - 4);//.map
-            }
-
-            String finalPath = path;
-
-            CachedResource cachedResource = !useCache ? null : CachedResource.getByPath(isSourceMap, path);
-            if (cachedResource == null || cachedResource.needReload(realFile, isDebug))
-            {
-                cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, realFile, new IFileContentGetter()
-                {
-
-                    @Override
-                    public Result getResult(File file, String encoding) throws IOException
-                    {
-                        Result result = null;
-                        for (IFileContentGetter contentGetter : contentGetterList)
-                        {
-                            result = contentGetter.getResult(file, encoding);
-                            if (result != null)
-                            {
-                                String content = pathDealt
-                                        .preDealContent(servletContext, finalPath, realFile, result.getContent());
-                                result.setContent(content);
-                                break;
-                            }
-                        }
-                        if (result == null)
-                        {
-                            result = new Result(getContent(file, encoding));
-                            String content = pathDealt
-                                    .preDealContent(servletContext, finalPath, realFile, result.getContent());
-                            result.setContent(content);
-                        }
-                        return result;
-                    }
-                }, encoding, replaceType);
-            }
-
-            return cachedResource;
+            return result;
         }
+
     }
 
     private boolean filter(ServletRequest servletRequest,
