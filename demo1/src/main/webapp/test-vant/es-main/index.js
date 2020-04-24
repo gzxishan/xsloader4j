@@ -2,8 +2,8 @@
 
 import Vue from "vue";
 import Vant from "vant";
-import App from "./App.vue";
-import { router } from './router.js';
+import App from "./App";
+import { router } from './router';
 
 Vue.use(Vant);
 

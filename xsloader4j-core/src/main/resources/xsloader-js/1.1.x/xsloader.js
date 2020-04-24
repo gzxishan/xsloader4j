@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.16
+ * xsloader.js v1.1.17
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed Apr 22 2020 15:18:59 GMT+0800 (GMT+08:00)
+ * build time:Fri Apr 24 2020 21:31:51 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2375,7 +2375,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.16"
+    version: "1.1.17"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -2521,6 +2521,12 @@
     nameOrUrl = U.removeQueryHash(nameOrUrl);
 
     var isSrc = _isSrc(nameOrUrl);
+
+    var config = L$7.config();
+
+    if (config && config.autoExt && /\/[^\/.]+$/.test(nameOrUrl)) {
+      nameOrUrl += config.autoExtSuffix;
+    }
 
     var moduleDef = theDefinedMap[nameOrUrl];
 
