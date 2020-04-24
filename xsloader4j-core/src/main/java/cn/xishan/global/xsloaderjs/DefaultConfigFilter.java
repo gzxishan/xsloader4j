@@ -26,12 +26,16 @@ public class DefaultConfigFilter extends XsloaderConfigFilter implements Wrapper
     private String requestPath;
     private String resourcePath;
     private Map<String, Object> props;
+    private IConfigDealt configDealt;
 
-    public DefaultConfigFilter(ServletContext servletContext, String requestPath, String resourcePath,
+    public DefaultConfigFilter(ServletContext servletContext, IConfigDealt configDealt,
+            String requestPath,
+            String resourcePath,
             Map<String, Object> props)
     {
         super(false);
         this.servletContext = servletContext;
+        this.configDealt = configDealt;
         this.requestPath = requestPath;
         this.resourcePath = resourcePath;
         if (props == null)
@@ -81,6 +85,10 @@ public class DefaultConfigFilter extends XsloaderConfigFilter implements Wrapper
     public String getConf(FilterConfig config, String confJson)
     {
         confJson = DealSharpProperties.replaceSharpProperties(confJson, props, null);
+        if (configDealt != null)
+        {
+            confJson = configDealt.getConf(servletContext, confJson);
+        }
         return confJson;
     }
 

@@ -80,6 +80,9 @@ public class XsloaderFilter implements Filterer
     @Property(name = "xsloader.conf.requestPath", defaultVal = "/xsloader.conf")
     private String requestPath;
 
+    @AutoSet(nullAble = true, classValue = IConfigDealt.class)
+    private IConfigDealt configDealt;
+
     @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties.")
     private String propertiesPrefix;
 
@@ -109,7 +112,7 @@ public class XsloaderFilter implements Filterer
         try
         {
             Map<String, Object> props = configData.getJSONByKeyPrefix(propertiesPrefix);
-            DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, requestPath,
+            DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, configDealt, requestPath,
                     resourcePath, props);
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(defaultConfigFilter);
             defaultConfigFilter.init(null);
