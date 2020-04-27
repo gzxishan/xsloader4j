@@ -10,6 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/1/7.
@@ -23,6 +27,7 @@ public class JsScriptUtil
     private static String[] scripts;
     private static String[] scripts2;
     private static J2BaseInterface cachedInterface = null;
+    private static List<Consumer<Void>> readyList = new ArrayList<>(1);
 
 
     static void release(Releasable... releasables)
@@ -144,5 +149,29 @@ public class JsScriptUtil
                 mineScript,
                 polyfillScript
         };
+
+        try
+        {
+            List<Consumer<Void>> list = readyList;
+            readyList = null;
+            for (Consumer<Void> consumer : list)
+            {
+                consumer.accept(null);
+            }
+        } catch (Exception e)
+        {
+            LOGGER.warn(e.getMessage(), e);
+        }
+    }
+
+    static void onReady(Consumer<Void> consumer)
+    {
+        if (readyList == null)
+        {
+            consumer.accept(null);
+        } else
+        {
+            readyList.add(consumer);
+        }
     }
 }

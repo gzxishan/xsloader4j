@@ -285,7 +285,7 @@
 
 	api.parseEs6Script=function(name,scriptContent){
 		let rs = transformScript(scriptContent, {
-			inlineSourceMap:true,
+			hasSourceMap:false,
 			currentUrl:name
 		});
 		return rs.code;

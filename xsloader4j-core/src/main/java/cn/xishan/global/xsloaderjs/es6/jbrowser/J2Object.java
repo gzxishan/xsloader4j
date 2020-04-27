@@ -2,7 +2,6 @@ package cn.xishan.global.xsloaderjs.es6.jbrowser;
 
 import cn.xishan.oftenporter.porter.core.annotation.deal.AnnoUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
-import cn.xishan.oftenporter.porter.core.util.proxy.ProxyUtil;
 import com.eclipsesource.v8.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,13 +53,29 @@ public abstract class J2Object implements AutoCloseable
         return root;
     }
 
+
     public static J2Object newRootObject(V8 v8)
+    {
+        return newRootObject(null, v8);
+    }
+
+    /**
+     * @param name 若不为null，则会添加当前对象到全局作用域、属性名为name。
+     * @param v8
+     * @return
+     */
+    public static J2Object newRootObject(String name, V8 v8)
     {
         J2Object j2Object = new J2Object()
         {
         };
         j2Object._v8 = v8;
         j2Object.releasableList = new ArrayList<>();
+        if (OftenTool.notEmpty(name))
+        {
+            j2Object.v8Object = j2Object.newV8Object();
+            v8.add(name, j2Object.v8Object);
+        }
         return j2Object;
     }
 
@@ -201,7 +216,40 @@ public abstract class J2Object implements AutoCloseable
         }
     }
 
-    protected Object getArrayItem(final V8Array array, final int index)
+    public static Object getObjectItem(final V8Object v8Object, String key)
+    {
+        try
+        {
+            int type = v8Object.getType(key);
+            switch (type)
+            {
+                case V8Value.INTEGER:
+                    return v8Object.getInteger(key);
+                case V8Value.DOUBLE:
+                    return v8Object.getDouble(key);
+                case V8Value.BOOLEAN:
+                    return v8Object.getBoolean(key);
+                case V8Value.STRING:
+                    return v8Object.getString(key);
+                case V8Value.V8_ARRAY:
+                case V8Value.V8_TYPED_ARRAY:
+                    return v8Object.getArray(key);
+                case V8Value.V8_OBJECT:
+                case V8Value.V8_FUNCTION:
+                    return v8Object.getObject(key);
+                case V8Value.V8_ARRAY_BUFFER:
+                    return v8Object.get(key);
+                case V8Value.UNDEFINED:
+                    return null;
+            }
+        } catch (V8ResultUndefined e)
+        {
+            // do nothing
+        }
+        return null;
+    }
+
+    public static Object getArrayItem(final V8Array array, int index)
     {
         try
         {
