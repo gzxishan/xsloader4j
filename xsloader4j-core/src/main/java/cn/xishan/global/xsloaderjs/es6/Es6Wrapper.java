@@ -100,6 +100,24 @@ public class Es6Wrapper
 //        return parseEs6(url, filepath, es6Content, hasSourceMap, true);
 //    }
 
+    public static String parseEs6Script(String name, String es6Content)
+    {
+        LOGGER.info("parse es6 script code:name={}", name);
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
+        {
+            V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
+            V8Array parameters = j2BaseInterface.newV8Array()
+                    .push(name)
+                    .push(es6Content);
+            String parsedCode = xsloaderServer.executeStringFunction("parseEs6Script", parameters);
+            return parsedCode;
+        } catch (Throwable e)
+        {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
             String replaceType)
     {

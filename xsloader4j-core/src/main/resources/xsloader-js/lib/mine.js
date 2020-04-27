@@ -232,7 +232,8 @@
 			isInline: false,
 			replaceType: "require",
 			hasSourceMap: false,
-			currentUrl: undefined
+			currentUrl: undefined,
+			inlineSourceMap:false
 		}, otherOption);
 
 		let option = {
@@ -244,7 +245,7 @@
 				strictMode: otherOption.strictMode,
 			},
 			sourceType: "module",
-			sourceMaps: !otherOption.isInline && otherOption.hasSourceMap ? true : false,
+			sourceMaps:otherOption.inlineSourceMap ? "inline" : (!otherOption.isInline && otherOption.hasSourceMap ? true : false),
 			filename: otherOption.currentUrl,
 			//			presets: [['es2017',{
 			//				"targets": {
@@ -280,6 +281,14 @@
 
 		let rs = Babel.transform(scriptContent, option);
 		return rs;
+	}
+
+	api.parseEs6Script=function(name,scriptContent){
+		let rs = transformScript(scriptContent, {
+			inlineSourceMap:true,
+			currentUrl:name
+		});
+		return rs.code;
 	}
 
 	/**

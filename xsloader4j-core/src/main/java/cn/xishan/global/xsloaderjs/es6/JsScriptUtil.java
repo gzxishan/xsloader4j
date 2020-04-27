@@ -42,7 +42,7 @@ public class JsScriptUtil
         }
     }
 
-    public static V8 createV8()
+    public static V8 createV8(String v8flags)
     {
         String tempDir = CachedResource.getTempDir("v8x");
         LOGGER.debug("v8 tempdir={}", tempDir);
@@ -51,7 +51,14 @@ public class JsScriptUtil
         {
             dir.mkdirs();
         }
-        V8.setFlags("--use_strict --harmony");
+
+        String flags = "--use_strict --harmony";
+        if (OftenTool.notEmpty(v8flags))
+        {
+            flags = v8flags.trim() + " " + flags;
+        }
+
+        V8.setFlags(flags);
         V8 v8 = V8.createV8Runtime(null, tempDir);
         return v8;
     }

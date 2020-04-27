@@ -2,11 +2,11 @@ package cn.xishan.global.xsloaderjs.es6.jbrowser;
 
 import cn.xishan.oftenporter.porter.core.annotation.deal.AnnoUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
+import cn.xishan.oftenporter.porter.core.util.proxy.ProxyUtil;
 import com.eclipsesource.v8.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.annotation.*;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,26 +18,6 @@ public abstract class J2Object implements AutoCloseable
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(J2Object.class);
-
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ElementType.METHOD})
-    @Documented
-    public @interface JsBridgeMethod
-    {
-        /**
-         * 在js中对应的方法名，为空等于当前java函数名。
-         *
-         * @return
-         */
-        String name() default "";
-
-        /**
-         * 是否为根方法。
-         *
-         * @return
-         */
-        boolean isRootFun() default false;
-    }
 
     protected V8 _v8;
     protected J2Object root;
@@ -122,18 +102,23 @@ public abstract class J2Object implements AutoCloseable
 
     protected void autoRegisterMethod()
     {
-        Method[] methods = OftenTool.getAllPublicMethods(this.getClass());
+        autoRegisterMethod(this);
+    }
+
+    public void autoRegisterMethod(Object target)
+    {
+        Method[] methods = OftenTool.getAllPublicMethods(target.getClass());
         for (Method method : methods)
         {
             JsBridgeMethod jsMethod = AnnoUtil.getAnnotation(method, JsBridgeMethod.class);
             if (jsMethod != null)
             {
-                addInterface(jsMethod, method);
+                addInterface(target, jsMethod, method);
             }
         }
     }
 
-    private void addInterface(JsBridgeMethod jsMethod, Method method)
+    private void addInterface(Object target, JsBridgeMethod jsMethod, Method method)
     {
         String jsName = jsMethod.name().equals("") ? method.getName() : jsMethod.name();
         V8Object v8Object;
@@ -145,6 +130,7 @@ public abstract class J2Object implements AutoCloseable
             v8Object = this.v8Object;
         }
         method.setAccessible(true);
+        boolean releaseParameters = jsMethod.releaseParameters();
         v8Object.registerJavaMethod((receiver, parameters) -> {
             int length = parameters.length();
             try
@@ -154,7 +140,7 @@ public abstract class J2Object implements AutoCloseable
                 {
                     args[i] = getArrayItem(parameters, i);
                 }
-                return method.invoke(J2Object.this, args);
+                return method.invoke(target, args);
             } catch (Throwable e)
             {
                 LOGGER.error(e.getMessage(), e);
@@ -167,7 +153,10 @@ public abstract class J2Object implements AutoCloseable
                     release(parameters.get(i));
                 }
                 release(receiver);
-                release(parameters);
+                if (releaseParameters)
+                {
+                    release(parameters);
+                }
             }
         }, jsName);
     }

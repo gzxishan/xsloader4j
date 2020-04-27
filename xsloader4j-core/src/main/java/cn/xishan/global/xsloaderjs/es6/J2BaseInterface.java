@@ -1,6 +1,7 @@
 package cn.xishan.global.xsloaderjs.es6;
 
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Object;
+import cn.xishan.global.xsloaderjs.es6.jbrowser.JsBridgeMethod;
 import cn.xishan.oftenporter.porter.core.annotation.MayNull;
 import cn.xishan.oftenporter.porter.core.util.*;
 import com.eclipsesource.v8.Releasable;
