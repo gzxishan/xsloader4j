@@ -8,7 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/29.
@@ -89,6 +91,11 @@ public abstract class J2Object implements AutoCloseable
         return v8Object;
     }
 
+    /**
+     * 创建的实例会被添加到待释放列表。
+     *
+     * @return
+     */
     public V8Object newV8Object()
     {
         V8Object v8Object = new V8Object(getV8());
@@ -102,6 +109,11 @@ public abstract class J2Object implements AutoCloseable
         return v8Object;
     }
 
+    /**
+     * 创建的实例会被添加到待释放列表。
+     *
+     * @return
+     */
     public V8Array newV8Array()
     {
         V8Array v8Array = new V8Array(getV8());
@@ -176,7 +188,7 @@ public abstract class J2Object implements AutoCloseable
         }, jsName);
     }
 
-    private void release(Object object)
+    public static void release(Object object)
     {
         if (object instanceof Releasable)
         {
@@ -189,6 +201,38 @@ public abstract class J2Object implements AutoCloseable
             }
         }
     }
+
+
+    public static V8Object toV8Value(V8 runtime, Map<String, Object> map)
+    {
+        if (map == null)
+        {
+            return null;
+        }
+
+        V8Object object = new V8Object(runtime);
+        for (Map.Entry<String, Object> entry : map.entrySet())
+        {
+            add(object, entry.getKey(), entry.getValue());
+        }
+        return object;
+    }
+
+    public static V8Array toV8Value(V8 runtime, Collection collection)
+    {
+        if (collection == null)
+        {
+            return null;
+        }
+
+        V8Array array = new V8Array(runtime);
+        for (Object obj : collection)
+        {
+            add(array, obj);
+        }
+        return array;
+    }
+
 
     public static void add(V8Object v8Object, String name, Object javaValue)
     {
@@ -210,9 +254,67 @@ public abstract class J2Object implements AutoCloseable
         } else if (javaValue instanceof V8Value)
         {
             v8Object.add(name, (V8Value) javaValue);
+        } else if (javaValue instanceof Map)
+        {
+            V8Object object = new V8Object(v8Object.getRuntime());
+            v8Object.add(name, object);
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) javaValue).entrySet())
+            {
+                add(object, entry.getKey(), entry.getValue());
+            }
+        } else if (javaValue instanceof Collection)
+        {
+            V8Array array = new V8Array(v8Object.getRuntime());
+            v8Object.add(name, array);
+            for (Object obj : (Collection) javaValue)
+            {
+                add(array, obj);
+            }
         } else
         {
             throw new IllegalArgumentException("unknown type:name=" + name + ",type=" + javaValue.getClass());
+        }
+    }
+
+    public static void add(V8Array v8Array, Object javaValue)
+    {
+        if (javaValue == null)
+        {
+            v8Array.pushNull();
+        } else if (javaValue instanceof CharSequence)
+        {
+            v8Array.push(String.valueOf(javaValue));
+        } else if ((javaValue instanceof Integer) || (javaValue instanceof Short) || javaValue instanceof Byte)
+        {
+            v8Array.push(((Number) javaValue).intValue());
+        } else if (javaValue instanceof Number)
+        {
+            v8Array.push(((Number) javaValue).doubleValue());
+        } else if (javaValue instanceof Boolean)
+        {
+            v8Array.push((Boolean) javaValue);
+        } else if (javaValue instanceof V8Value)
+        {
+            v8Array.push((V8Value) javaValue);
+        } else if (javaValue instanceof Map)
+        {
+            V8Object object = new V8Object(v8Array.getRuntime());
+            v8Array.push(object);
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) javaValue).entrySet())
+            {
+                add(object, entry.getKey(), entry.getValue());
+            }
+        } else if (javaValue instanceof Collection)
+        {
+            V8Array array = new V8Array(v8Array.getRuntime());
+            v8Array.push(array);
+            for (Object obj : (Collection) javaValue)
+            {
+                add(array, obj);
+            }
+        } else
+        {
+            throw new IllegalArgumentException("unknown type:type=" + javaValue.getClass());
         }
     }
 
@@ -294,16 +396,7 @@ public abstract class J2Object implements AutoCloseable
         {
             for (Releasable releasable : releasableList)
             {
-                if (releasable != null)
-                {
-                    try
-                    {
-                        releasable.release();
-                    } catch (Exception e)
-                    {
-                        LOGGER.warn(e.getMessage(), e);
-                    }
-                }
+                release(releasable);
             }
             releasableList = null;
         }

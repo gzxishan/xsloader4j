@@ -2,7 +2,6 @@ package cn.xishan.global.xsloaderjs.es6;
 
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Object;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.JsBridgeMethod;
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.eclipsesource.v8.V8;
@@ -11,7 +10,6 @@ import com.eclipsesource.v8.V8Function;
 import com.eclipsesource.v8.V8Object;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * @author Created by https://github.com/CLovinr on 2020-04-27.
@@ -147,8 +145,8 @@ public class ScriptEnv
 
     public void release()
     {
-        root.release();
-        root.getV8().release();
+        J2Object.release(root);
+        J2Object.release(root.getV8());
     }
 
     public void acquire()
@@ -214,5 +212,10 @@ public class ScriptEnv
             v8Array.release();
             return jsonArray;
         }
+    }
+
+    public J2Object getDevV8Object()
+    {
+        return root;
     }
 }
