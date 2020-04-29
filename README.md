@@ -1,9 +1,9 @@
 ## 项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 版本
-当前最新版本为  [**1.1.19**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.27**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.19-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.27-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.19</version>
+    <version>1.1.27</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.19</version>
+    <version>1.1.27</version>
 </dependency>
 ```
 ## 配置
@@ -459,6 +459,13 @@ cnpm install --save @babel/polyfill
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
 ## 发布记录
+
+### v1.1.27 2020/4/29
+1. 完善demo1，加入vant、mand-mobile测试例子（也支持ant-design-vue）；
+2. 默认支持自动后缀：`*.vue`,`*.jsx`,`*.js`；
+3. 加入ScriptEnv；
+4. 修复一些bug；
+
 ### v1.1.19 2020/4/10
 1. 内置`<jsx>`组件，方便显示jsx；
 
