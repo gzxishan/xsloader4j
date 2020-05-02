@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.17
+ * xsloader.js v1.1.18
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Fri Apr 24 2020 21:31:51 GMT+0800 (GMT+08:00)
+ * build time:Sat May 02 2020 16:45:13 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -1797,11 +1797,22 @@
     return path + (params ? "?" + params : "") + (hash ? hash : "");
   }
 
+  function domAttr(dom, name) {
+    var attr;
+
+    if (dom && (attr = dom.getAttribute(name)) !== null && attr !== undefined) {
+      return attr;
+    } else {
+      return undefined;
+    }
+  }
+
   function queryString2ParamsMap(argsStr, decode) {
     return _toParamsMap(argsStr, decode);
   }
 
   var base$1 = {
+    domAttr: domAttr,
     randId: randId,
     xsEval: xsEval,
     xsParseJson: xsParseJson,
@@ -2375,7 +2386,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.17"
+    version: "1.1.18"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -4780,7 +4791,7 @@
       delay: 500
     }, option.plugins.loading);
 
-    if (script.theLoaderScript.getAttribute("disable-loading") !== undefined) {
+    if (L$a.domAttr(script.theLoaderScript, "disable-loading") !== undefined) {
       option.plugins.loading.enable = false;
     }
 
