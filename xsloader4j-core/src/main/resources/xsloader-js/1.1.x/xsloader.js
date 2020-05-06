@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.18
+ * xsloader.js v1.1.19
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Sat May 02 2020 16:45:13 GMT+0800 (GMT+08:00)
+ * build time:Wed May 06 2020 21:18:01 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2386,7 +2386,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.18"
+    version: "1.1.19"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -7034,8 +7034,10 @@
       },
       getStyleBuilder: function getStyleBuilder(thiz) {
         return function (cssContent) {
+          var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
+
           if (cssContent) {
-            var id = L$s.randId();
+            var id = L$s.randId() + "_" + name;
             var count = 0;
             var styleDom = document.createElement("style");
             styleDom.setAttribute("id", id);

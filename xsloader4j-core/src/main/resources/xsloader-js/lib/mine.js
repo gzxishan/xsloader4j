@@ -29,7 +29,7 @@
 
 	root.console = {
 		assert(condition, str) {
-			if(!condition) {
+			if (!condition) {
 				$jsBridge$.warn(str);
 			}
 		}
@@ -42,14 +42,14 @@
 	root.XsloaderServer = api;
 
 	let extend = function(target) {
-		for(let i = 1; i < arguments.length; i++) {
+		for (let i = 1; i < arguments.length; i++) {
 			let obj = arguments[i];
-			if(!obj) {
+			if (!obj) {
 				continue;
 			}
-			for(let x in obj) {
+			for (let x in obj) {
 				let value = obj[x];
-				if(value === undefined) {
+				if (value === undefined) {
 					continue;
 				}
 				target[x] = obj[x];
@@ -59,13 +59,13 @@
 	};
 
 	String.prototype.replaceAll = function(str, replace) {
-		if(!(typeof str == "string")) {
+		if (!(typeof str == "string")) {
 			return this;
 		} else {
 			let as = [];
 			let len = this.length - str.length;
-			for(let i = 0; i < this.length;) {
-				if(i < len && this.substring(i, i + str.length) == str) {
+			for (let i = 0; i < this.length;) {
+				if (i < len && this.substring(i, i + str.length) == str) {
 					as.push(replace);
 					i += str.length;
 				} else {
@@ -82,14 +82,14 @@
 
 		let reg = new RegExp(`(<\s*${tag}\\s*)([^>]*)>([\\w\\W]*${q})</\s*${tag}\s*>`);
 		let regResult = reg.exec(str);
-		if(regResult) {
+		if (regResult) {
 			let content = regResult[3];
 			let attrsStr = regResult[2];
 			let attrs = {};
 			let currentIndex = regResult.index + regResult[1].length;
-			while(attrsStr) {
+			while (attrsStr) {
 				let regResult2 = /([a-zA-Z0-9\|\$:@#!\*\&\^%_\.-]+)(\s*=\s*['"])([^'"]+)(['"])/.exec(attrsStr)
-				if(regResult2) {
+				if (regResult2) {
 					currentIndex += regResult2.index;
 					let k = regResult2[1]
 					attrs[k] = {
@@ -121,7 +121,7 @@
 	};
 
 	api.compileVueTemplate = function(currentUrl, filepath, template, hasSourceMap, otherOption) {
-		if(!template) {
+		if (!template) {
 			return {};
 		}
 
@@ -136,7 +136,7 @@
 		function parseScript(scriptStr) {
 			let rs = api.parseEs6(currentUrl, filepath, scriptStr, null, hasSourceMap, otherOption);
 			rs = rs.code.trim();
-			if(rs.startsWith('"use strict";')) {
+			if (rs.startsWith('"use strict";')) {
 				rs = rs.substring('"use strict";'.length);
 			}
 			return rs.trim();
@@ -147,7 +147,7 @@
 				$jsBridge$.warn(str);
 			},
 			createFunction(code, errors) {
-				let funName="__"+$jsBridge$.shortId();
+				let funName = "__" + $jsBridge$.shortId();
 				let parsed = parseScript(`function ${funName}(){\n${code}\n}`);
 				return `(function(){${parsed}; return ${funName};})()`;
 			}
@@ -155,9 +155,9 @@
 		//String:res.render,res.staticRenderFns
 		let result = {};
 		result.render = res.render;
-		if(res.staticRenderFns) {
+		if (res.staticRenderFns) {
 			let arr = [];
-			for(let i = 0; i < res.staticRenderFns.length; i++) {
+			for (let i = 0; i < res.staticRenderFns.length; i++) {
 				arr.push(res.staticRenderFns[i]);
 			}
 			result.staticRenderFns = "[" + res.staticRenderFns.join(",") + "]";
@@ -171,34 +171,34 @@
 		let fromIndex = 0;
 		let importLength = "import".length;
 
-		while(fromIndex < script.length) {
+		while (fromIndex < script.length) {
 			let indexStart = script.indexOf("import", fromIndex);
-			if(indexStart == -1) {
+			if (indexStart == -1) {
 				break;
 			}
 
-			if(indexStart > 0 && script.charAt(indexStart - 1) == ".") {
+			if (indexStart > 0 && script.charAt(indexStart - 1) == ".") {
 				fromIndex = indexStart + importLength;
 				continue;
 			}
 
 			let index1 = script.indexOf("(", indexStart + importLength); //(index
-			if(index1 == -1 || !/^[\s]*$/.test(script.substring(indexStart + importLength, index1))) {
+			if (index1 == -1 || !/^[\s]*$/.test(script.substring(indexStart + importLength, index1))) {
 				fromIndex = indexStart + importLength;
 				continue
 			} else {
 				//找到了(
 				let bracketCount = 1;
 				let index2 = index1 + 1;
-				while(bracketCount > 0 && index2 < script.length) {
-					if(script.charAt(index2) == "(") {
+				while (bracketCount > 0 && index2 < script.length) {
+					if (script.charAt(index2) == "(") {
 						bracketCount++;
-					} else if(script.charAt(index2) == ")") {
+					} else if (script.charAt(index2) == ")") {
 						bracketCount--;
 					}
 					index2++;
 				}
-				if(bracketCount == 0) {
+				if (bracketCount == 0) {
 					script = script.substring(0, indexStart) + replaceStr + script.substring(indexStart + importLength);
 					fromIndex = index2 + (replaceStr.length - importLength);
 				} else {
@@ -214,7 +214,7 @@
 	const IMPORT_REQUIRE_REG = new RegExp(`require\\("${IMPORT_PREFIX}([^"]*)"\\)`, "g");
 
 	function __replaceRequire(code) {
-		if(code) {
+		if (code) {
 			code = code.replace(IMPORT_REQUIRE_REG, 'require.get("$1")');
 		}
 		return code;
@@ -233,7 +233,7 @@
 			replaceType: "require",
 			hasSourceMap: false,
 			currentUrl: undefined,
-			inlineSourceMap:false
+			inlineSourceMap: false
 		}, otherOption);
 
 		let option = {
@@ -245,7 +245,8 @@
 				strictMode: otherOption.strictMode,
 			},
 			sourceType: "module",
-			sourceMaps:otherOption.inlineSourceMap ? "inline" : (!otherOption.isInline && otherOption.hasSourceMap ? true : false),
+			sourceMaps: otherOption.inlineSourceMap ? "inline" : (!otherOption.isInline && otherOption.hasSourceMap ? true :
+				false),
 			filename: otherOption.currentUrl,
 			//			presets: [['es2017',{
 			//				"targets": {
@@ -283,10 +284,10 @@
 		return rs;
 	}
 
-	api.parseEs6Script=function(name,scriptContent){
+	api.parseEs6Script = function(name, scriptContent) {
 		let rs = transformScript(scriptContent, {
-			hasSourceMap:false,
-			currentUrl:name
+			hasSourceMap: false,
+			currentUrl: name
 		});
 		return rs.code;
 	}
@@ -313,11 +314,12 @@
 		}, otherOption);
 
 		let __unstrictFunMap = {};
-		if(otherOption.doStaticInclude) {
+		if (otherOption.doStaticInclude) {
 			scriptContent = $jsBridge$.staticInclude(filepath, scriptContent);
 		}
-		if(otherOption.doStaticVueTemplate) {
-			scriptContent = $jsBridge$.staticVueTemplate(currentUrl, filepath, scriptContent, hasSourceMap, "__unstrictFunMap", __unstrictFunMap);
+		if (otherOption.doStaticVueTemplate) {
+			scriptContent = $jsBridge$.staticVueTemplate(currentUrl, filepath, scriptContent, hasSourceMap, "__unstrictFunMap",
+				__unstrictFunMap);
 		}
 
 		customerScriptPart = customerScriptPart || "";
@@ -329,7 +331,7 @@
 		let parsedCode = otherOption.replaceType == "require.get" ? __replaceRequire(rs.code) : rs.code;
 		let sourceMap = rs.map ? JSON.stringify(rs.map) : null;
 		parsedCode = replaceAsyncImport(parsedCode, "__ImporT__");
-		if(otherOption.isInline) {
+		if (otherOption.isInline) {
 			return {
 				code: parsedCode,
 				sourceMap
@@ -372,7 +374,7 @@
 
 		let scriptSuffix = "\n})(" + (function() {
 			let as = [];
-			for(let k in __unstrictFunMap) {
+			for (let k in __unstrictFunMap) {
 				as.push("'" + k + "':" + __unstrictFunMap[k]);
 			}
 			let rs = "{" + as.join(",\n") + "}";
@@ -430,15 +432,15 @@
 		let scriptResult = tagExec("script", content);
 
 		let appendPrefixComment = function(str, markedComments, offset) {
-			if(!str) {
+			if (!str) {
 				return "";
 			}
-			if(offset === undefined) {
+			if (offset === undefined) {
 				offset = 0;
 			}
 
 			let strs = str.split("\n");
-			for(var i = 0; i < strs.length; i++) {
+			for (var i = 0; i < strs.length; i++) {
 				strs[i] = "//" + strs[i];
 			}
 			markedComments.push({
@@ -450,8 +452,8 @@
 
 		let charCount = function(str, c) {
 			let n = 0;
-			for(var i = 0; i < str.length; i++) {
-				if(str.charAt(i) == c) {
+			for (var i = 0; i < str.length; i++) {
+				if (str.charAt(i) == c) {
 					n++;
 				}
 			}
@@ -459,18 +461,19 @@
 		}
 
 		let markedComments = []; //标记添加的前缀注释
-		if(scriptResult) {
+		if (scriptResult) {
 			let isR = scriptResult.content.indexOf("\r\n") >= 0;
 			scriptContent = appendPrefixComment(content.substring(0, scriptResult.cindex), markedComments);
-			if(!(scriptResult.content.charAt(0) == '\r' || scriptResult.content.charAt(0) == '\n')) {
+			if (!(scriptResult.content.charAt(0) == '\r' || scriptResult.content.charAt(0) == '\n')) {
 				scriptContent += isR ? "\r\n" : "\n";
 			}
 			scriptContent += scriptResult.content;
-			if(!(scriptResult.content.charAt(scriptResult.content.length - 1) == '\n')) {
+			if (!(scriptResult.content.charAt(scriptResult.content.length - 1) == '\n')) {
 				scriptContent += isR ? "\r\n" : "\n";
 			}
 
-			scriptContent += appendPrefixComment(content.substring(scriptResult.cend), markedComments, charCount(scriptContent, '\n'));
+			scriptContent += appendPrefixComment(content.substring(scriptResult.cend), markedComments, charCount(scriptContent,
+				'\n'));
 			scriptLang = scriptResult.lang;
 
 			content = content.substring(0, scriptResult.index) + content.substring(scriptResult.index + scriptResult.length);
@@ -480,13 +483,13 @@
 		}
 
 		//去掉注释
-		while(true) {
+		while (true) {
 			let index = content.indexOf("<!--");
-			if(index == -1) {
+			if (index == -1) {
 				break;
 			}
 			let index2 = content.indexOf("-->", index + 4);
-			if(index2 != -1) {
+			if (index2 != -1) {
 				content = content.substring(0, index) + content.substring(index2 + 3);
 			}
 		}
@@ -496,9 +499,9 @@
 		let styleNames = [];
 		//处理style
 
-		while(true) {
+		while (true) {
 			let styleResult = tagExec("style", content, true);
-			if(!styleResult) {
+			if (!styleResult) {
 				break;
 			} else {
 				let finalCssContent;
@@ -511,18 +514,19 @@
 				let name = styleResult.attrs.name;
 				let scopedClass = "";
 
-				if(scoped === "scoped") {
+				if (scoped === "scoped") {
 					scoped = "true";
 				}
 
-				if(lang == "sass" || lang == "scss") {
-					if(scoped == "true") {
+
+				if (lang == "sass" || lang == "scss") {
+					if (scoped == "true") {
 						scopedClass = "scoped-scss-" + $jsBridge$.shortId();
 						cssContent = "." + scopedClass + "{\n" + cssContent + "\n}";
 					}
 					finalCssContent = this.parseSass(url, filepath, cssContent, hasSourceMap);
-				} else if(lang == "less") {
-					if(scoped == "true") {
+				} else if (lang == "less") {
+					if (scoped == "true") {
 						scopedClass = "scoped-less-" + $jsBridge$.shortId();
 						cssContent = "." + scopedClass + "{\n" + cssContent + "\n}";
 					}
@@ -548,7 +552,7 @@
 		//			template = (content.substring(0, content.length - "</template>".length)).substring("<template>".length);
 		//		}
 		let encodeBase64 = function(str) {
-			if(str) {
+			if (str) {
 				return new Base64().encode(str);
 			} else {
 				return "";
@@ -558,23 +562,30 @@
 		let theFinalCssContent = finalCssContents.join("\n");
 
 		//替换"$style--name"
-		for(let i = 0; i < styleNames.length; i++) {
+		for (let i = 0; i < styleNames.length; i++) {
 			let name = styleNames[i].name;
 			let clazz = styleNames[i].clazz;
-			if(template) {
+			if (template) {
 				template = template.replaceAll("$style--" + name, clazz);
 			}
-			if(theFinalCssContent) {
+			if (theFinalCssContent) {
 				theFinalCssContent = theFinalCssContent.replaceAll("$style--" + name, clazz);
 			}
-			if(scriptContent) {
+			if (scriptContent) {
 				scriptContent = scriptContent.replaceAll("$style--" + name, clazz);
 			}
 		}
 
+		let filename = "";
+		if (filepath) {
+			let path = filepath.replaceAll("\\", "/");
+			let index = path.lastIndexOf("/");
+			filename = path.substring(index+1).replace(/['\"\.:\*\s]/g, "_");
+		}
+
 		let customerScriptPart = '\nexports.default=exports.default||{};\n' +
 			'var __cssBase64="' + encodeBase64(theFinalCssContent) + '";\n' +
-			`var __styleObj=__styleBuilder(__decodeBase64(__cssBase64));
+			`var __styleObj=__styleBuilder(__decodeBase64(__cssBase64),'${filename}');
 			var origin__beforeCreate;
 			var origin__created;
 			var origin__mounted;
@@ -582,17 +593,17 @@
 			(function() { //服务端编译<template>
 				let strs = [];
 
-				if(scopedClasses.length) {
+				if (scopedClasses.length) {
 					let scopedClass = scopedClasses.join(" ");
 					let index = template.indexOf("<");
 					let index2 = template.indexOf(">", index + 1);
-					if(index != -1 && index2 != -1) {
+					if (index != -1 && index2 != -1) {
 						let tag = template.substring(index, index2 + 1);
 						let result = /^<\s*([a-zA-Z0-9_$\.-])/.exec(tag);
-						if(result) {
+						if (result) {
 							let tagName = result[1];
 							let regResult = tagExec(tagName, tag + "</" + tagName + ">");
-							if(regResult && regResult.attrs["class"]) {
+							if (regResult && regResult.attrs["class"]) {
 								let classObj = regResult.attrs["class"];
 								let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj.content + classObj.s2;
 								template = template.substring(0, index) +
@@ -608,11 +619,11 @@
 				}
 
 				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap, otherOption);
-				if(compiledTemplate.render) {
+				if (compiledTemplate.render) {
 					strs.push("exports.default.render=", compiledTemplate.render, ";\n");
 				}
 
-				if(compiledTemplate.staticRenderFns) {
+				if (compiledTemplate.staticRenderFns) {
 					strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns, ";\n");
 				}
 				return strs.join("");
@@ -624,6 +635,10 @@
 			
 			exports.default.beforeCreate = function() {
 			   this.$_styleObj=__styleObj&&__styleObj.init();
+			   this.$keepVueStyle=false;
+			   this.$destroyVueStyle=function(){
+				   this.$_styleObj&&this.$_styleObj.destroy();
+			   };
 			   this.__xsloader_vue=true;
 			   var rt;
 			   if(origin__beforeCreate) {
@@ -653,7 +668,8 @@
 			
 			exports.default.destroyed = function() {
 			   this.$emit('vue-destroyed',this);
-			   this.$_styleObj&&this.$_styleObj.destroy();this.$_styleObj=null;
+			   this.$keepVueStyle!==true&&this.$destroyVueStyle();
+			   this.$_styleObj=null;
 			   var rt;
 			   if(origin__destroyed) {
 			    rt = origin__destroyed.apply(this, arguments);
@@ -686,7 +702,7 @@
 			let chr1, chr2, chr3, enc1, enc2, enc3, enc4;
 			let i = 0;
 			input = _utf8_encode(input);
-			while(i < input.length) {
+			while (i < input.length) {
 				chr1 = input.charCodeAt(i++);
 				chr2 = input.charCodeAt(i++);
 				chr3 = input.charCodeAt(i++);
@@ -694,9 +710,9 @@
 				enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
 				enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
 				enc4 = chr3 & 63;
-				if(isNaN(chr2)) {
+				if (isNaN(chr2)) {
 					enc3 = enc4 = 64;
-				} else if(isNaN(chr3)) {
+				} else if (isNaN(chr3)) {
 					enc4 = 64;
 				}
 				output = output +
@@ -713,7 +729,7 @@
 			let enc1, enc2, enc3, enc4;
 			let i = 0;
 			input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-			while(i < input.length) {
+			while (i < input.length) {
 				enc1 = _keyStr.indexOf(input.charAt(i++));
 				enc2 = _keyStr.indexOf(input.charAt(i++));
 				enc3 = _keyStr.indexOf(input.charAt(i++));
@@ -722,10 +738,10 @@
 				chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
 				chr3 = ((enc3 & 3) << 6) | enc4;
 				output = output + String.fromCharCode(chr1);
-				if(enc3 != 64) {
+				if (enc3 != 64) {
 					output = output + String.fromCharCode(chr2);
 				}
-				if(enc4 != 64) {
+				if (enc4 != 64) {
 					output = output + String.fromCharCode(chr3);
 				}
 			}
@@ -737,11 +753,11 @@
 		var _utf8_encode = function(string) {
 			string = string.replace(/\r\n/g, "\n");
 			let utftext = "";
-			for(let n = 0; n < string.length; n++) {
+			for (let n = 0; n < string.length; n++) {
 				let c = string.charCodeAt(n);
-				if(c < 128) {
+				if (c < 128) {
 					utftext += String.fromCharCode(c);
-				} else if((c > 127) && (c < 2048)) {
+				} else if ((c > 127) && (c < 2048)) {
 					utftext += String.fromCharCode((c >> 6) | 192);
 					utftext += String.fromCharCode((c & 63) | 128);
 				} else {
@@ -759,12 +775,12 @@
 			let string = "";
 			let i = 0;
 			let c = c1 = c2 = 0;
-			while(i < utftext.length) {
+			while (i < utftext.length) {
 				c = utftext.charCodeAt(i);
-				if(c < 128) {
+				if (c < 128) {
 					string += String.fromCharCode(c);
 					i++;
-				} else if((c > 191) && (c < 224)) {
+				} else if ((c > 191) && (c < 224)) {
 					c2 = utftext.charCodeAt(i + 1);
 					string += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
 					i += 2;
