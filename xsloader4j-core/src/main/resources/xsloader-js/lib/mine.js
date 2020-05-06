@@ -580,7 +580,13 @@
 		if (filepath) {
 			let path = filepath.replaceAll("\\", "/");
 			let index = path.lastIndexOf("/");
-			filename = path.substring(index+1).replace(/['\"\.:\*\s]/g, "_");
+			if(index>0){
+				let i2=path.lastIndexOf("/",index-1);
+				if(i2>=0){
+					index=i2;
+				}
+			}
+			filename ="__"+ path.substring(index+1).replace(/['\"\.:\*\s]/g, "_").replaceAll("/","$");
 		}
 
 		let customerScriptPart = '\nexports.default=exports.default||{};\n' +
