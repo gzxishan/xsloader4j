@@ -578,15 +578,16 @@
 
 		let filename = "";
 		if (filepath) {
+			let dirCount = 4;
 			let path = filepath.replaceAll("\\", "/");
-			let index = path.lastIndexOf("/");
-			if(index>0){
-				let i2=path.lastIndexOf("/",index-1);
-				if(i2>=0){
-					index=i2;
-				}
+			let index = path.indexOf("/webapp/");
+			if (index > 0) {
+				path = path.substring(index);
 			}
-			filename ="__"+ path.substring(index+1).replace(/['\"\.:\*\s]/g, "_").replaceAll("/","$");
+
+			let names = path.split("/");
+			while(names.length>dirCount){names.shift();}
+			filename = "__" + names.join("$").replace(/['\"\.:\*\s]/g, "_");
 		}
 
 		let customerScriptPart = '\nexports.default=exports.default||{};\n' +
@@ -642,8 +643,10 @@
 			exports.default.beforeCreate = function() {
 			   this.$_styleObj=__styleObj&&__styleObj.init();
 			   this.$keepVueStyle=false;
+			   var that=this;
 			   this.$destroyVueStyle=function(){
-				   this.$_styleObj&&this.$_styleObj.destroy();
+				   that.$_styleObj&&that.$_styleObj.destroy();
+				   that.$_styleObj=null;
 			   };
 			   this.__xsloader_vue=true;
 			   var rt;
@@ -675,7 +678,6 @@
 			exports.default.destroyed = function() {
 			   this.$emit('vue-destroyed',this);
 			   this.$keepVueStyle!==true&&this.$destroyVueStyle();
-			   this.$_styleObj=null;
 			   var rt;
 			   if(origin__destroyed) {
 			    rt = origin__destroyed.apply(this, arguments);
