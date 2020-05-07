@@ -463,6 +463,9 @@ cnpm install --save @babel/polyfill
 
 ## 发布记录
 
+### v1.1.31 2020/5/7
+1. 完善vue模板的编译；
+
 ### v1.1.29 2020/5/2
 1. 修复loading的bug；
 
