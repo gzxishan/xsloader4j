@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.19
+ * xsloader.js v1.1.20
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed May 06 2020 21:18:01 GMT+0800 (GMT+08:00)
+ * build time:Mon May 11 2020 11:26:03 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2386,7 +2386,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.19"
+    version: "1.1.20"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3710,6 +3710,12 @@
       }
     };
 
+    invoker.appendArgs = function (url) {
+      var forArgsUrl = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : U.global.location.href;
+      var urlArgs = L$9.config().getUrlArgs(module, forArgsUrl);
+      return L$9.appendArgs2Url(url, urlArgs);
+    };
+
     invoker.require = function () {
       var h = L$9.require.apply(new ThisInvoker(invoker), arguments);
 
@@ -4708,6 +4714,11 @@
       },
       dealUrl: function dealUrl(module, url) {
         var addVersion = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+        var urlArgs = this.getUrlArgs(module, url, addVersion);
+        return L$a.appendArgs2Url(url, urlArgs);
+      },
+      getUrlArgs: function getUrlArgs(module, url) {
+        var addVersion = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
         var urlArg;
         var nameOrUrl;
 
@@ -4767,7 +4778,7 @@
           urlArg += "&_xsv=" + encodeURIComponent(L$a.env.version);
         }
 
-        return L$a.appendArgs2Url(url, urlArg);
+        return urlArg;
       },
       dealUrlArgs: function dealUrlArgs(url) {
         url = U.getPathWithRelative(location.href, url);
