@@ -643,6 +643,7 @@
 			exports.default.beforeCreate = function() {
 			   this.$_styleObj=__styleObj&&__styleObj.init();
 			   this.$keepVueStyle=false;
+			   this.$thiz=thiz;
 			   var that=this;
 			   this.$destroyVueStyle=function(){
 				   that.$_styleObj&&that.$_styleObj.destroy();

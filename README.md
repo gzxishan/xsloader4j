@@ -212,14 +212,22 @@ data-conf2="./xsloader.conf"
 ### comp1.vue
 ```vue
 <template>
-    <h1>{{info}}</h1>
+    <div>
+        <h1 :class="{...classNames}">{{info}}</h1>
+        <p>$thiz.getUrl():<span style="color:gray;">{{$thiz.getUrl()}}</span></p>
+        <p>$thiz.getUrl("../index.js"):<span style="color:gray;">{{$thiz.getUrl("../index.js")}}</span></p>
+    </div>
 </template>
 
 <script>
     export default{
         data(){
             return {
-                   info:"HelloWorld"
+                   info:"HelloWorld",
+                   classNames:{
+                        teatA:true,
+                        testB:true,
+                   }
             }
         }
     }
@@ -353,6 +361,7 @@ const ...
 - \<script\>支持的js语法同*.js
 - 支持jsx语法
 - 需要全局配置vue模块
+- 在Vue实例上添加$thiz属性（同*.js里的thiz变量），表示当前vue所在的模块对象。
 - 在Vue实例上添加$keepVueStyle属性，默认为false，表示销毁时、对应的style也会被销毁。
 - 在Vue实例上添加$destroyVueStyle()函数，用于销毁style；当使用Vue的transaction过渡动画时，可设置其包裹的组件的$keepVueStyle=true，在动画结束后手动调用此函数销毁style。
 - \<style\>：lang属性支持default（即css）、scss(推荐，也是默认值)、less；可包含多个style标签；scoped:true(scoped),false
@@ -462,6 +471,9 @@ cnpm install --save @babel/polyfill
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
 ## 发布记录
+### v...
+1. xsloader.js的模块对象增加appendArgs(url,forArgsUrl)；
+2. vue模板实例添加$thiz变量，表示当前vue模块；
 
 ### v1.1.31 2020/5/7
 1. 完善vue模板的编译；
