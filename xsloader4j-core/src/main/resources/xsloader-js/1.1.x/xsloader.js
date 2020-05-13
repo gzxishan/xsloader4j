@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.20
+ * xsloader.js v1.1.21
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon May 11 2020 11:26:03 GMT+0800 (GMT+08:00)
+ * build time:Wed May 13 2020 18:33:06 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -93,6 +93,83 @@
     }
 
     return target;
+  }
+
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function");
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) _setPrototypeOf(subClass, superClass);
+  }
+
+  function _getPrototypeOf(o) {
+    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+      return o.__proto__ || Object.getPrototypeOf(o);
+    };
+    return _getPrototypeOf(o);
+  }
+
+  function _setPrototypeOf(o, p) {
+    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+      o.__proto__ = p;
+      return o;
+    };
+
+    return _setPrototypeOf(o, p);
+  }
+
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function _assertThisInitialized(self) {
+    if (self === void 0) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return self;
+  }
+
+  function _possibleConstructorReturn(self, call) {
+    if (call && (typeof call === "object" || typeof call === "function")) {
+      return call;
+    }
+
+    return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    return function () {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (_isNativeReflectConstruct()) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   var G;
@@ -789,6 +866,20 @@
     }
   }();
 
+  function isEmptyObject(obj) {
+    if (obj === null || obj === undefined) {
+      return true;
+    } else if (!L$1.isObject(obj)) {
+      throw new Error("expected object:" + obj);
+    } else {
+      for (var k in obj) {
+        return false;
+      }
+
+      return true;
+    }
+  }
+
   var base = {
     graphPath: new GraphPath(),
     strValue2Arr: strValue2Arr,
@@ -803,7 +894,8 @@
     isLoaderEnd: function isLoaderEnd() {
       return isXsLoaderEnd;
     },
-    IE_VERSION: IE_VERSION
+    IE_VERSION: IE_VERSION,
+    isEmptyObject: isEmptyObject
   };
 
   function whichTransitionEvent() {
@@ -1598,7 +1690,7 @@
   }
 
   function randId(suffix) {
-    var id = "r" + parseInt(new Date().getTime() / 1000) + "_" + parseInt(Math.random() * 1000) + "_" + U.getAndIncIdCount();
+    var id = "r" + parseInt(new Date().getTime() / 50).toString(16) + parseInt(Math.random() * 1000).toString(16) + U.getAndIncIdCount().toString(16);
 
     if (suffix !== undefined) {
       id += suffix;
@@ -2386,7 +2478,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.20"
+    version: "1.1.21"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -4813,6 +4905,10 @@
       timeout: 30000,
       sleep: 500
     }, option.plugins.xsmsg);
+    option.plugins.ifmsg = L$a.extend({
+      connTimeout: 30000,
+      sleepTimeout: 20
+    }, option.plugins.ifmsg);
 
     if (!L$a.endsWith(option.baseUrl, "/")) {
       option.baseUrl += "/";
@@ -6749,6 +6845,8 @@
         var winObj;
 
         if (typeof iframe == "string") {
+          iframe = document.getElementById(iframe);
+
           winObj = function winObj(callback) {
             iframe.onload = function () {
               callback(this.contentWindow);
@@ -7087,8 +7185,1091 @@
     return mod;
   });
 
+  var L$t = U.global.xsloader;
+  var CONNS_MAP = {};
+  var DEBUG_OPTION = {
+    logMessage: false
+  };
+
+  var Debug = function () {
+    function Debug() {
+      _classCallCheck(this, Debug);
+    }
+
+    _createClass(Debug, [{
+      key: "logMessage",
+      set: function set(log) {
+        DEBUG_OPTION.logMessage = !!log;
+      },
+      get: function get() {
+        return DEBUG_OPTION.logMessage;
+      }
+    }]);
+
+    return Debug;
+  }();
+
+  function currentTimemillis() {
+    return new Date().getTime();
+  }
+
+  function runAfter(time, callback) {
+    return setTimeout(callback, time);
+  }
+
+  function clearRunAfter(timer) {
+    clearTimeout(timer);
+  }
+
+  var timer = null;
+
+  function destroyTimer() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  function startTimer() {
+    destroyTimer();
+    timer = setInterval(function () {
+      for (var cmd in CONNS_MAP) {
+        var obj = CONNS_MAP[cmd];
+
+        for (var id in obj.clients) {
+          obj.clients[id].checkHeart();
+        }
+
+        for (var _id in obj.selfclients) {
+          obj.selfclients[_id].checkHeart();
+        }
+      }
+    }, parseInt(5 + Math.random() * 10) * 1000);
+  }
+
+  function doSendMessage(isserver, source, msg) {
+    msg = _objectSpread2({
+      isserver: !!isserver
+    }, msg, {
+      __ifmsg: true
+    });
+
+    try {
+      source.postMessage(msg, "*");
+    } catch (e) {
+      console.error(e);
+      console.error(msg);
+    }
+  }
+
+  function checkSource(client, source) {
+    if (client && client.source != source) {
+      throw new Error("source error:", client.source, source);
+    }
+  }
+
+  var MESSAGE_LISTENER = function MESSAGE_LISTENER(event) {
+    var data = event.data,
+        source = event.source,
+        origin = event.origin;
+
+    if (L$t.isObject(data) && data.__ifmsg === true) {
+      var cmd = data.cmd,
+          fromid = data.fromid,
+          toid = data.toid,
+          mdata = data.mdata,
+          type = data.type,
+          err = data.err,
+          isserver = data.isserver;
+
+      if (DEBUG_OPTION.logMessage) {
+        console.log(location.href, " receive:");
+        console.log(data);
+      }
+
+      var obj = CONNS_MAP[cmd];
+
+      if (!obj) {
+        if (type != "ignore") {
+          doSendMessage(!isserver, source, {
+            cmd: cmd,
+            type: "ignore",
+            toid: fromid,
+            data: data
+          });
+        }
+      } else {
+        if (type == "connecting") {
+          if (!obj.server) {
+            doSendMessage(!isserver, source, {
+              cmd: cmd,
+              type: "connecting-fail",
+              toid: fromid,
+              err: "not a server,cmd=${cmd}"
+            });
+          } else {
+            if (obj.clients[fromid]) {
+              if (currentTimemillis() - obj.clients[fromid]._createTime > 10 * 1000) {
+                doSendMessage(!isserver, source, {
+                  cmd: cmd,
+                  type: "connecting-fail:duplicate",
+                  toid: fromid,
+                  err: "duplicate fromid[".concat(fromid, "],cmd=").concat(cmd)
+                });
+              }
+            } else {
+              var client = new Client(cmd, source, origin, fromid);
+              client._conntimeout = obj.server._connTimeout;
+              client._sleeptimeout = obj.server._sleepTimeout;
+              doSendMessage(!isserver, source, {
+                cmd: cmd,
+                type: "connect",
+                fromid: obj.server.id,
+                toid: fromid
+              });
+              obj.server.onConnect(client, mdata);
+            }
+          }
+        } else if (type == "connecting-fail:duplicate") {
+          console.warn(err);
+        } else if (type == "connecting-fail") {
+          var _client = obj.selfclients[toid];
+          checkSource(_client, source);
+
+          if (_client) {
+            _client.gotConnectingFail(err);
+          } else {
+            console.warn(err);
+          }
+        } else if (type == "connect") {
+          var _client2 = obj.selfclients[toid];
+          checkSource(_client2, source);
+
+          if (!_client2) {
+            doSendMessage(!isserver, source, {
+              cmd: cmd,
+              type: "connect-fail",
+              toid: fromid,
+              fromid: toid,
+              err: "client not found:clientid=".concat(toid)
+            });
+          }
+        } else if (type == "connect-fail") {
+          console.warn(err);
+        } else if (type == "connected") {
+          var _client3;
+
+          if (isserver) {
+            _client3 = obj.selfclients[toid];
+          } else {
+            _client3 = obj.clients[fromid];
+          }
+
+          checkSource(_client3, source);
+
+          if (_client3) {
+            if (isserver) {
+              _client3.gotConnect(fromid, source, origin, mdata);
+            }
+          }
+        } else if (type == "message") {
+          var _client4;
+
+          if (isserver) {
+            _client4 = obj.selfclients[toid];
+          } else {
+            _client4 = obj.clients[fromid];
+          }
+
+          checkSource(_client4, source);
+
+          if (_client4) {
+            if (isserver) {
+              _client4.gotMessage(mdata);
+            } else {
+              _client4.gotMessage(mdata);
+            }
+          }
+        } else if (type == "close") {
+          var _client5;
+
+          if (isserver) {
+            _client5 = obj.selfclients[toid];
+          } else {
+            _client5 = obj.clients[fromid];
+          }
+
+          checkSource(_client5, source);
+
+          if (_client5) {
+            _client5.close();
+          }
+        } else if (type == "closed") {
+          var _client6;
+
+          if (isserver) {
+            _client6 = obj.selfclients[toid];
+          } else {
+            _client6 = obj.clients[fromid];
+          }
+
+          checkSource(_client6, source);
+
+          if (_client6) {
+            _client6.close(false);
+          }
+        } else if (type == "heart") {
+          var _client7;
+
+          if (isserver) {
+            _client7 = obj.selfclients[toid];
+          } else {
+            _client7 = obj.clients[fromid];
+          }
+
+          checkSource(_client7, source);
+
+          if (_client7) {
+            _client7.gotHeart();
+
+            doSendMessage(!isserver, source, {
+              cmd: cmd,
+              type: "rheart",
+              toid: fromid,
+              fromid: toid
+            });
+          }
+        } else if (type == "rheart") {
+          var _client8;
+
+          if (isserver) {
+            _client8 = obj.selfclients[toid];
+          } else {
+            _client8 = obj.clients[fromid];
+          }
+
+          checkSource(_client8, source);
+
+          if (_client8) {
+            _client8.gotHeart();
+          }
+        }
+      }
+    }
+  };
+
+  var Callback = function () {
+    function Callback(thiz, callback) {
+      _classCallCheck(this, Callback);
+
+      _defineProperty(this, "thiz", void 0);
+
+      _defineProperty(this, "callback", void 0);
+
+      this.thiz = thiz;
+      this.callback = callback;
+    }
+
+    _createClass(Callback, [{
+      key: "invoke",
+      value: function invoke(args) {
+        this.callback.apply(this.thiz, args);
+      }
+    }]);
+
+    return Callback;
+  }();
+
+  Callback.call = function (self, callback) {
+    if (callback) {
+      var args = [];
+
+      for (var i = 2; i < arguments.length; i++) {
+        args.push(arguments[i]);
+      }
+
+      if (callback instanceof Callback) {
+        callback.invoke(args);
+      } else {
+        callback.apply(self, args);
+      }
+    }
+  };
+
+  var Base = function () {
+    function Base() {
+      var cmd = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "default";
+
+      _classCallCheck(this, Base);
+
+      _defineProperty(this, "_cmd", void 0);
+
+      _defineProperty(this, "_id", void 0);
+
+      this._cmd = cmd;
+      this._id = L$t.randId();
+    }
+
+    _createClass(Base, [{
+      key: "closeBase",
+      value: function closeBase() {
+        var obj = CONNS_MAP[this.cmd];
+
+        if (obj) {
+          if (!obj.server && U.isEmptyObject(obj.clients) && U.isEmptyObject(obj.selfclients)) {
+            delete CONNS_MAP[this.cmd];
+
+            if (U.isEmptyObject(CONNS_MAP)) {
+              window.removeEventListener('message', MESSAGE_LISTENER);
+              destroyTimer();
+            }
+          }
+        }
+      }
+    }, {
+      key: "cmd",
+      get: function get() {
+        return this._cmd;
+      }
+    }, {
+      key: "id",
+      get: function get() {
+        return this._id;
+      }
+    }]);
+
+    return Base;
+  }();
+
+  var Client = function (_Base) {
+    _inherits(Client, _Base);
+
+    var _super = _createSuper(Client);
+
+    function Client(cmd, source, origin, fromid) {
+      var _this;
+
+      var isself = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+
+      _classCallCheck(this, Client);
+
+      _this = _super.call(this, cmd);
+
+      _defineProperty(_assertThisInitialized(_this), "_source", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_origin", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_fromid", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_connect", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_connected", false);
+
+      _defineProperty(_assertThisInitialized(_this), "_destroyed", false);
+
+      _defineProperty(_assertThisInitialized(_this), "_onConnect", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_onConnectFail", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_isself", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_conntimeout", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_sleeptimeout", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_rtimer", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_starttime", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_failed", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_heartTimeout", 30 * 1000);
+
+      _defineProperty(_assertThisInitialized(_this), "_heartTime", 10 * 1000);
+
+      _defineProperty(_assertThisInitialized(_this), "_lastSendHeartTime", 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_lastReceiveHeartTime", 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_onHeartTimeout", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_onClosed", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_onMessage", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_onConnected", void 0);
+
+      _defineProperty(_assertThisInitialized(_this), "_createTime", currentTimemillis());
+
+      _this._source = source;
+      _this._origin = origin;
+      _this._fromid = fromid;
+      _this._isself = isself;
+      return _this;
+    }
+
+    _createClass(Client, [{
+      key: "isTimeout",
+      value: function isTimeout() {
+        var dt = currentTimemillis() - this._starttime;
+
+        return dt > this._conntimeout;
+      }
+    }, {
+      key: "connect",
+      value: function connect(conndata) {
+        var _this2 = this;
+
+        if (!this.isself) {
+          throw new Error("not allowed for server client!");
+        } else if (this.connected) ; else if (this.destroyed) {
+          throw new Error("destroyed!");
+        } else if (!this.source) {
+          throw new Error("no source!");
+        } else {
+          if (!this._starttime || this._failed) {
+            this._failed = false;
+            this._starttime = currentTimemillis();
+            this._connect = false;
+          } else if (this._connect) {
+            return;
+          }
+
+          if (U.isEmptyObject(CONNS_MAP)) {
+            window.addEventListener('message', MESSAGE_LISTENER);
+            startTimer();
+          }
+
+          var msg = {
+            cmd: this.cmd,
+            type: "connecting",
+            fromid: this.id,
+            mdata: conndata
+          };
+
+          if (!CONNS_MAP[this.cmd]) {
+            CONNS_MAP[this.cmd] = {
+              server: null,
+              clients: {},
+              selfclients: {}
+            };
+          }
+
+          CONNS_MAP[this.cmd].selfclients[this.id] = this;
+          doSendMessage(false, this.source, msg);
+          this._rtimer = runAfter(this._sleeptimeout, function () {
+            if (_this2.connected || _this2._failed || _this2._connect || _this2._destroyed) {
+              return;
+            } else if (_this2.isTimeout()) {
+              if (!_this2.connected) {
+                _this2._failed = true;
+                Callback.call(_this2, _this2._onConnectFail, {
+                  cmd: _this2.cmd,
+                  type: "timeout:connecting"
+                });
+              }
+            } else {
+              _this2.connect(conndata);
+            }
+          });
+        }
+      }
+    }, {
+      key: "checkHeart",
+      value: function checkHeart() {
+        if (this.connected && !this._destroyed) {
+          var time = currentTimemillis();
+
+          if (time - this._lastReceiveHeartTime > this._heartTimeout) {
+            try {
+              Callback.call(this, this._onHeartTimeout);
+            } finally {
+              this.close();
+            }
+          } else if (time - this._lastSendHeartTime > this._heartTime) {
+            this._lastSendHeartTime = time;
+            doSendMessage(!this.isself, this.source, {
+              cmd: this.cmd,
+              type: "heart",
+              fromid: this.id,
+              toid: this.fromid
+            });
+          }
+        }
+      }
+    }, {
+      key: "gotHeart",
+      value: function gotHeart() {
+        this._lastReceiveHeartTime = currentTimemillis();
+      }
+    }, {
+      key: "checkClientConnected",
+      value: function checkClientConnected(server) {
+        var _this3 = this;
+
+        if (!this._connected && !this._destroyed && !this._failed) {
+          if (!this._starttime) {
+            this._starttime = currentTimemillis();
+            this._connect = true;
+          }
+
+          if (this.isTimeout()) {
+            try {
+              Callback.call(this, server._onConnectTimeout, this);
+            } finally {
+              this.close();
+            }
+          } else {
+            this._rtimer = runAfter(this._sleeptimeout, function () {
+              _this3.checkClientConnected(server);
+            });
+          }
+        }
+      }
+    }, {
+      key: "gotConnectingFail",
+      value: function gotConnectingFail(err) {
+        this._failed = true;
+        Callback.call(this, this._onConnectFail, {
+          cmd: this.cmd,
+          type: "fail:connecting",
+          err: err
+        });
+      }
+    }, {
+      key: "gotConnect",
+      value: function gotConnect(fromid, source, origin, conndata) {
+        var _this4 = this;
+
+        this._fromid = fromid;
+
+        if (!this._connect && !this._connected && !this._destroyed && !this._failed) {
+          this._connect = true;
+
+          var onConn = this._onConnect || function (source, origin, conndata, callback) {
+            var mine = location.protocol + "//" + location.host;
+            callback(mine == origin, null);
+          };
+
+          var callback = function callback(isAccept, errOrConndata) {
+            if (isAccept) {
+              _this4.gotConnected();
+
+              doSendMessage(false, _this4.source, {
+                cmd: _this4.cmd,
+                type: "connected",
+                fromid: _this4.id,
+                toid: _this4.fromid
+              });
+
+              var onConnected = _this4._onConnected || function () {
+                _this4.close(false);
+
+                doSendMessage(true, _this4.source, {
+                  cmd: _this4.cmd,
+                  type: "close",
+                  mdata: "not exists connected handle",
+                  fromid: _this4.id,
+                  toid: _this4.fromid
+                });
+              };
+
+              Callback.call(_this4, onConnected);
+            } else {
+              doSendMessage(false, _this4.source, {
+                cmd: _this4.cmd,
+                type: "connected-fail",
+                err: errOrConndata,
+                fromid: _this4.id,
+                toid: _this4.fromid
+              });
+            }
+          };
+
+          Callback.call(this, onConn, source, origin, conndata, callback);
+        }
+      }
+    }, {
+      key: "gotConnected",
+      value: function gotConnected() {
+        clearRunAfter(this._rtimer);
+        this._rtimer = null;
+        var time = currentTimemillis();
+        this._lastSendHeartTime = time;
+        this._lastReceiveHeartTime = time;
+        this._connected = true;
+      }
+    }, {
+      key: "gotMessage",
+      value: function gotMessage(mdata) {
+        Callback.call(this, this._onMessage, mdata);
+      }
+    }, {
+      key: "close",
+      value: function close() {
+        var sendClosed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+
+        try {
+          var obj = CONNS_MAP[this.cmd];
+
+          if (obj) {
+            if (this.isself) {
+              if (obj.selfclients) {
+                delete obj.selfclients[this.id];
+              }
+            } else {
+              if (obj.clients) {
+                delete obj.clients[this.fromid];
+              }
+            }
+          }
+
+          if (this._rtimer) {
+            clearRunAfter(this._rtimer);
+            this._rtimer = null;
+          }
+
+          this._connected = false;
+          this._destroyed = true;
+          this.closeBase();
+
+          if (sendClosed && this.source) {
+            doSendMessage(!this.isself, this.source, {
+              cmd: this.cmd,
+              type: "closed",
+              fromid: this.id,
+              toid: this.fromid
+            });
+          }
+        } finally {
+          Callback.call(this, this._onClosed);
+        }
+      }
+    }, {
+      key: "sendMessage",
+      value: function sendMessage(data) {
+        if (this.destroyed) {
+          throw new Error("destroyed!");
+        } else if (this.connected) {
+          doSendMessage(!this.isself, this.source, {
+            cmd: this.cmd,
+            type: "message",
+            mdata: data,
+            fromid: this.id,
+            toid: this.fromid
+          });
+        } else {
+          throw new Error("not connected!");
+        }
+      }
+    }, {
+      key: "source",
+      get: function get() {
+        return this._source;
+      },
+      set: function set(source) {
+        if (this._source) {
+          throw new Error("already exists source:id=".concat(this.id));
+        }
+
+        this._source = source;
+      }
+    }, {
+      key: "isself",
+      get: function get() {
+        return this._isself;
+      }
+    }, {
+      key: "origin",
+      get: function get() {
+        return this._origin;
+      }
+    }, {
+      key: "fromid",
+      get: function get() {
+        return this._fromid;
+      }
+    }, {
+      key: "connected",
+      get: function get() {
+        return this._connected;
+      }
+    }, {
+      key: "destroyed",
+      get: function get() {
+        return this._destroyed;
+      }
+    }, {
+      key: "onHeartTimeout",
+      set: function set(onHeartTimeout) {
+        this._onHeartTimeout = onHeartTimeout ? new Callback(this, onHeartTimeout) : null;
+      },
+      get: function get() {
+        return this._onHeartTimeout && this._onHeartTimeout.callback;
+      }
+    }, {
+      key: "onClosed",
+      set: function set(onClosed) {
+        this._onClosed = onClosed ? new Callback(this, onClosed) : null;
+      },
+      get: function get() {
+        return this._onClosed && this._onClosed.callback;
+      }
+    }, {
+      key: "onMessage",
+      set: function set(onMessage) {
+        this._onMessage = onMessage ? new Callback(this, onMessage) : null;
+      },
+      get: function get() {
+        return this._onMessage && this._onMessage.callback;
+      }
+    }]);
+
+    return Client;
+  }(Base);
+
+  var Server = function (_Base2) {
+    _inherits(Server, _Base2);
+
+    var _super2 = _createSuper(Server);
+
+    function Server(cmd) {
+      var _this5;
+
+      _classCallCheck(this, Server);
+
+      _this5 = _super2.call(this, cmd);
+
+      _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
+
+      _defineProperty(_assertThisInitialized(_this5), "_destroyed", false);
+
+      _defineProperty(_assertThisInitialized(_this5), "_onConnect", void 0);
+
+      _defineProperty(_assertThisInitialized(_this5), "_onConnectTimeout", void 0);
+
+      _defineProperty(_assertThisInitialized(_this5), "_onConnected", void 0);
+
+      _defineProperty(_assertThisInitialized(_this5), "_conntimeout", void 0);
+
+      _defineProperty(_assertThisInitialized(_this5), "_sleeptimeout", void 0);
+
+      _this5._id = L$t.randId();
+
+      _this5.onConnectTimeout = function (client) {
+        console.warn("client connect timeout:", client);
+      };
+
+      return _this5;
+    }
+
+    _createClass(Server, [{
+      key: "onConnect",
+      value: function onConnect(client, conndata) {
+        var _this6 = this;
+
+        var onConn = this._onConnect || function (client, conndata, callback) {
+          var mine = location.protocol + "//" + location.host;
+          callback(mine == client.origin, null);
+        };
+
+        var callback = function callback(isAccept, errOrConndata) {
+          if (isAccept) {
+            var obj = CONNS_MAP[_this6.cmd];
+            obj.clients[client.fromid] = client;
+            client.gotConnected();
+            doSendMessage(true, client.source, {
+              cmd: _this6.cmd,
+              type: "connected",
+              mdata: errOrConndata,
+              fromid: _this6.id,
+              toid: client.fromid
+            });
+
+            var onConnected = _this6._onConnected || function () {
+              client.close(false);
+              doSendMessage(true, client.source, {
+                cmd: _this6.cmd,
+                type: "close",
+                mdata: "not exists connected handle",
+                fromid: _this6.id,
+                toid: client.fromid
+              });
+            };
+
+            Callback.call(_this6, onConnected, client);
+            client.checkClientConnected(_this6);
+          } else {
+            doSendMessage(true, client.source, {
+              cmd: _this6.cmd,
+              type: "connected-fail",
+              err: errOrConndata,
+              fromid: _this6.id,
+              toid: client.fromid
+            });
+          }
+        };
+
+        Callback.call(this, onConn, client, conndata, callback);
+      }
+    }, {
+      key: "close",
+      value: function close() {
+        if (this._destroyed) {
+          throw new Error("already destroyed!");
+        } else {
+          var obj = CONNS_MAP[this.cmd];
+
+          if (!obj.server || obj.server != this) {
+            throw new Error("server cmd not match:cmd=".concat(this.cmd));
+          } else {
+            this._destroyed = true;
+            this._start = false;
+
+            for (var k in obj.clients) {
+              try {
+                var client = obj.clients[k];
+                client.close();
+              } catch (e) {
+                console.error(e);
+              }
+            }
+
+            obj.clients = {};
+            obj.server = null;
+            this.closeBase();
+          }
+        }
+      }
+    }, {
+      key: "listen",
+      value: function listen() {
+        if (CONNS_MAP[this.cmd]) {
+          throw new Error("already listened:cmd=".concat(this.cmd));
+        } else {
+          if (U.isEmptyObject(CONNS_MAP)) {
+            window.addEventListener('message', MESSAGE_LISTENER);
+            startTimer();
+          }
+
+          if (!CONNS_MAP[this.cmd]) {
+            CONNS_MAP[this.cmd] = {
+              server: null,
+              clients: {},
+              selfclients: {}
+            };
+          }
+
+          CONNS_MAP[this.cmd].server = this;
+          this._start = true;
+        }
+      }
+    }]);
+
+    return Server;
+  }(Base);
+
+  var IfmsgServer = function () {
+    function IfmsgServer(cmd, option) {
+      _classCallCheck(this, IfmsgServer);
+
+      _defineProperty(this, "_server", void 0);
+
+      var gconfig = L$t.config().plugins.ifmsg;
+      option = L$t.extend({
+        connTimeout: gconfig.connTimeout,
+        sleepTimeout: gconfig.sleepTimeout
+      }, option);
+      this._server = new Server(cmd);
+      this._server._conntimeout = option.connTimeout;
+      this._server._sleeptimeout = option.sleepTimeout;
+    }
+
+    _createClass(IfmsgServer, [{
+      key: "listen",
+      value: function listen() {
+        this._server.listen();
+      }
+    }, {
+      key: "close",
+      value: function close() {
+        this._server.close();
+      }
+    }, {
+      key: "onConnect",
+      set: function set(onConnect) {
+        this._server._onConnect = onConnect ? new Callback(this, onConnect) : null;
+      },
+      get: function get() {
+        return this._server._onConnect && this._server._onConnect.callback;
+      }
+    }, {
+      key: "onConnectTimeout",
+      set: function set(onConnectTimeout) {
+        this._server._onConnectTimeout = onConnectTimeout ? new Callback(this, onConnectTimeout) : null;
+      },
+      get: function get() {
+        return this._server._onConnectTimeout && this._server._onConnectTimeout.callback;
+      }
+    }, {
+      key: "onConnected",
+      set: function set(onConnected) {
+        this._server._onConnected = onConnected ? new Callback(this, onConnected) : null;
+      },
+      get: function get() {
+        return this._server._onConnected && this._server._onConnected.callback;
+      }
+    }, {
+      key: "isStart",
+      get: function get() {
+        return this._server._start;
+      }
+    }, {
+      key: "isDestroyed",
+      get: function get() {
+        return this._server._destroyed;
+      }
+    }, {
+      key: "cmd",
+      get: function get() {
+        return this._server.cmd;
+      }
+    }]);
+
+    return IfmsgServer;
+  }();
+
+  var IfmsgClient = function () {
+    function IfmsgClient(cmd, option) {
+      _classCallCheck(this, IfmsgClient);
+
+      _defineProperty(this, "_client", void 0);
+
+      var gconfig = L$t.config().plugins.ifmsg;
+      option = L$t.extend({
+        connTimeout: gconfig.connTimeout,
+        sleepTimeout: gconfig.sleepTimeout
+      }, option);
+      this._client = new Client(cmd, null, null, null, true);
+      this._client._conntimeout = option.connTimeout;
+      this._client._sleeptimeout = option.sleepTimeout;
+
+      this.onConnectFail = function (err) {
+        console.warn(err);
+      };
+    }
+
+    _createClass(IfmsgClient, [{
+      key: "connIframe",
+      value: function connIframe(iframe, conndata) {
+        var _this7 = this;
+
+        if (typeof iframe == "string") {
+          iframe = document.getElementById(iframe);
+
+          var fun = function fun() {
+            iframe.removeEventListener("load", fun);
+            var source = iframe.contentWindow;
+            _this7._client.source = source;
+
+            _this7._client.connect(conndata);
+          };
+
+          iframe.addEventListener("load", fun);
+        } else {
+          var source = iframe.contentWindow;
+          this._client.source = source;
+
+          this._client.connect(conndata);
+        }
+      }
+    }, {
+      key: "connParent",
+      value: function connParent(conndata) {
+        this._client.source = window.parent;
+
+        this._client.connect(conndata);
+      }
+    }, {
+      key: "connTop",
+      value: function connTop(conndata) {
+        this._client.source = window.top;
+
+        this._client.connect(conndata);
+      }
+    }, {
+      key: "connOpener",
+      value: function connOpener(conndata) {
+        this._client.source = window.opener;
+
+        this._client.connect(conndata);
+      }
+    }, {
+      key: "sendMessage",
+      value: function sendMessage(data) {
+        this._client.sendMessage(data);
+      }
+    }, {
+      key: "onConnect",
+      set: function set(onConnect) {
+        this._client._onConnect = onConnect ? new Callback(this, onConnect) : null;
+      },
+      get: function get() {
+        return this._client._onConnect && this._client._onConnect.callback;
+      }
+    }, {
+      key: "onConnected",
+      set: function set(onConnected) {
+        this._client._onConnected = onConnected ? new Callback(this, onConnected) : null;
+      },
+      get: function get() {
+        return this._client._onConnected && this._client._onConnected.callback;
+      }
+    }, {
+      key: "onHeartTimeout",
+      set: function set(onHeartTimeout) {
+        this._client.onHeartTimeout = onHeartTimeout;
+      },
+      get: function get() {
+        return this._client.onHeartTimeout;
+      }
+    }, {
+      key: "onClosed",
+      set: function set(onClosed) {
+        this._client.onClosed = onClosed;
+      },
+      get: function get() {
+        return this._client.onClosed;
+      }
+    }, {
+      key: "onMessage",
+      set: function set(onMessage) {
+        this._client.onMessage = onMessage;
+      },
+      get: function get() {
+        return this._client.onMessage;
+      }
+    }, {
+      key: "onConnectFail",
+      set: function set(callback) {
+        this._client._onConnectFail = callback ? new Callback(this, callback) : null;
+      },
+      get: function get() {
+        return this._client._onConnectFail && this._client._onConnectFail.callback;
+      }
+    }]);
+
+    return IfmsgClient;
+  }();
+
+  L$t.define("ifmsg", {
+    Server: IfmsgServer,
+    Client: IfmsgClient,
+    debug: new Debug()
+  });
+
   var G$7 = U.global;
-  var L$t = G$7.xsloader;
+  var L$u = G$7.xsloader;
   var http = G$7._xshttp_request_;
   var DATA_CONF = "data-conf",
       DATA_CONFX = "data-xsloader-conf";
@@ -7098,9 +8279,9 @@
       DATA_MAINX = "data-xsloader-main";
   var DATA_CONF_TYPE = "data-conf-type";
   var serviceConfigUrl;
-  var dataConf = L$t.script().getAttribute(DATA_CONF) || L$t.script().getAttribute(DATA_CONFX);
-  var dataMain = L$t.script().getAttribute(DATA_MAIN) || L$t.script().getAttribute(DATA_MAINX);
-  var dataConfType = L$t.script().getAttribute(DATA_CONF_TYPE);
+  var dataConf = L$u.script().getAttribute(DATA_CONF) || L$u.script().getAttribute(DATA_CONFX);
+  var dataMain = L$u.script().getAttribute(DATA_MAIN) || L$u.script().getAttribute(DATA_MAINX);
+  var dataConfType = L$u.script().getAttribute(DATA_CONF_TYPE);
 
   if (dataConfType !== "json" && dataConfType != "js") {
     dataConfType = "auto";
@@ -7117,7 +8298,7 @@
         name = "index";
       }
 
-      if (L$t.endsWith(name, ".html")) {
+      if (L$u.endsWith(name, ".html")) {
         name = name.substring(0, name.length - 5);
       }
 
@@ -7130,7 +8311,7 @@
     }
 
     function extendConfig(config) {
-      config = L$t.extendDeep({
+      config = L$u.extendDeep({
         properties: {},
         main: {
           getPath: function getPath() {
@@ -7170,14 +8351,14 @@
           var conf;
 
           if (dataConfType == "js") {
-            conf = L$t.xsEval(confText);
+            conf = L$u.xsEval(confText);
           } else if (dataConfType == "json") {
-            conf = L$t.xsParseJson(confText);
+            conf = L$u.xsParseJson(confText);
           } else {
-            if (L$t.startsWith(url, location.protocol + "//" + location.host + "/")) {
-              conf = L$t.xsEval(confText);
+            if (L$u.startsWith(url, location.protocol + "//" + location.host + "/")) {
+              conf = L$u.xsEval(confText);
             } else {
-              conf = L$t.xsParseJson(confText);
+              conf = L$u.xsParseJson(confText);
             }
           }
 
@@ -7187,7 +8368,7 @@
             conf.beforeDealProperties();
           }
 
-          conf = L$t.dealProperties(conf, conf.properties);
+          conf = L$u.dealProperties(conf, conf.properties);
 
           if (isLocal && conf.service.hasGlobal) {
             loadServiceConfig("global servie", conf.service.confUrl, function (globalConfig) {
@@ -7272,10 +8453,10 @@
       conf.service.resUrls && Array.pushAll(resUrls, conf.service.resUrls);
       localConfig !== conf && localConfig.service.resUrls && Array.pushAll(resUrls, localConfig.service.resUrls);
 
-      L$t.resUrlBuilder = function (groupModule) {
+      L$u.resUrlBuilder = function (groupModule) {
         var as = [];
         U.each(resUrls, function (url) {
-          as.push(L$t.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
+          as.push(L$u.appendArgs2Url(url, "m=" + encodeURIComponent(groupModule)));
         });
         return as;
       };
@@ -7285,7 +8466,7 @@
       loader.depsPaths = loader.depsPaths || {};
 
       if (mainPath.indexOf("!") != -1) {
-        var theConfig = L$t(loader);
+        var theConfig = L$u(loader);
         mainName = "_plugin_main_";
         var deps = [];
 
@@ -7300,31 +8481,31 @@
         }
 
         deps.push(mainPath);
-        L$t.define(mainName, deps, function () {}).then({
+        L$u.define(mainName, deps, function () {}).then({
           absUrl: pageHref
         });
-      } else if (!L$t.hasDefine(mainName)) {
+      } else if (!L$u.hasDefine(mainName)) {
         loader.depsPaths[mainName] = mainPath;
-        L$t(loader);
+        L$u(loader);
       } else {
-        L$t(loader);
+        L$u(loader);
       }
 
       loader.defineFunction[mainName] = function (originCallback, originThis, originArgs) {
-        if (L$t.isFunction(conf.main.before)) {
+        if (L$u.isFunction(conf.main.before)) {
           conf.main.before.call(conf, mainName);
         }
 
         var rt = originCallback.apply(originThis, originArgs);
 
-        if (L$t.isFunction(conf.main.after)) {
+        if (L$u.isFunction(conf.main.after)) {
           conf.main.after.call(conf, mainName);
         }
 
         return rt;
       };
 
-      L$t.require([mainName], function (main) {}).error(function (err, invoker) {
+      L$u.require([mainName], function (main) {}).error(function (err, invoker) {
         if (invoker) {
           console.error("error occured:invoker.url=", invoker.getUrl());
         }
@@ -7334,13 +8515,13 @@
       });
     }
 
-    L$t.asyncCall(startLoad, true);
+    L$u.asyncCall(startLoad, true);
   };
 
   if (dataConf) {
     serviceConfigUrl = U.getPathWithRelative(location.href, dataConf);
-  } else if (dataConf = L$t.script().getAttribute(DATA_CONF2) || L$t.script().getAttribute(DATA_CONF2X)) {
-    serviceConfigUrl = U.getPathWithRelative(L$t.scriptSrc(), dataConf);
+  } else if (dataConf = L$u.script().getAttribute(DATA_CONF2) || L$u.script().getAttribute(DATA_CONF2X)) {
+    serviceConfigUrl = U.getPathWithRelative(L$u.scriptSrc(), dataConf);
   } else {
     initFun = null;
   }
