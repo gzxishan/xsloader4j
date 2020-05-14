@@ -1,6 +1,7 @@
 package cn.xishan.global.xsloaderjs;
 
 import cn.xishan.global.xsloaderjs.es6.JsFilter;
+import cn.xishan.global.xsloaderjs.htmv.HtmvFilterer;
 import cn.xishan.oftenporter.porter.core.advanced.IConfigData;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
@@ -49,6 +50,12 @@ public class XsloaderFilter implements Filterer
      */
     @Property(name = "xsloader.disabled", defaultVal = "false")
     private Boolean disabled;
+
+    /**
+     * 是否启用htmv，默认false。
+     */
+    @Property(name = "xsloader.htmv.enable", defaultVal = "false")
+    private Boolean enableHtmv;
 
     /**
      * 用于开发。
@@ -120,6 +127,13 @@ public class XsloaderFilter implements Filterer
             JsFilter jsFilter = new JsFilter();
             autoSetter.forInstance(new Object[]{jsFilter});
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
+
+            if (enableHtmv)
+            {
+                HtmvFilterer htmvFilterer = new HtmvFilterer(servletContext);
+                autoSetter.forInstance(new Object[]{htmvFilterer});
+                WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(htmvFilterer);
+            }
 
             content = FileTool.getData(getClass().getResourceAsStream(
                     "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js" : "xsloader.js")), 2048);

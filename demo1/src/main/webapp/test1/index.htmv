@@ -1,0 +1,40 @@
+<template>
+	 <div style="text-align:center;">
+            <comp1/>
+            <comp2/>
+            <jsx :x="getVnode" id="123" :name="'name'" @click="onClickVnodex" class="test-class"/>
+        </div>
+</template>
+
+<script>
+import "css!static/test.scss";//不是以“.”开头的路径相对于baseUrl
+import "css!static/test.less";
+import Vue from "vue";
+import comp1 from "./es-main/vue/comp1.vue";//需要加入文件后缀，当前目录需要用"./"、否则是相对于baseUrl
+
+console.log(thiz.getUrl());//http://localhost:8070/test1/es-main/index.js?v=20200130-02
+console.log(thiz.getUrl("./lib/other.js"));//http://localhost:8070/test1/es-main/lib/other.js?v=20200130-02
+
+export default {
+
+    methods:{
+        getVnode(){
+            return (<p on={{click:this.onClickp}}>
+                来自函数
+            </p>);
+        },
+        onClickVnodex($event){
+            alert("onClickVnodex:"+$event);
+        },
+        onClickp($event){
+            alert("onClickp:"+$event);
+        }
+    },
+    components:{
+        comp1,
+        comp2:()=>import("./es-main/jsx/comp2.jsx")//支持异步加载
+    }
+
+}
+
+</script>

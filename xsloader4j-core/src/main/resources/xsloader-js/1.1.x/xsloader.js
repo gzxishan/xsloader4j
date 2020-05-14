@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.21
+ * xsloader.js v1.1.22
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed May 13 2020 18:33:06 GMT+0800 (GMT+08:00)
+ * build time:Thu May 14 2020 18:04:51 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -213,7 +213,7 @@
 
   var ABSOLUTE_PROTOCOL_REG = /^(([a-zA-Z0-9_]*:\/\/)|(\/)|(\/\/))/;
   var ABSOLUTE_PROTOCOL_REG2 = /^([a-zA-Z0-9_]+:)\/\/([^/\s]+)/;
-  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue", ".*"];
+  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue", ".*", ".htmv_vue"];
   var L = global$1.xsloader;
 
   function isJsFile(path) {
@@ -2478,7 +2478,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.21"
+    version: "1.1.22"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -8465,7 +8465,15 @@
       loader.defineFunction = loader.defineFunction || {};
       loader.depsPaths = loader.depsPaths || {};
 
-      if (mainPath.indexOf("!") != -1) {
+      if (L$u.endsWith(location.pathname, ".htmv")) {
+        if (G$7.__htmv_init_bridge_) {
+          G$7.__htmv_init_bridge_();
+        }
+
+        mainName = "htmv-main";
+        loader.depsPaths[mainName] = location.href;
+        L$u(loader);
+      } else if (mainPath.indexOf("!") != -1) {
         var theConfig = L$u(loader);
         mainName = "_plugin_main_";
         var deps = [];
