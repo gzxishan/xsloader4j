@@ -84,8 +84,10 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
                             }
 
                             String script = appScript;
+                            script = script.replace("#{app-class}", "vue-app");
                             script = script.replace("#{app-id}", "vue-app");
-                            script = script.replace("#{app}", servletContext.getContextPath()+path + "_vue");//需要配合IFileContentGetter.getContent
+                            script = script.replace("#{app}",
+                                    servletContext.getContextPath() + path + "_vue");//需要配合IFileContentGetter.getContent
 
                             document.body().append("\n<script type='text/javascript'>\n" +
                                     script +
@@ -146,12 +148,13 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             loader.attr("src", servletContext.getContextPath() + "/xsloader.js");
             loader.attr("data-conf2", loaderConf);
             loader.attr("type", "text/javascript");
-            loader.attr("async","async");
+            loader.attr("async", "async");
             loader.attr("charset", "utf-8");
             loader.attr("id", "xsloader-script");
             head.prependChild(loader);
 
-            if(document.body().getElementById("vue-app")==null){
+            if (document.body().getElementById("vue-app") == null)
+            {
                 Element app = new Element("div");
                 app.attr("id", "vue-app");
                 document.body().prependChild(app);
