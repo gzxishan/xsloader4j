@@ -190,6 +190,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             Item item = path2Content.get(path);
             if (!item.isChange() && !HttpCacheUtil.isCacheIneffectiveWithModified(item.lastModified, request, response))
             {
+                HttpCacheUtil.setCacheWithModified(cacheSeconds, item.lastModified, response);
                 return null;
             } else
             {
