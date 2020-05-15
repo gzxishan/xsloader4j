@@ -180,6 +180,12 @@ public class Es6Wrapper
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
         {
+            if (vueContent != null)
+            {//替换`\jsx与\jsx`：临时解决HBuilderX对Vue文件暂不支持jsx语法的问题
+                vueContent = vueContent.replace("`\\jsx", "");
+                vueContent = vueContent.replace("\\jsx`", "");
+            }
+
             Result<String> result = new Result<>();
             j2BaseInterface.threadLocal.set(result);
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
