@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.1.40</version>
+    <version>1.1.41</version>
     <modules>
         <module>xsloader4j-core</module>
         <module>xsloader4j-spring-boot-embed-starter</module>
@@ -15,7 +15,7 @@
     </modules>
 
     <name>xsloader4j</name>
-    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017)、*.scss、*.less、*.vue、*.jsx。</description>
+    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017)、*.scss、*.less、*.vue、*.htmv（格式同vue，但可以直接访问）、*.jsx。</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <licenses>
@@ -50,7 +50,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <project.OftenPorter.version>1.2.96</project.OftenPorter.version>
+        <project.OftenPorter.version>1.2.97</project.OftenPorter.version>
         <project.log4j12.version>1.7.30</project.log4j12.version>
     </properties>
 

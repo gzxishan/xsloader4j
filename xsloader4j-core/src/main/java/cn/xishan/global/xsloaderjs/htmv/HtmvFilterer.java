@@ -269,7 +269,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
         if (starHtmvPath == null)
         {
             starHtmvPath = new HtmvPath("*",
-                    ResourceUtil.getAbsoluteResourceString("/xsloader-js/htmv/pc.html", "utf-8"));
+                    ResourceUtil.getAbsoluteResourceString("/xsloader-js/htmv/default.html", "utf-8"));
         }
     }
 
