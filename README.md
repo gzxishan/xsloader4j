@@ -1,6 +1,6 @@
-## 项目介绍
+## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
-## 版本
+## 二、版本
 当前最新版本为  [**1.1.31**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
 ![Version](https://img.shields.io/badge/Version-1.1.31-brightgreen.svg)
@@ -10,7 +10,7 @@
 
 [码云](https://gitee.com/xishankeji/xsloader4j)
 
-## 运行环境
+## 三、运行环境
 - JDK 8
 - servlet3
 - Windows,Linux,Mac
@@ -21,7 +21,7 @@
 - Windows10
 - CentOS 7.4，7.5
 
-## 安装
+## 四、安装
 - spring boot嵌入式版（内嵌tomcat等容器，通过main函数启动）
 ```xml
 <dependency>
@@ -38,7 +38,7 @@
     <version>1.1.31</version>
 </dependency>
 ```
-## 配置
+## 五、配置
 
 ### 1、启动配置
 在资源目录（如src/main/resources）下新建xsloader4j.properties：
@@ -54,7 +54,9 @@ xsloader.es6.extensions=
 xsloader.es6.v8flags=
 xsloader.conf.properties.staticUrlPrefix=https://xxxxx.cn/xxx
 xsloader.conf.properties.prop1=xxx
-
+xsloader.htmv.enable=false
+xsloader.htmv.paths[0]=* to /WEB-INF/htmv/default.html
+xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 ```
 - xsloader.es6.polyfill：是否使用polyfill，为true时、会自动加载polyfill（7.8.3），默认为true。
 - xsloader.es6.debug：是否为debug模式，当为true时，文件修改后会重新进行转换。
@@ -63,8 +65,9 @@ xsloader.conf.properties.prop1=xxx
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（应该在spring boot嵌入式版本中使用），如“/static”。
 - xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx"，且取值只能是[.js,.jsx,.vue,.js+]中的值
 - xsloader.es6.v8flags：v8引擎flags
-- xsloader.conf.properties.xxx参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
-
+- xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
+- xsloader.htmv.enable：是否启用htmv，默认为false
+- xsloader.htmv.paths：配置默认的html模板（可选）
 ### 2、xsloader配置
 在资源目录（如src/main/resources）下新建xsloader-conf.js,参考内容如下：
 - 该配置文件的访问路径为：/contextPath/xsloader.conf
@@ -158,7 +161,7 @@ xsloader.conf.properties.prop1=xxx
      }
 }
 ```
-## 使用
+## 六、使用
 - xsloader脚本引入：
 ```html
 <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
@@ -289,7 +292,7 @@ new Vue({
 });
 ```
 
-## 其他说明
+## 七、其他说明
 
 ### 1、打包说明
 - 打包成指定系统的war包后会增加20Mb左右，例如打包到linux系统下运行，可在`pom.xml`的plugins里排除windows与mac的j2v8依赖包：
@@ -329,7 +332,7 @@ new Vue({
 
 #### 1）*.js
 - 语法支持到es2017
-- 支持jsx语法（需要全局配置vue模块）
+- 支持jsx语法
 - 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象）可以直接显示编译后的jsx对象
 ```
 <div>
@@ -344,7 +347,17 @@ export ...
 const ...
 ```
 - thiz变量指向当前模块，更多请见[xsloader的this](https://github.com/gzxishan/xsloader/wiki/2.define,require,invoker%E7%AD%89#5this%E4%B8%8E_invoker_)
-
+- 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
+```json
+{
+  "paths":{
+       "vue":"你的vue2的路径/vue.min.js"
+  },
+  "deps":{
+      "*":"vue"//当有vue组件、jsx语法或htmv时，一定要先加载vue模块
+  }
+}
+```
 #### 2）*.vue
 ```html
 <template>
@@ -354,30 +367,92 @@ const ...
 
 </script>
 
-<style>
+<style lang="scss" scoped="true">
 
 </style>
 ```
 - \<script\>支持的js语法同*.js
 - 支持jsx语法
-- 需要全局配置vue模块
+- 某些IDE暂不支持jsx语法，可以用如下方式勉强避免错乱：（编译前，java后台会把Vue文件里的\`\jsx与\jsx\`删除）
+```
+return (`\jsx
+    <div>HelloJSX</div>
+\jsx`)
+```
 - 在Vue实例上添加$thiz属性（同*.js里的thiz变量），表示当前vue所在的模块对象。
-- 在Vue实例上添加$keepVueStyle属性，默认为false，表示销毁时、对应的style也会被销毁。
-- 在Vue实例上添加$destroyVueStyle()函数，用于销毁style；当使用Vue的transaction过渡动画时，可设置其包裹的组件的$keepVueStyle=true，在动画结束后手动调用此函数销毁style。
+- 在Vue实例上添加`$keepVueStyle`属性，默认为false，表示销毁时、对应的style也会被销毁。
+- 在Vue实例上添加`$destroyVueStyle()`函数，用于销毁style；当使用Vue的`<transition>`过渡动画时，可设置其包裹的组件的`$keepVueStyle=true`，在动画结束后手动调用此函数销毁style。
 - \<style\>：lang属性支持default（即css）、scss(推荐，也是默认值)、less；可包含多个style标签；scoped:true(scoped),false
 ```
 1、注意这里scoped为true时，只是在根元素上添加一个随机的class。
 2、<style>标签支持多个
 ```
+- 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
+```json
+{
+  "paths":{
+       "vue":"你的vue2的路径/vue.min.js"
+  },
+  "deps":{
+      "*":"vue"//当有vue组件、jsx语法或htmv时，一定要先加载vue模块
+  }
+}
+```
 
-#### 3）*.scss
+#### 3）*.htmv
+- 该文件实际是一个vue格式的文件，更多说明见*.vue
+```html
+<!--settings:
+{
+    title:"文档标题"
+}
+-->
+<template>
+
+</template>
+<script>
+
+</script>
+
+<style lang="scss" scoped="true">
+
+</style>
+```
+- 通过settings注释里的json格式对文档进行设置：
+1. title：设置文档标题
+- 通过浏览器可以直接访问htmv文件（java端会自动转换），参考demo1的test1/index.htmv。
+- 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
+```json
+{
+  "paths":{
+       "vue":"你的vue2的路径/vue.min.js"
+  },
+  "deps":{
+      "*":"vue"//当有vue组件、jsx语法或htmv时，一定要先加载vue模块
+  }
+}
+```
+- 通过设置`xsloader.htmv.enable=true`来启用htmv
+
+#### 4）*.scss
 支持scss语法
 
-#### 4）*.less
+#### 5）*.less
 支持less语法
 
-#### 5）*.jsx
+#### 6）*.jsx
 - 效果与*.js文件效果是一样的
+- 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
+```json
+{
+  "paths":{
+       "vue":"你的vue2的路径/vue.min.js"
+  },
+  "deps":{
+      "*":"vue"//当有vue组件、jsx语法或htmv时，一定要先加载vue模块
+  }
+}
+```
 - 属性、class、事件等设置见Vue的$createElement
 ```
 <img attrs={{src:""}} class="test" style="" />
@@ -470,8 +545,8 @@ cnpm install --save @babel/polyfill
 
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
-## 发布记录
-### v...
+## 八、发布记录
+### 【进行中】
 1. xsloader.js的模块对象增加appendArgs(url,forArgsUrl)；
 2. vue模板实例添加$thiz变量，表示当前vue模块；
 3. 支持*.htmv，用于直接显示vue模板；
