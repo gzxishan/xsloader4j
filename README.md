@@ -550,6 +550,7 @@ cnpm install --save @babel/polyfill
 1. xsloader.js的模块对象增加appendArgs(url,forArgsUrl)；
 2. vue模板实例添加$thiz变量，表示当前vue模块；
 3. 支持*.htmv，用于直接显示vue模板；
+4. 修复xsloader.js的xsloader4j-server-bridge依赖vue（但vue还暂未加载），提前注册<jsx>组件导致缺少vue报错的bug；
 
 ### v1.1.31 2020/5/7
 1. 完善vue模板的编译；

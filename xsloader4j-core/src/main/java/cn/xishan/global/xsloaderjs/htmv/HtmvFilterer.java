@@ -145,7 +145,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             Element head = document.getElementsByTag("head").get(0);
 
             Element loader = new Element("script");
-            loader.attr("src", servletContext.getContextPath() + "/xsloader.js");
+            loader.attr("src", servletContext.getContextPath() + "/xsloader.js?_v=1.1.23");
             loader.attr("data-conf2", loaderConf);
             loader.attr("type", "text/javascript");
             loader.attr("async", "async");

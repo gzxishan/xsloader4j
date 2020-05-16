@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.22
+ * xsloader.js v1.1.23
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu May 14 2020 18:04:51 GMT+0800 (GMT+08:00)
+ * build time:Sat May 16 2020 15:26:35 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -153,23 +140,6 @@
     }
 
     return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    return function () {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (_isNativeReflectConstruct()) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
   }
 
   var G;
@@ -2478,7 +2448,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.22"
+    version: "1.1.23"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -4716,7 +4686,7 @@
     var has = false;
     var module = moduleScript.getModule(name);
 
-    if (!module || module.state == "init") ; else {
+    if (!module || module.state === undefined || module.state == "init") ; else {
       has = true;
     }
 
@@ -7544,8 +7514,6 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
-    var _super = _createSuper(Client);
-
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7553,7 +7521,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this), "_source", void 0);
 
@@ -7931,14 +7899,12 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
 
