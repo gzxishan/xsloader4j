@@ -1,5 +1,6 @@
 package cn.xishan.global.xsloaderjs.htmv;
 
+import cn.xishan.global.xsloaderjs.XsloaderFilter;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.exception.InitException;
@@ -145,7 +146,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             Element head = document.getElementsByTag("head").get(0);
 
             Element loader = new Element("script");
-            loader.attr("src", servletContext.getContextPath() + "/xsloader.js?_v=1.1.23");
+            loader.attr("src", servletContext.getContextPath() + "/xsloader.js?_v=" + XsloaderFilter.XSLOADER_VERSION);
             loader.attr("data-conf2", loaderConf);
             loader.attr("type", "text/javascript");
             loader.attr("async", "async");
