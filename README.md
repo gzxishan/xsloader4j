@@ -546,6 +546,9 @@ cnpm install --save @babel/polyfill
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
 ## 八、发布记录
+### v进行中
+1. 解决ifmsg重复onConnect的问题；
+
 ### v1.1.46 2020/05/18
 1. xsloader.js的模块对象增加appendArgs(url,forArgsUrl)；
 2. vue模板实例添加`$thiz`变量，表示当前vue模块；

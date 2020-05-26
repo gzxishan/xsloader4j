@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.25
+ * xsloader.js v1.1.26
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Sun May 17 2020 20:38:28 GMT+0800 (GMT+08:00)
+ * build time:Tue May 26 2020 17:34:35 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2478,7 +2478,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.25"
+    version: "1.1.26"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -7956,6 +7956,9 @@
       value: function onConnect(client, conndata) {
         var _this6 = this;
 
+        var obj = CONNS_MAP[this.cmd];
+        obj.clients[client.fromid] = client;
+
         var onConn = this._onConnect || function (client, conndata, callback) {
           var mine = location.protocol + "//" + location.host;
           callback(mine == client.origin, null);
@@ -7963,8 +7966,6 @@
 
         var callback = function callback(isAccept, errOrConndata) {
           if (isAccept) {
-            var obj = CONNS_MAP[_this6.cmd];
-            obj.clients[client.fromid] = client;
             client.gotConnected();
             doSendMessage(true, client.source, {
               cmd: _this6.cmd,
@@ -7988,6 +7989,7 @@
             Callback.call(_this6, onConnected, client);
             client.checkClientConnected(_this6);
           } else {
+            client.close(false);
             doSendMessage(true, client.source, {
               cmd: _this6.cmd,
               type: "connected-fail",
