@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.26
+ * xsloader.js v1.1.27
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue May 26 2020 17:34:35 GMT+0800 (GMT+08:00)
+ * build time:Thu May 28 2020 19:08:17 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -184,19 +184,6 @@
     throw new Error("not found global var!");
   }
 
-  function InVar$1(val) {
-    this.get = function () {
-      return val;
-    };
-
-    this.set = function (newVal) {
-      var old = val;
-      val = newVal;
-      return old;
-    };
-  }
-
-  G.InVar = InVar$1;
   var global$1 = G;
 
   var _loaderFun;
@@ -635,6 +622,20 @@
   var REPLACE_REQUIRE_GET_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\.\s*get\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
   var REPLACE_REQUIRE_REGEXP = /(^|[\s\(\),;.\?:]+)require\s*\(\s*["']([^'"\r\n]+)["']\s*\)/g;
   var NOT_REQUIRE_REGEXP = /\.\s*$/;
+
+  function InVar(val) {
+    this.get = function () {
+      return val;
+    };
+
+    this.set = function (newVal) {
+      var old = val;
+      val = newVal;
+      return old;
+    };
+  }
+
+  L$1.InVar = global$1.InVar = InVar;
 
   function GraphPath() {
     var pathEdges = {};
@@ -2478,7 +2479,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.26"
+    version: "1.1.27"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3871,7 +3872,7 @@
 
       _defineProperty(this, "_id", void 0);
 
-      this._im = new InVar(moduleMap);
+      this._im = new L$9.InVar(moduleMap);
       this._id = U.getAndIncIdCount();
       moduleMap.thiz = this;
 
@@ -7263,8 +7264,9 @@
   }
 
   function checkSource(client, source) {
-    if (client && client.source != source) {
-      throw new Error("source error:", client.source, source);
+    if (client && client.source.get() != source) {
+      console.error("source error:", client.source.get(), source);
+      throw new Error("source error:not match");
     }
   }
 
@@ -7601,7 +7603,7 @@
 
       _defineProperty(_assertThisInitialized(_this), "_createTime", currentTimemillis());
 
-      _this._source = source;
+      _this._source = new L$t.InVar(source);
       _this._origin = origin;
       _this._fromid = fromid;
       _this._isself = isself;
@@ -7624,7 +7626,7 @@
           throw new Error("not allowed for server client!");
         } else if (this.connected) ; else if (this.destroyed) {
           throw new Error("destroyed!");
-        } else if (!this.source) {
+        } else if (!this.source.get()) {
           throw new Error("no source!");
         } else {
           if (!this._starttime || this._failed) {
@@ -7656,7 +7658,7 @@
           }
 
           CONNS_MAP[this.cmd].selfclients[this.id] = this;
-          doSendMessage(false, this.source, msg);
+          doSendMessage(false, this.source.get(), msg);
           this._rtimer = runAfter(this._sleeptimeout, function () {
             if (_this2.connected || _this2._failed || _this2._connect || _this2._destroyed) {
               return;
@@ -7688,7 +7690,7 @@
             }
           } else if (time - this._lastSendHeartTime > this._heartTime) {
             this._lastSendHeartTime = time;
-            doSendMessage(!this.isself, this.source, {
+            doSendMessage(!this.isself, this.source.get(), {
               cmd: this.cmd,
               type: "heart",
               fromid: this.id,
@@ -7755,7 +7757,7 @@
             if (isAccept) {
               _this4.gotConnected();
 
-              doSendMessage(false, _this4.source, {
+              doSendMessage(false, _this4.source.get(), {
                 cmd: _this4.cmd,
                 type: "connected",
                 fromid: _this4.id,
@@ -7764,7 +7766,7 @@
               var onConnected = _this4._onConnected;
               Callback.call(_this4, onConnected);
             } else {
-              doSendMessage(false, _this4.source, {
+              doSendMessage(false, _this4.source.get(), {
                 cmd: _this4.cmd,
                 type: "connected-fail",
                 err: errOrConndata,
@@ -7821,8 +7823,8 @@
           this._destroyed = true;
           this.closeBase();
 
-          if (sendClosed && this.source) {
-            doSendMessage(!this.isself, this.source, {
+          if (sendClosed && this.source.get()) {
+            doSendMessage(!this.isself, this.source.get(), {
               cmd: this.cmd,
               type: "closed",
               fromid: this.id,
@@ -7839,7 +7841,7 @@
         if (this.destroyed) {
           throw new Error("destroyed!");
         } else if (this.connected) {
-          doSendMessage(!this.isself, this.source, {
+          doSendMessage(!this.isself, this.source.get(), {
             cmd: this.cmd,
             type: "message",
             mdata: data,
@@ -7856,11 +7858,11 @@
         return this._source;
       },
       set: function set(source) {
-        if (this._source) {
+        if (this._source.get()) {
           throw new Error("already exists source:id=".concat(this.id));
         }
 
-        this._source = source;
+        this._source.set(source);
       }
     }, {
       key: "isself",
@@ -7967,7 +7969,7 @@
         var callback = function callback(isAccept, errOrConndata) {
           if (isAccept) {
             client.gotConnected();
-            doSendMessage(true, client.source, {
+            doSendMessage(true, client.source.get(), {
               cmd: _this6.cmd,
               type: "connected",
               mdata: errOrConndata,
@@ -7977,7 +7979,7 @@
 
             var onConnected = _this6._onConnected || function () {
               client.close(false);
-              doSendMessage(true, client.source, {
+              doSendMessage(true, client.source.get(), {
                 cmd: _this6.cmd,
                 type: "close",
                 mdata: "not exists connected handle",
@@ -7990,7 +7992,7 @@
             client.checkClientConnected(_this6);
           } else {
             client.close(false);
-            doSendMessage(true, client.source, {
+            doSendMessage(true, client.source.get(), {
               cmd: _this6.cmd,
               type: "connected-fail",
               err: errOrConndata,
@@ -8070,59 +8072,59 @@
         connTimeout: gconfig.connTimeout,
         sleepTimeout: gconfig.sleepTimeout
       }, option);
-      this._server = new Server(cmd);
-      this._server._conntimeout = option.connTimeout;
-      this._server._sleeptimeout = option.sleepTimeout;
+      this._server = new L$t.InVar(new Server(cmd));
+      this._server.get()._conntimeout = option.connTimeout;
+      this._server.get()._sleeptimeout = option.sleepTimeout;
     }
 
     _createClass(IfmsgServer, [{
       key: "listen",
       value: function listen() {
-        this._server.listen();
+        this._server.get().listen();
       }
     }, {
       key: "close",
       value: function close() {
-        this._server.close();
+        this._server.get().close();
       }
     }, {
       key: "onConnect",
       set: function set(onConnect) {
-        this._server._onConnect = onConnect ? new Callback(this, onConnect) : null;
+        this._server.get()._onConnect = onConnect ? new Callback(this, onConnect) : null;
       },
       get: function get() {
-        return this._server._onConnect && this._server._onConnect.callback;
+        return this._server.get()._onConnect && this._server.get()._onConnect.callback;
       }
     }, {
       key: "onConnectTimeout",
       set: function set(onConnectTimeout) {
-        this._server._onConnectTimeout = onConnectTimeout ? new Callback(this, onConnectTimeout) : null;
+        this._server.get()._onConnectTimeout = onConnectTimeout ? new Callback(this, onConnectTimeout) : null;
       },
       get: function get() {
-        return this._server._onConnectTimeout && this._server._onConnectTimeout.callback;
+        return this._server.get()._onConnectTimeout && this._server.get()._onConnectTimeout.callback;
       }
     }, {
       key: "onConnected",
       set: function set(onConnected) {
-        this._server._onConnected = onConnected ? new Callback(this, onConnected) : null;
+        this._server.get()._onConnected = onConnected ? new Callback(this, onConnected) : null;
       },
       get: function get() {
-        return this._server._onConnected && this._server._onConnected.callback;
+        return this._server.get()._onConnected && this._server.get()._onConnected.callback;
       }
     }, {
       key: "isStart",
       get: function get() {
-        return this._server._start;
+        return this._server.get()._start;
       }
     }, {
       key: "isDestroyed",
       get: function get() {
-        return this._server._destroyed;
+        return this._server.get()._destroyed;
       }
     }, {
       key: "cmd",
       get: function get() {
-        return this._server.cmd;
+        return this._server.get().cmd;
       }
     }]);
 
@@ -8140,9 +8142,9 @@
         connTimeout: gconfig.connTimeout,
         sleepTimeout: gconfig.sleepTimeout
       }, option);
-      this._client = new Client(cmd, null, null, null, true);
-      this._client._conntimeout = option.connTimeout;
-      this._client._sleeptimeout = option.sleepTimeout;
+      this._client = new L$t.InVar(new Client(cmd, null, null, null, true));
+      this._client.get()._conntimeout = option.connTimeout;
+      this._client.get()._sleeptimeout = option.sleepTimeout;
 
       this.onConnectFail = function (err) {
         console.warn(err);
@@ -8160,107 +8162,109 @@
           var fun = function fun() {
             iframe.removeEventListener("load", fun);
             var source = iframe.contentWindow;
-            _this7._client.source = source;
 
-            _this7._client.connect(conndata);
+            _this7._client.get().source.set(source);
+
+            _this7._client.get().connect(conndata);
           };
 
           iframe.addEventListener("load", fun);
         } else {
           var source = iframe.contentWindow;
-          this._client.source = source;
 
-          this._client.connect(conndata);
+          this._client.get().source.set(source);
+
+          this._client.get().connect(conndata);
         }
       }
     }, {
       key: "connParent",
       value: function connParent(conndata) {
-        this._client.source = window.parent;
+        this._client.get().source.set(window.parent);
 
-        this._client.connect(conndata);
+        this._client.get().connect(conndata);
       }
     }, {
       key: "connTop",
       value: function connTop(conndata) {
-        this._client.source = window.top;
+        this._client.get().source.set(window.top);
 
-        this._client.connect(conndata);
+        this._client.get().connect(conndata);
       }
     }, {
       key: "connOpener",
       value: function connOpener(conndata) {
-        this._client.source = window.opener;
+        this._client.get().source.set(window.opener);
 
-        this._client.connect(conndata);
+        this._client.get().connect(conndata);
       }
     }, {
       key: "sendMessage",
       value: function sendMessage(data) {
-        this._client.sendMessage(data);
+        this._client.get().sendMessage(data);
       }
     }, {
       key: "close",
       value: function close() {
-        this._client.close();
+        this._client.get().close();
       }
     }, {
       key: "onConnect",
       set: function set(onConnect) {
-        this._client._onConnect = onConnect ? new Callback(this, onConnect) : null;
+        this._client.get()._onConnect = onConnect ? new Callback(this, onConnect) : null;
       },
       get: function get() {
-        return this._client._onConnect && this._client._onConnect.callback;
+        return this._client.get()._onConnect && this._client.get()._onConnect.callback;
       }
     }, {
       key: "onConnected",
       set: function set(onConnected) {
-        this._client._onConnected = onConnected ? new Callback(this, onConnected) : null;
+        this._client.get()._onConnected = onConnected ? new Callback(this, onConnected) : null;
       },
       get: function get() {
-        return this._client._onConnected && this._client._onConnected.callback;
+        return this._client.get()._onConnected && this._client.get()._onConnected.callback;
       }
     }, {
       key: "onHeartTimeout",
       set: function set(onHeartTimeout) {
-        this._client.onHeartTimeout = onHeartTimeout;
+        this._client.get().onHeartTimeout = onHeartTimeout;
       },
       get: function get() {
-        return this._client.onHeartTimeout;
+        return this._client.get().onHeartTimeout;
       }
     }, {
       key: "onClosed",
       set: function set(onClosed) {
-        this._client.onClosed = onClosed;
+        this._client.get().onClosed = onClosed;
       },
       get: function get() {
-        return this._client.onClosed;
+        return this._client.get().onClosed;
       }
     }, {
       key: "onMessage",
       set: function set(onMessage) {
-        this._client.onMessage = onMessage;
+        this._client.get().onMessage = onMessage;
       },
       get: function get() {
-        return this._client.onMessage;
+        return this._client.get().onMessage;
       }
     }, {
       key: "onConnectFail",
       set: function set(callback) {
-        this._client._onConnectFail = callback ? new Callback(this, callback) : null;
+        this._client.get()._onConnectFail = callback ? new Callback(this, callback) : null;
       },
       get: function get() {
-        return this._client._onConnectFail && this._client._onConnectFail.callback;
+        return this._client.get()._onConnectFail && this._client.get()._onConnectFail.callback;
       }
     }, {
       key: "connected",
       get: function get() {
-        return this._client.connected;
+        return this._client.get().connected;
       }
     }, {
       key: "destroyed",
       get: function get() {
-        return this._client.destroyed;
+        return this._client.get().destroyed;
       }
     }]);
 

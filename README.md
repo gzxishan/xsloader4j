@@ -548,6 +548,7 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 ### v进行中
 1. 解决ifmsg重复onConnect的问题；
+2. 解决ifmsg的client实例作为vue变量时，导致iframe跨域问题的bug；
 
 ### v1.1.46 2020/05/18
 1. xsloader.js的模块对象增加appendArgs(url,forArgsUrl)；
