@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.27
+ * xsloader.js v1.1.28
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu May 28 2020 19:08:17 GMT+0800 (GMT+08:00)
+ * build time:Wed Jun 10 2020 02:35:52 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -153,23 +140,6 @@
     }
 
     return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    return function () {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (_isNativeReflectConstruct()) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
   }
 
   var G;
@@ -2479,7 +2449,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.27"
+    version: "1.1.28"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -6999,7 +6969,7 @@
         props: {
           x: {
             type: [Object, Function],
-            required: true
+            required: false
           }
         },
         render: function render() {
@@ -7012,19 +6982,21 @@
           };
           var Comp = this.x;
 
-          if (L$s.isFunction(Comp)) {
-            Comp = Comp();
-          }
-
-          if (L$s.isObject(Comp)) {
-            var data = Comp.data || (Comp.data = {});
-
-            for (var k in wrapProps) {
-              data[k] = L$s.extend({}, data[k], wrapProps[k]);
+          if (Comp) {
+            if (L$s.isFunction(Comp)) {
+              Comp = Comp();
             }
-          }
 
-          return Comp;
+            if (L$s.isObject(Comp)) {
+              var data = Comp.data || (Comp.data = {});
+
+              for (var k in wrapProps) {
+                data[k] = L$s.extend({}, data[k], wrapProps[k]);
+              }
+            }
+
+            return Comp;
+          }
         }
       });
       hasRegVnodex = true;
@@ -7546,8 +7518,6 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
-    var _super = _createSuper(Client);
-
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7555,7 +7525,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this), "_source", void 0);
 
@@ -7921,14 +7891,12 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
 
