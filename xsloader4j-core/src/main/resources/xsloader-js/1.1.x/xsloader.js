@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.28
+ * xsloader.js v1.1.29
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed Jun 10 2020 02:35:52 GMT+0800 (GMT+08:00)
+ * build time:Mon Jun 29 2020 11:34:54 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,6 +126,19 @@
     return _setPrototypeOf(o, p);
   }
 
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -140,6 +153,23 @@
     }
 
     return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    return function () {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (_isNativeReflectConstruct()) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   var G;
@@ -2449,7 +2479,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.28"
+    version: "1.1.29"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -2934,9 +2964,9 @@
     return instanceModule;
   }
 
-  function _newModule(name, src, thatInvoker, index) {
-    src = U.removeQueryHash(src);
-    var defineObject = new script.DefineObject(src, null, [name, null, null]);
+  function _newModule(name, scriptSrc, thatInvoker, index) {
+    var src = U.removeQueryHash(scriptSrc);
+    var defineObject = new script.DefineObject(scriptSrc, src, null, [name, null, null]);
     defineObject.index = index;
     defineObject.thatInvoker = thatInvoker;
     defineObject.appendConfigDepsAndEmbedDeps();
@@ -3642,7 +3672,8 @@
 
   var _lastAppendHeadDom = theLoaderScript;
   var isSrcFromScriptLoad;
-  var lastScriptSrc = thePageUrl$1;
+  var lastSrc = thePageUrl$1;
+  var lastScriptSrc = location.href;
   var theRealDefine;
 
   if (safariVersion > 0 && safariVersion <= 7) {
@@ -3865,6 +3896,11 @@
         return this._im.get().src;
       }
     }, {
+      key: "scriptSrc",
+      value: function scriptSrc() {
+        return this._im.get().scriptSrc;
+      }
+    }, {
       key: "getName",
       value: function getName() {
         return this._im.get().selfname;
@@ -3940,15 +3976,17 @@
   }
 
   var DefineObject = function () {
-    function DefineObject(src, thiz) {
-      var args = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-      var isRequire = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+    function DefineObject(scriptSrc, src, thiz) {
+      var args = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
+      var isRequire = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
 
       _classCallCheck(this, DefineObject);
 
       _defineProperty(this, "thiz", void 0);
 
       _defineProperty(this, "isRequire", void 0);
+
+      _defineProperty(this, "scriptSrc", void 0);
 
       _defineProperty(this, "src", void 0);
 
@@ -3974,6 +4012,7 @@
 
       this.parentDefine = currentDefineModuleQueue.peek();
       this.thatInvoker = getInvoker(thiz);
+      this.scriptSrc = scriptSrc;
       this.src = src;
       this.thiz = thiz;
       this.isRequire = isRequire;
@@ -4223,6 +4262,10 @@
       rs.src = U.getNodeAbsolutePath(rs.node);
     }
 
+    if (rs) {
+      rs.scriptSrc = rs.src;
+    }
+
     if (isRemoveQueryHash) {
       rs.src = U.removeQueryHash(rs.src);
     }
@@ -4288,10 +4331,12 @@
 
     __removeListener(node, callbackObj.errListen, 'error');
 
+    var scriptSrc = node && U.getNodeAbsolutePath(node);
     return {
       node: node,
       name: node && node.getAttribute(DATA_ATTR_MODULE),
-      src: U.removeQueryHash(node && U.getNodeAbsolutePath(node))
+      src: U.removeQueryHash(scriptSrc),
+      scriptSrc: scriptSrc
     };
   }
 
@@ -4319,7 +4364,8 @@
         var scriptData = __getScriptData(evt, callbackObj);
 
         if (isSrcFromScriptLoad) {
-          lastScriptSrc = scriptData.src;
+          lastSrc = scriptData.src;
+          lastScriptSrc = scriptData.lastScriptSrc;
           L$9.asyncCall(function () {
             onload(scriptData);
           });
@@ -4353,7 +4399,8 @@
   function doDefine(thiz, args, isRequire) {
     var rs = getCurrentScript();
     var src = rs.src;
-    var defineObject = new DefineObject(src, thiz, args, isRequire);
+    var scriptSrc = rs.scriptSrc;
+    var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire);
 
     if (!isSrcFromScriptLoad) {
       try {
@@ -4375,7 +4422,8 @@
     var isLoaderEnd = U.isLoaderEnd();
     L$9.asyncCall(function () {
       if (isSrcFromScriptLoad && isLoaderEnd) {
-        defineObject.src = lastScriptSrc;
+        defineObject.src = lastSrc;
+        defineObject.lastScriptSrc = lastScriptSrc;
       }
 
       theRealDefine([defineObject]);
@@ -7518,6 +7566,8 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
+    var _super = _createSuper(Client);
+
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7525,7 +7575,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      _this = _super.call(this, cmd);
 
       _defineProperty(_assertThisInitialized(_this), "_source", void 0);
 
@@ -7891,12 +7941,14 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
+    var _super2 = _createSuper(Server);
+
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
+      _this5 = _super2.call(this, cmd);
 
       _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
 

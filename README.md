@@ -547,6 +547,7 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+1. xsloader的invoker增加scriptSrc,包含地址参数的；
 
 ### v1.1.49 2020/06/24
 1. 解决ifmsg重复onConnect的问题；
