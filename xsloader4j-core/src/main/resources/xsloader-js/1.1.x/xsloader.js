@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon Jun 29 2020 11:34:54 GMT+0800 (GMT+08:00)
+ * build time:Mon Jun 29 2020 11:57:37 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2954,6 +2954,7 @@
       index: index,
       module: module,
       src: module.src,
+      scriptSrc: module.scriptSrc,
       absUrl: function absUrl() {
         return module.thiz.absUrl();
       },
@@ -2988,6 +2989,7 @@
       ignoreAspect: false,
       args: null,
       src: defineObject.src,
+      scriptSrc: defineObject.scriptSrc,
       absUrlFromModule: function absUrlFromModule() {
         return defineObject.absUrlFromDefineObject();
       },
@@ -3854,7 +3856,8 @@
 
       var moduleMap = {
         module: module,
-        src: module.src,
+        src: invoker.src(),
+        scriptSrc: invoker.scriptSrc(),
         absUrl: function absUrl() {
           return absUrlStr;
         },
@@ -3964,6 +3967,7 @@
         var moduleMap = {
           module: "",
           src: thePageUrl$1,
+          scriptSrc: location.href,
           absUrl: function absUrl() {
             return thePageUrl$1;
           },
