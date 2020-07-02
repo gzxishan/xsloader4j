@@ -84,6 +84,15 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
                                 document.title(settings.getString("title"));
                             }
 
+                            if (settings.containsKey("heads"))
+                            {
+                                JSONArray heads = settings.getJSONArray("heads");
+                                for (int i = 0; i < heads.size(); i++)
+                                {
+                                    document.head().append(heads.getString(i));
+                                }
+                            }
+
                             String script = appScript;
                             script = script.replace("#{app-class}", "vue-app");
                             script = script.replace("#{app-id}", "vue-app");

@@ -404,7 +404,8 @@ return (`\jsx
 ```html
 <!--settings:
 {
-    title:"文档标题"
+    title:"文档标题",
+    heads:['<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">']
 }
 -->
 <template>
@@ -420,6 +421,7 @@ return (`\jsx
 ```
 - 通过settings注释里的json格式对文档进行设置：
 1. title：设置文档标题
+2. heads：用于添加到`<head>`标签中
 - 通过浏览器可以直接访问htmv文件（java端会自动转换），参考demo1的test1/index.htmv。
 - 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
 ```json
@@ -548,6 +550,7 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 ### v进行中
 1. xsloader的invoker增加scriptSrc,包含地址参数的；
+2. htmv的`settings`配置中增加`heads`属性；
 
 ### v1.1.49 2020/06/24
 1. 解决ifmsg重复onConnect的问题；
