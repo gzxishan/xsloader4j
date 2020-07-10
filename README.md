@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.1.49**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.52**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.49-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.52-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.49</version>
+    <version>1.1.52</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.49</version>
+    <version>1.1.52</version>
 </dependency>
 ```
 ## 五、配置
@@ -549,7 +549,9 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
-1. xsloader的invoker增加scriptSrc,包含地址参数的；
+
+### v1.1.52 2020/07/10
+1. xsloader的invoker增加scriptSrc(),包含地址参数的；
 2. htmv的`settings`配置中增加`heads`属性；
 
 ### v1.1.49 2020/06/24
