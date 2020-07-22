@@ -4,10 +4,7 @@ import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Object;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.JsBridgeMethod;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.eclipsesource.v8.V8;
-import com.eclipsesource.v8.V8Array;
-import com.eclipsesource.v8.V8Function;
-import com.eclipsesource.v8.V8Object;
+import com.eclipsesource.v8.*;
 
 import java.util.function.Consumer;
 
@@ -29,6 +26,11 @@ public class ScriptEnv
     {
         this.varName = varName;
         this.flags = flags;
+    }
+
+    public String getVarName()
+    {
+        return varName;
     }
 
     public void onReady(Consumer<Void> consumer)
@@ -217,5 +219,53 @@ public class ScriptEnv
     public J2Object getDevV8Object()
     {
         return root;
+    }
+
+    private V8Array toParameters(Object[] args)
+    {
+        V8Array parameters = root.newV8Array();
+        for (Object obj : args)
+        {
+            J2Object.add(parameters, obj);
+        }
+        return parameters;
+    }
+
+    private Object dealReturnAndArgs(Object result)
+    {
+        if (result instanceof Releasable)
+        {
+            ((Releasable) result).release();
+            throw new RuntimeException("illegal return type,not allowed Releasable result:" + result);
+        } else
+        {
+            return result;
+        }
+    }
+
+    /**
+     * 执行{@linkplain #getVarName()}下的函数。
+     *
+     * @param fun
+     * @param args
+     * @return
+     */
+    public Object exeVarFun(String fun, Object... args)
+    {
+        Object result = root.getV8Object().executeJSFunction(fun, args);
+        return dealReturnAndArgs(result);
+    }
+
+    /**
+     * 执行全局函数。
+     *
+     * @param fun
+     * @param args
+     * @return
+     */
+    public Object exeFun(String fun, Object... args)
+    {
+        Object result = root.getV8().executeJSFunction(fun, args);
+        return dealReturnAndArgs(result);
     }
 }
