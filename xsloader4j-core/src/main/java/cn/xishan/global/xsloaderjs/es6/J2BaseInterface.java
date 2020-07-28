@@ -33,6 +33,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
 
     private static final Logger LOGGER = LoggerFactory.getLogger(J2BaseInterface.class);
     static final ThreadLocal<Es6Wrapper.Result<String>> threadLocal = new ThreadLocal<>();
+    private static final ThreadLocal<String> currentUrl = new ThreadLocal<>();
 
     interface ILoadFileListener
     {
@@ -93,10 +94,14 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         }
     }
 
-    public J2BaseInterface acquire()
+    public J2BaseInterface acquire(String url)
     {
         lock.lock("v8");
         getV8().getLocker().acquire();
+        if (url != null)
+        {
+            currentUrl.set(url);
+        }
         return new J2BaseInterfaceImpl(this);
     }
 
@@ -139,6 +144,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         {
             this.fileListener = null;
             this.fileContentGetter = null;
+            currentUrl.remove();
             threadLocal.remove();
             root.release();
             getV8().getLocker().release();
@@ -363,13 +369,13 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     @JsBridgeMethod(isRootFun = true)
     public void print(String str)
     {
-        LOGGER.debug("js print:\n{}", str);
+        LOGGER.debug("js print:(url={})\n{}", currentUrl.get(), str);
     }
 
     @JsBridgeMethod
     public void warn(String str)
     {
-        LOGGER.warn("js warn:\n{}", str);
+        LOGGER.warn("js warn:(url={})\n{}", currentUrl.get(), str);
     }
 
 

@@ -68,8 +68,12 @@ public class JsScriptUtil
         return v8;
     }
 
-
-    static synchronized J2BaseInterface getAndAcquire()
+    /**
+     *
+     * @param url 当前访问路径
+     * @return
+     */
+    static synchronized J2BaseInterface getAndAcquire(String url)
     {
         if (cachedInterface == null)
         {
@@ -127,7 +131,7 @@ public class JsScriptUtil
                 }
             }
         }
-        return cachedInterface.acquire();
+        return cachedInterface.acquire(url);
     }
 
     static void init(String v8flags)

@@ -550,6 +550,7 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 ### v进行中
 - 完善`ScriptEnv`；
+- 编译js与vue的警告日志中打印url；
 
 ### v1.1.52 2020/07/10
 1. xsloader的invoker增加scriptSrc(),包含地址参数的；

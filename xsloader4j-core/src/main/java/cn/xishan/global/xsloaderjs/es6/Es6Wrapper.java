@@ -103,7 +103,7 @@ public class Es6Wrapper
     public static String parseEs6Script(String name, String es6Content)
     {
         LOGGER.info("parse es6 script code:name={}", name);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null))
         {
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -122,7 +122,7 @@ public class Es6Wrapper
             String replaceType)
     {
         LOGGER.info("parse es6 code:url={},file={}", url, filepath);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
         {
             Result<String> result = new Result<>();
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
@@ -178,7 +178,7 @@ public class Es6Wrapper
             String replaceType)
     {
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire())
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
         {
             if (vueContent != null)
             {//替换`\jsx与\jsx`：临时解决HBuilderX对Vue文件暂不支持jsx语法的问题
