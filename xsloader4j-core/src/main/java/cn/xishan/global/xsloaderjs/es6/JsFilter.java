@@ -366,7 +366,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                             boolean isEs6 = pathDealt.isESCode(path, script);
                             item = new Es6Item(file.lastModified(), isEs6);
                             supportEs6Files.put(file.getAbsolutePath(), item);
-                        } else if (isDebug && !item.isEs6() && file.lastModified() != item.getLastModified())
+                        } else if (file.lastModified() != item.getLastModified())
                         {
                             String script = FileTool.getString(file, encoding);
                             boolean isEs6 = pathDealt.isESCode(path, script);

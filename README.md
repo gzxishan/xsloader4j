@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.1.52**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.55**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.52-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.55-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.52</version>
+    <version>1.1.55</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.52</version>
+    <version>1.1.55</version>
 </dependency>
 ```
 ## 五、配置
@@ -333,7 +333,7 @@ new Vue({
 #### 1）*.js
 - 语法支持到es2017
 - 支持jsx语法
-- 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象）可以直接显示编译后的jsx对象
+- 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象，支持字符串等内容）可以直接显示编译后的jsx对象
 ```
 <div>
     <jsx :x="xxx" />
@@ -549,8 +549,12 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
-- 完善`ScriptEnv`；
-- 编译js与vue的警告日志中打印url；
+
+### v1.1.55 2020/08/21
+1. 完善`ScriptEnv`；
+2. 编译js与vue的警告日志中打印url；
+3. `<jsx>`支持字符串等内容；
+4. 修复js代码从es6+变为es5时，仍然被判断为es6的问题；
 
 ### v1.1.52 2020/07/10
 1. xsloader的invoker增加scriptSrc(),包含地址参数的；

@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.29
+ * xsloader.js v1.1.30
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon Jun 29 2020 11:57:37 GMT+0800 (GMT+08:00)
+ * build time:Thu Aug 20 2020 23:59:11 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -153,23 +140,6 @@
     }
 
     return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    return function () {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (_isNativeReflectConstruct()) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
   }
 
   var G;
@@ -1312,7 +1282,7 @@
     indexInArrayFrom: indexInArrayFrom
   };
 
-  var JSON = {};
+  var JSON$1 = {};
   var rx_one = /^[\],:{}\s]*$/;
   var rx_two = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g;
   var rx_three = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
@@ -1430,7 +1400,7 @@
     }
   }
 
-  if (typeof JSON.stringify !== "function") {
+  if (typeof JSON$1.stringify !== "function") {
     meta = {
       "\b": "\\b",
       "\t": "\\t",
@@ -1441,7 +1411,7 @@
       "\\": "\\\\"
     };
 
-    JSON.stringify = function (value, replacer, space) {
+    JSON$1.stringify = function (value, replacer, space) {
       var i;
       gap = "";
       indent = "";
@@ -1466,8 +1436,8 @@
     };
   }
 
-  if (typeof JSON.parse !== "function") {
-    JSON.parse = function (text, reviver) {
+  if (typeof JSON$1.parse !== "function") {
+    JSON$1.parse = function (text, reviver) {
       var j;
 
       function walk(holder, key) {
@@ -1768,7 +1738,7 @@
         str = str.replace(new RegExp(option.rcomment + "[^\\n]*(\\n|$)", "g"), "");
       }
 
-      var jsonObj = JSON;
+      var jsonObj = JSON$1;
       return jsonObj.parse(str, replacer);
     } catch (e) {
       try {
@@ -1791,7 +1761,7 @@
   }
 
   function xsJson2String(obj) {
-    var jsonObj = JSON;
+    var jsonObj = JSON$1;
     return jsonObj.stringify(obj);
   }
 
@@ -2479,7 +2449,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.29"
+    version: "1.1.30"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -7020,11 +6990,10 @@
       Vue.component("jsx", {
         props: {
           x: {
-            type: [Object, Function],
             required: false
           }
         },
-        render: function render() {
+        render: function render(h) {
           var $listeners = this.$listeners,
               $attrs = this.$attrs;
           delete $attrs.x;
@@ -7034,7 +7003,7 @@
           };
           var Comp = this.x;
 
-          if (Comp) {
+          if (!L$s.isEmpty(Comp)) {
             if (L$s.isFunction(Comp)) {
               Comp = Comp();
             }
@@ -7045,6 +7014,16 @@
               for (var k in wrapProps) {
                 data[k] = L$s.extend({}, data[k], wrapProps[k]);
               }
+            }
+
+            if (!L$s.isObject(Comp)) {
+              var content = L$s.isString(Comp) ? Comp : JSON.stringify(Comp);
+              Comp = h("span", {
+                "class": "jsx-text",
+                "domProps": {
+                  innerText: content
+                }
+              });
             }
 
             return Comp;
@@ -7570,8 +7549,6 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
-    var _super = _createSuper(Client);
-
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7579,7 +7556,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this), "_source", void 0);
 
@@ -7945,14 +7922,12 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
 
       _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
 
