@@ -393,7 +393,13 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
 
     public void addReleasable(Releasable releasable)
     {
-        releasableList.add(releasable);
+        if (releasableList != null)
+        {
+            releasableList.add(releasable);
+        } else
+        {
+            root.addReleasable(releasable);
+        }
     }
 
     public void release()
