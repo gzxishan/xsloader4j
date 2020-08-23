@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/29.
  */
-public abstract class J2Object implements AutoCloseable
+public abstract class J2Object implements AutoCloseable, IReleasableRegister
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(J2Object.class);
@@ -203,7 +203,7 @@ public abstract class J2Object implements AutoCloseable
     }
 
 
-    public static V8Object toV8Value(V8 runtime, Map<String, Object> map)
+    public static V8Object toV8Value(V8 runtime, Map<String, Object> map, IReleasableRegister releasableRegister)
     {
         if (map == null)
         {
@@ -211,14 +211,15 @@ public abstract class J2Object implements AutoCloseable
         }
 
         V8Object object = new V8Object(runtime);
+        releasableRegister.addReleasable(object);
         for (Map.Entry<String, Object> entry : map.entrySet())
         {
-            add(object, entry.getKey(), entry.getValue());
+            add(object, entry.getKey(), entry.getValue(), releasableRegister);
         }
         return object;
     }
 
-    public static V8Array toV8Value(V8 runtime, Collection collection)
+    public static V8Array toV8Value(V8 runtime, Collection collection, IReleasableRegister releasableRegister)
     {
         if (collection == null)
         {
@@ -226,15 +227,16 @@ public abstract class J2Object implements AutoCloseable
         }
 
         V8Array array = new V8Array(runtime);
+        releasableRegister.addReleasable(array);
         for (Object obj : collection)
         {
-            add(array, obj);
+            add(array, obj, releasableRegister);
         }
         return array;
     }
 
 
-    public static void add(V8Object v8Object, String name, Object javaValue)
+    public static void add(V8Object v8Object, String name, Object javaValue, IReleasableRegister releasableRegister)
     {
         if (javaValue == null)
         {
@@ -257,18 +259,20 @@ public abstract class J2Object implements AutoCloseable
         } else if (javaValue instanceof Map)
         {
             V8Object object = new V8Object(v8Object.getRuntime());
+            releasableRegister.addReleasable(object);
             v8Object.add(name, object);
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) javaValue).entrySet())
             {
-                add(object, entry.getKey(), entry.getValue());
+                add(object, entry.getKey(), entry.getValue(), releasableRegister);
             }
         } else if (javaValue instanceof Collection)
         {
             V8Array array = new V8Array(v8Object.getRuntime());
+            releasableRegister.addReleasable(array);
             v8Object.add(name, array);
             for (Object obj : (Collection) javaValue)
             {
-                add(array, obj);
+                add(array, obj, releasableRegister);
             }
         } else
         {
@@ -276,7 +280,7 @@ public abstract class J2Object implements AutoCloseable
         }
     }
 
-    public static void add(V8Array v8Array, Object javaValue)
+    public static void add(V8Array v8Array, Object javaValue, IReleasableRegister releasableRegister)
     {
         if (javaValue == null)
         {
@@ -299,18 +303,20 @@ public abstract class J2Object implements AutoCloseable
         } else if (javaValue instanceof Map)
         {
             V8Object object = new V8Object(v8Array.getRuntime());
+            releasableRegister.addReleasable(object);
             v8Array.push(object);
             for (Map.Entry<String, Object> entry : ((Map<String, Object>) javaValue).entrySet())
             {
-                add(object, entry.getKey(), entry.getValue());
+                add(object, entry.getKey(), entry.getValue(), releasableRegister);
             }
         } else if (javaValue instanceof Collection)
         {
             V8Array array = new V8Array(v8Array.getRuntime());
+            releasableRegister.addReleasable(array);
             v8Array.push(array);
             for (Object obj : (Collection) javaValue)
             {
-                add(array, obj);
+                add(array, obj, releasableRegister);
             }
         } else
         {
@@ -385,7 +391,7 @@ public abstract class J2Object implements AutoCloseable
     }
 
 
-    protected void addReleasable(Releasable releasable)
+    public void addReleasable(Releasable releasable)
     {
         releasableList.add(releasable);
     }

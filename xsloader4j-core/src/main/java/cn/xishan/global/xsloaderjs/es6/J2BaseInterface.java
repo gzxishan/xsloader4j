@@ -126,7 +126,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     }
 
     @Override
-    protected void addReleasable(Releasable releasable)
+    public void addReleasable(Releasable releasable)
     {
         if (impl != null)
         {

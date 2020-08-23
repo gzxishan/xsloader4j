@@ -549,6 +549,7 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+1. 解决使用V8时，Map或Collection转换成V8的对象或数组无法释放的问题；
 
 ### v1.1.55 2020/08/21
 1. 完善`ScriptEnv`；

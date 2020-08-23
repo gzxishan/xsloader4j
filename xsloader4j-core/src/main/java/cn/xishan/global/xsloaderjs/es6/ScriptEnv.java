@@ -226,7 +226,7 @@ public class ScriptEnv
         V8Array parameters = root.newV8Array();
         for (Object obj : args)
         {
-            J2Object.add(parameters, obj);
+            J2Object.add(parameters, obj, root);
         }
         return parameters;
     }
