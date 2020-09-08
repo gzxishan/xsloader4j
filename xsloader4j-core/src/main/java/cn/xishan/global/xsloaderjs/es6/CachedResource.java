@@ -31,7 +31,7 @@ public class CachedResource
     private String encoding;
     private JSONArray files;
     private JSONArray filesLastModified;
-    private static String VERSION = "20200331";
+    private static String VERSION = "v0";
     private static String tempId = "default";
     private boolean isSourceMap;
 
@@ -40,9 +40,8 @@ public class CachedResource
         this.isSourceMap = isSourceMap;
     }
 
-    static void init(String VERSION, String tempId)
+    static void init(String tempId)
     {
-        CachedResource.VERSION = VERSION;
         CachedResource.tempId = tempId;
     }
 

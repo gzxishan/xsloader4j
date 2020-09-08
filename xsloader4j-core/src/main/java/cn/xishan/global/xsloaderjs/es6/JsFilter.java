@@ -39,6 +39,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
     @Property(name = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
+
+    @Property(name = "xsloader.es6.name", defaultVal = "default")
+    private static String name;
+
     @Property(name = "xsloader.es6.useCache", defaultVal = "true")//
     private static Boolean useCache;
 
@@ -166,9 +170,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @AutoSet.SetOk
     public void setOk() throws IOException
     {
+        CachedResource.init(name);
         JsScriptUtil.init(v8flags);
-        CachedResource.init(isDebug ? String.valueOf(System.currentTimeMillis()) : "0",
-                HashUtil.md5(servletContext.getRealPath("/").getBytes(Charset.defaultCharset())));
 
         if (OftenTool.isEmpty(dealt))
         {

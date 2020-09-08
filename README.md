@@ -47,6 +47,7 @@
 ```properties
 xsloader.es6.polyfill=true
 xsloader.es6.debug=true
+xsloader.es6.name=default
 xsloader.sourcemap=true
 xsloader.es6.dealt.ignores=
 xsloader.es6.dealt.static=
@@ -60,6 +61,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 ```
 - xsloader.es6.polyfill：是否使用polyfill，为true时、会自动加载polyfill（7.8.3），默认为true。
 - xsloader.es6.debug：是否为debug模式，当为true时，文件修改后会重新进行转换。
+- xsloader.es6.name：目录名，默认default，当多个项目的临时为目录相同时、可避免v8加载失败。
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（应该在spring boot嵌入式版本中使用），如“/static”。
@@ -550,6 +552,7 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 ### v进行中
 1. 解决使用V8时，Map或Collection转换成V8的对象或数组无法释放的问题；
+2. 增加xsloader.es6.name配置；
 
 ### v1.1.55 2020/08/21
 1. 完善`ScriptEnv`；
