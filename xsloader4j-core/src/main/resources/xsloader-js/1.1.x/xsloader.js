@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.30
+ * xsloader.js v1.1.31
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Aug 20 2020 23:59:11 GMT+0800 (GMT+08:00)
+ * build time:Tue Sep 08 2020 22:21:10 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2449,7 +2449,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.30"
+    version: "1.1.31"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -4709,7 +4709,20 @@
     var has = false;
     var module = moduleScript.getModule(name);
 
-    if (!module || module.state === undefined || module.state == "init") ; else {
+    if (!module || module.state === undefined || module.state == "init") {
+      has = false;
+    } else {
+      has = true;
+    }
+
+    return has;
+  };
+
+  L$a.hasDefined = function (name) {
+    var has = false;
+    var module = moduleScript.getModule(name);
+
+    if (module && module.state == "defined") {
       has = true;
     }
 
@@ -6981,7 +6994,7 @@
     function regVnodex() {
       var requiredVue = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      if (hasRegVnodex || !requiredVue && !L$s.hasDefine("vue")) {
+      if (hasRegVnodex || !requiredVue && !L$s.hasDefined("vue")) {
         return;
       }
 

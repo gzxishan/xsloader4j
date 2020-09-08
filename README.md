@@ -553,6 +553,7 @@ cnpm install --save @babel/polyfill
 ### v进行中
 1. 解决使用V8时，Map或Collection转换成V8的对象或数组无法释放的问题；
 2. 增加xsloader.es6.name配置；
+3. 增加`xsloader.hasDefined(name)`判断模块是否已经定义完成（此模块已被执行）；
 
 ### v1.1.55 2020/08/21
 1. 完善`ScriptEnv`；
