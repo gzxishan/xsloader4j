@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.1.55**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.1.60**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.1.55-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.1.60-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.1.55</version>
+    <version>1.1.60</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -35,7 +35,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.1.55</version>
+    <version>1.1.60</version>
 </dependency>
 ```
 ## 五、配置
@@ -551,6 +551,8 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+
+### v1.1.60 2020/09/14
 1. 解决使用V8时，Map或Collection转换成V8的对象或数组无法释放的问题；
 2. 增加xsloader.es6.name配置；
 3. 增加`xsloader.hasDefined(name)`判断模块是否已经定义完成（此模块已被执行）；
