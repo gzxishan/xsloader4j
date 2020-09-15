@@ -16,10 +16,10 @@
 - Windows,Linux,Mac
 - maven3
 
-#### 已测试通过
+#### 已测试环境
 - Jdk8
-- Windows10
-- CentOS 7.4，7.5
+- Windows10，windows server 2018
+- CentOS 7.4，7.5，7.8
 
 ## 四、安装
 - spring boot嵌入式版（内嵌tomcat等容器，通过main函数启动）
@@ -541,11 +541,7 @@ cnpm install --save @babel/polyfill
 ### 5、xsloader.js说明
 该插件是基于AMD协议开发的模块加载器（借鉴了requirejs，但从1.2.x开始进行了重构），支持异步模块加载、插件开发、更灵活的依赖配置、脚本版本配置等。
 
-内置插件包括：css、image、json、text、request等。
-
-#### 使用情况
-- xsloader.js：已完全在公司线上产品中使用
-- xsloader4j：已覆盖公司80%以上的项目
+内置插件包括：css、image、json、text、request、ifmsg等。
 
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
