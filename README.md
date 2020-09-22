@@ -174,7 +174,9 @@ data-conf2="./xsloader.conf"
 ```
 - 详细例子可以参考demo1项目
 
-- 执行jetty:run或tomcat7:run的maven插件，可运行demo。访问地址：[http://localhost:8070/](http://localhost:8070/)
+- <font color="red" weight="bold">执行jetty:run或tomcat7:run的maven插件，可运行demo。</font>访问地址：[http://localhost:8070/](http://localhost:8070/)
+
+<img src="https://gitee.com/xishankeji/xsloader4j/raw/master/demo1/images/run-demo.png"/>
 
 - test1目录结构：
 ```
