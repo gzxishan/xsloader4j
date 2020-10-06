@@ -80,10 +80,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     private static String[] ignores;
 
     /**
-     * 存放在资源路径下的静态路径前缀，如"/static"
+     * 存放在资源路径下的静态路径前缀，如"/static"，多个用逗号分隔。
      */
     @Property(name = "xsloader.es6.dealt.static")
-    private static String staticPath;
+    private static String[] staticPath;
 
     @AutoSet
     ServletContext servletContext;
@@ -175,7 +175,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
         if (OftenTool.isEmpty(dealt))
         {
-            pathDealt = new DefaultPathDealt(staticPath, ignores);
+            pathDealt = new DefaultPathDealt(servletContext, staticPath, ignores);
         } else
         {
             try

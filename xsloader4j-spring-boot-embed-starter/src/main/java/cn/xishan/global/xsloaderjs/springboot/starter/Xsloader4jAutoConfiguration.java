@@ -22,9 +22,12 @@ public class Xsloader4jAutoConfiguration implements ServletContextInitializer
     @Override
     public void onStartup(ServletContext servletContext) throws ServletException
     {
-        OftenServletContainerInitializer initializer = new OftenServletContainerInitializer();
-        Set<Class<?>> classSet = new HashSet<>();
-        classSet.add(DefaultXsloaderOftenInitializer.class);
-        initializer.onStartup(classSet, servletContext);
+        if (!DefaultXsloaderOftenInitializer.isStart())
+        {
+            OftenServletContainerInitializer initializer = new OftenServletContainerInitializer();
+            Set<Class<?>> classSet = new HashSet<>();
+            classSet.add(DefaultXsloaderOftenInitializer.class);
+            initializer.onStartup(classSet, servletContext);
+        }
     }
 }

@@ -16,13 +16,16 @@
 - Windows,Linux,Mac
 - maven3
 
+#### 推荐IDE
+- idea
+
 #### 已测试环境
 - Jdk8
 - Windows10，windows server 2018
 - CentOS 7.4，7.5，7.8
 
 ## 四、安装
-- spring boot嵌入式版（内嵌tomcat等容器，通过main函数启动）
+- spring boot版
 ```xml
 <dependency>
     <groupId>com.xishankeji</groupId>
@@ -64,7 +67,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.es6.name：目录名，默认default，当多个项目的临时为目录相同时、可避免v8加载失败。
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
-- xsloader.es6.dealt.static：静态资源在资源目录下的路径（应该在spring boot嵌入式版本中使用），如“/static”。
+- xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
 - xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx"，且取值只能是[.js,.jsx,.vue,.js+]中的值
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
@@ -172,11 +175,15 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 ```
 data-conf2="./xsloader.conf"
 ```
-- 详细例子可以参考demo1项目
+- 详细例子可以参考demo-servlet项目
 
-- <font color="red" weight="bold">执行jetty:run或tomcat7:run的maven插件，可运行demo。</font>访问地址：[http://localhost:8070/](http://localhost:8070/)
+- demo-servlet为普通servlet项目，<font color="red" weight="bold">执行jetty:run或tomcat7:run的maven插件，可运行demo。</font>访问地址：[http://localhost:8070/index.html](http://localhost:8070/index.html)
 
-<img src="https://gitee.com/xishankeji/xsloader4j/raw/master/demo1/images/run-demo.png"/>
+<img src="https://gitee.com/xishankeji/xsloader4j/raw/master/demo-servlet/images/run-demo.png"/>
+
+- demo-spring-boot-servlet为spring boot servlet项目
+
+- demo-spring-boot-main为spring boot main函数项目（普通java项目）
 
 - test1目录结构：
 ```
@@ -329,7 +336,7 @@ new Vue({
 
 ### 2、引入其他库
 - 引入的第三方库需要遵循AMD规范
-- 一般打包的三方umd模块可以正常工作，可以参考项目`demo1`
+- 一般打包的三方umd模块可以正常工作，可以参考项目`demo-servlet`
 - `注意`:import其他组件或模块，不能省略后缀名，如"./app.vue","./router.js"
 
 ### 3、代码转换说明
@@ -426,7 +433,7 @@ return (`\jsx
 - 通过settings注释里的json格式对文档进行设置：
 1. title：设置文档标题
 2. heads：用于添加到`<head>`标签中
-- 通过浏览器可以直接访问htmv文件（java端会自动转换），参考demo1的test1/index.htmv。
+- 通过浏览器可以直接访问htmv文件（java端会自动转换），参考demo-servlet的test1/index.htmv。
 - 当有vue组件、jsx语法或htmv时，需要在配置文件的loader里设置vue2依赖：
 ```json
 {
@@ -584,7 +591,7 @@ cnpm install --save @babel/polyfill
 1. 修复loading的bug；
 
 ### v1.1.27 2020/4/29
-1. 完善demo1，加入vant、mand-mobile测试例子（也支持ant-design-vue）；
+1. 完善demo-servlet，加入vant、mand-mobile测试例子（也支持ant-design-vue）；
 2. 默认支持自动后缀：`*.vue`,`*.jsx`,`*.js`；
 3. 加入ScriptEnv；
 4. 修复一些bug；
