@@ -266,7 +266,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
                     hasSourceMap, replaceType);
-            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(),
+            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(),
                     encoding, "application/javascript", result);
         } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue"))
         {
@@ -274,19 +274,19 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper.Result<String> result = es6Wrapper
                     .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
             cachedResource = CachedResource
-                    .save(isSourceMap, path, file.lastModified(), encoding, "application/javascript",
+                    .save(realPath,isSourceMap, path, file.lastModified(), encoding, "application/javascript",
                             result);
         } else if (suffix.equals("scss") || suffix.equals("sass"))
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
-            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
+            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(), encoding, "text/css",
                     result);
         } else if (suffix.equals("less"))
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
-            cachedResource = CachedResource.save(isSourceMap, path, file.lastModified(), encoding, "text/css",
+            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(), encoding, "text/css",
                     result);
         } else
         {
@@ -384,7 +384,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                 }
             }
 
-
             boolean isSourceMap = path.endsWith(".map");
             if (isSourceMap)
             {
@@ -481,6 +480,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         String path = OftenServletRequest.getPath(request);
+        boolean isSource="true".equals(request.getParameter("__source"));
 
         String replaceType = JsFilter.replaceType;
 
@@ -506,7 +506,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             }
         } else
         {
-            cachedResource.writeResponse(request, response, isDebug, forceCacheSeconds);
+            cachedResource.writeResponse(isSource,request, response, isDebug, forceCacheSeconds);
             return true;
         }
     }
@@ -582,7 +582,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null);
         Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap, replaceType);
-        CachedResource cachedResource = CachedResource.save(isSourceMap, path, System.currentTimeMillis(), "utf-8",
+        CachedResource cachedResource = CachedResource.save(filepath,isSourceMap, path, System.currentTimeMillis(), "utf-8",
                 "application/javascript", result);
         return cachedResource;
     }

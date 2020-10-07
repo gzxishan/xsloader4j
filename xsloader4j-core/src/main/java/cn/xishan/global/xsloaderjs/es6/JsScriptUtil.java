@@ -137,7 +137,7 @@ public class JsScriptUtil
     static void init(String v8flags)
     {
         JsScriptUtil.v8flags = v8flags;
-        String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.8.4/babel.js", "utf-8");
+        String babelScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.11.6/babel.js", "utf-8");
         String vueScript = ResourceUtil
                 .getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
         JsScriptUtil.scripts = new String[]{
@@ -147,7 +147,7 @@ public class JsScriptUtil
 
         String mineScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/mine.js", "utf-8");
         String polyfillScript = ResourceUtil
-                .getAbsoluteResourceString("/xsloader-js/lib/babel-7.8.4/polyfills.js", "utf-8");
+                .getAbsoluteResourceString("/xsloader-js/lib/babel-7.11.6/polyfills.js", "utf-8");
 
         JsScriptUtil.scripts2 = new String[]{
                 mineScript,

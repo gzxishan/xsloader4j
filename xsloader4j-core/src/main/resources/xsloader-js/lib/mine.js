@@ -261,22 +261,37 @@
 			plugins: [{
 					visitor: otherOption.replaceType == "require.get" ? ReplaceRequireVisitor : undefined
 				},
-				['proposal-object-rest-spread'],
-				['transform-react-jsx', {
-					pragma: "__serverBridge__.renderJsx(this)",
-					throwIfNamespace: false
-				}],
-				['syntax-dynamic-import'],
-				["transform-regenerator"],
-				['transform-async-to-generator'], //es2017
-				['proposal-async-generator-functions'],
-				["syntax-top-level-await"],
+				//['transform-async-to-generator'], //es2017
+				['proposal-object-rest-spread'],//es2018
+				['proposal-async-generator-functions'],//es2018
+				["transform-dotall-regex"],//es2018
+                ["transform-named-capturing-groups-regex"],//es2018
+                ["proposal-optional-catch-binding"],//es2018
+                ["proposal-unicode-property-regex", { "useUnicodeFlag": false }],//es2018
+                ["transform-regenerator"],
+                ['transform-react-jsx', {
+                    pragma: "__serverBridge__.renderJsx(this)",
+                    throwIfNamespace: false
+                }],
+                ["proposal-dynamic-import"],
 				["proposal-decorators", {
 					"legacy": true
 				}],
 				["proposal-class-properties", {
 					"loose": true
-				}]
+				}],
+				["proposal-private-methods", {
+                    "loose": true
+                }],
+				["proposal-private-property-in-object", {
+                    "loose": true
+                }],
+				["proposal-nullish-coalescing-operator"],
+				["proposal-optional-chaining"],
+				["proposal-numeric-separator"],
+				["proposal-throw-expressions"],
+				["proposal-logical-assignment-operators"],
+				["proposal-do-expressions"]
 			]
 		}; //!!!!!!!!!!!!!!先顺序执行插件，接着逆序执行预设
 

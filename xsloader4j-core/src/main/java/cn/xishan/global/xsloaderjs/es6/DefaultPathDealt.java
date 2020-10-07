@@ -1,9 +1,9 @@
 package cn.xishan.global.xsloaderjs.es6;
 
-import cn.xishan.global.xsloaderjs.XsloaderUtils;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
+import cn.xishan.oftenporter.servlet.ServletUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class DefaultPathDealt implements IPathDealt
             }
 
             List<String> staticResourceDirList = new ArrayList<>();
-            File resFile = XsloaderUtils.getResourcesRootDir(servletContext);
+            File resFile = ServletUtils.getResourcesRootDir(servletContext);
             if (resFile != null && resFile.exists())
             {
                 String resPath = resFile.getAbsolutePath().replace(File.separatorChar, '/');

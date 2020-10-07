@@ -7,13 +7,13 @@
     <parent>
         <groupId>com.xishankeji</groupId>
         <artifactId>xsloader4j</artifactId>
-        <version>1.1.61</version>
+        <version>1.2.0</version>
     </parent>
 
     <artifactId>xsloader4j-core</artifactId>
 
     <name>xsloader4j-core</name>
-    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017)、*.scss、*.less（暂不支持sourceMap）、*.vue、*.htmv（格式同vue，但可以直接访问）、*.jsx。</description>
+    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017,ES2018)、*.scss、*.less（暂不支持sourceMap）、*.vue、*.htmv（格式同vue，但可以直接访问）、*.jsx。</description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <properties>

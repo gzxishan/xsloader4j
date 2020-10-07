@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<title>基础语言测试</title>
+		<meta charset="UTF-8">
+		<!--引入xsloader脚本-->
+		<script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
+		<style type="text/css">
+			html,body{
+				margin: 0;
+				padding: 0;
+				width: 100%;
+			}
+			body{
+				padding: 5px;
+			}
+			*{
+				box-sizing: border-box;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div id="vue-app">
+
+		</div>
+		<script id="app-template" type="text/x-template">
+			<div style="text-align:center;">
+				<h2>ES2015</h2>
+				<box label="arrow-functions" description="箭头函数" />
+				<box label="block-scoped-functions" description="块级别作用域下的函数" />
+				<box label="block-scoping" description="块级别作用域" />
+				<box label="classes" description="类" />
+				<box label="computed-properties" description="计算属性名" />
+				<box label="destructuring" description="对象与数组解构" />
+				<box label="duplicate-keys" description="重复的属性名" />
+				<box label="for-of" description="" />
+				<box label="function-name" description="函数名" />
+				<box label="instanceof" description="" />
+				<box label="literals" description="" />
+				<box label="new-target" description="" />
+				<box label="object-super" description="" />
+				<box label="parameters" description="" />
+				<box label="shorthand-properties" description="" />
+				<box label="spread" description="数组spread" />
+				<box label="sticky-regex" description="" />
+				<box label="template-literals" description="" />
+				<box label="typeof-symbol" description="" />
+				<box label="unicode-escapes" description="" />
+				<box label="unicode-regex" description="" />
+				<h2>ES2016</h2>
+				<box label="exponentiation-operator" description="幂操作" />
+				<h2>ES2017</h2>
+				<box label="async-to-generator" description="async/await" />
+				<h2>ES2018</h2>
+				<box label="async-generator-functions" description="" />
+				<box label="dotall-regex" description="" />
+				<box label="named-capturing-groups-regex" description="" />
+				<box label="object-rest-spread" description="对象spread" />
+				<box label="optional-catch-binding" description="可选的catch错误声明" />
+				<box label="unicode-property-regex" description="" />
+				<h2>其他</h2>
+				<box label="regenerator" description="" />
+				<box label="react-jsx" description="支持jsx，但需要引入Vue且模块名为vue" />
+				<box label="dynamic-import" description="支持异步导入，返回一个promise实例" />
+				<box label="decorators" description="" />
+				<box label="class-properties" description="类属性" />
+				<box label="private-methods" description="私有函数" />
+				<box label="private-property-in-object" description="私有成员变量" />
+				<box label="nullish-coalescing-operator" description="双问号??操作符跟||类似，如果给定变量值为null或者undefined，则使用双问号后的默认值，否则使用该变量值" />
+				<box label="optional-chaining" description="" />
+				<box label="numeric-separator" description="" />
+				<box label="throw-expressions" description="" />
+				<box label="logical-assignment-operators" description="" />
+				<box label="do-expressions" description="" />
+			</div>
+		</script>
+	</body>
+
+</html>

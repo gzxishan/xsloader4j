@@ -342,7 +342,7 @@ new Vue({
 ### 3、代码转换说明
 
 #### 1）*.js
-- 语法支持到es2017
+- 语法支持到es2018
 - 支持jsx语法
 - 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象，支持字符串等内容）可以直接显示编译后的jsx对象
 ```
@@ -554,8 +554,16 @@ cnpm install --save @babel/polyfill
 
 [xsloader-wiki](https://github.com/gzxishan/xsloader/wiki)
 
+### 6、直接获取源码
+在请求地址上加入`__source=true`则直接返回源码。
+
 ## 八、发布记录
 ### v进行中
+1. 加入spring boot相关demo；
+2. 升级babel与polyfill；
+3. 转换的js支持到es2018；
+4. 增加`__source`参数，若`__source=true`则直接返回源码；
+5. 增加语法或特性测试例子（`demo-servlet/src/main/webapp/lang/`）；
 
 ### v1.1.60 2020/09/14
 1. 解决使用V8时，Map或Collection转换成V8的对象或数组无法释放的问题；

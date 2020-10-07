@@ -26,6 +26,7 @@ public class CachedResource
     private static final Logger LOGGER = LoggerFactory.getLogger(CachedResource.class);
     private String path;
     private long lastModified;
+    private String topFile;
     private long updatetime;
     private String contentType;
     private String encoding;
@@ -104,12 +105,14 @@ public class CachedResource
      * @return
      * @throws IOException
      */
-    public static CachedResource save(boolean isSourceMap, String path, long lastModified, String encoding,
+    public static CachedResource save(String topFile, boolean isSourceMap, String path, long lastModified,
+            String encoding,
             String contentType,
             Es6Wrapper.Result<String> result) throws IOException
     {
         long updatetime = System.currentTimeMillis();
         CachedResource cachedResource = new CachedResource(isSourceMap);
+        cachedResource.topFile = topFile;
         cachedResource.updatetime = updatetime;
         cachedResource.contentType = contentType;
         cachedResource.encoding = encoding;
@@ -159,6 +162,7 @@ public class CachedResource
     public JSONObject getConfig()
     {
         JSONObject conf = new JSONObject();
+        conf.put("topFile", topFile);
         conf.put("encoding", encoding);
         conf.put("type", contentType);
         conf.put("updatetime", updatetime);
@@ -180,12 +184,14 @@ public class CachedResource
         if (confFile.exists() && dataFile.exists())
         {
             JSONObject conf = JSON.parseObject(FileTool.getString(confFile, "utf-8"));
+            String topFile = conf.getString("topFile");
             String contentType = conf.getString("type");
             String encoding = conf.getString("encoding");
             JSONArray files = conf.getJSONArray("files");
             JSONArray filesLastModified = conf.getJSONArray("filesLastModified");
 
             CachedResource cachedResource = new CachedResource(isSourceMap);
+            cachedResource.topFile = topFile;
             cachedResource.contentType = contentType;
             cachedResource.encoding = encoding;
             cachedResource.lastModified = dataFile.lastModified();
@@ -336,18 +342,34 @@ public class CachedResource
         this.encoding = encoding;
     }
 
-    private void doResponse(HttpServletResponse response)
+    private void doResponse(boolean isSource, HttpServletResponse response)
     {
-        response.setContentLength(isSourceMap() ? getSourceMapLength() : this.getContentLength());
-        try (OutputStream os = response.getOutputStream(); InputStream in = isSourceMap() ? getSourceMap() : this
-                .getContent())
+        if (isSource)
         {
-            FileTool.in2out(in, os, 1024);
-            os.flush();
-        } catch (IOException e)
+            File file = new File(topFile);
+            response.setContentLength((int) file.length());
+            try (OutputStream os = response.getOutputStream(); InputStream in = new FileInputStream(file))
+            {
+                FileTool.in2out(in, os, 1024);
+                os.flush();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        } else
         {
-            throw new RuntimeException(e);
+            response.setContentLength(isSourceMap() ? getSourceMapLength() : this.getContentLength());
+            try (OutputStream os = response.getOutputStream(); InputStream in = isSourceMap() ? getSourceMap() : this
+                    .getContent())
+            {
+                FileTool.in2out(in, os, 1024);
+                os.flush();
+            } catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
         }
+
     }
 
     public boolean isSourceMap()
@@ -355,19 +377,26 @@ public class CachedResource
         return isSourceMap;
     }
 
-    public void writeResponse(HttpServletRequest request, HttpServletResponse response,
+    public void writeResponse(boolean isSource, HttpServletRequest request, HttpServletResponse response,
             boolean isDebug, int forceCacheSeconds) throws IOException
     {
-        if (isSourceMap() && !existsMap())
+        if (isSource && OftenTool.isEmpty(topFile) && !new File(topFile).exists())
+        {
+            response.sendError(404);
+            return;
+        } else if (isSourceMap() && !existsMap())
         {
             response.sendError(404);
             return;
         }
+
         long lastModified = this.lastModified;
         response.setCharacterEncoding(this.getEncoding());
-        response.setContentType(isSourceMap() ? this.getSourceMapContentType() : this.getContentType());
+        response.setContentType(
+                isSource ? "text/plain" : (isSourceMap() ? this.getSourceMapContentType() : this.getContentType())
+        );
         HttpCacheUtil.checkWithModified(lastModified, request, response)
-                .changed((request2, response2) -> doResponse(response2))
+                .changed((request2, response2) -> doResponse(isSource, response2))
                 .cacheInfo(forceCacheSeconds, lastModified)
                 .unchanged304()
                 .done();

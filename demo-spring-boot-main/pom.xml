@@ -4,13 +4,13 @@
     <parent>
         <groupId>com.xishankeji</groupId>
         <artifactId>xsloader4j</artifactId>
-        <version>1.1.61</version>
+        <version>1.2.0</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.xishankeji.xsloader4j</groupId>
     <artifactId>demo-spring-boot-main</artifactId>
-    <version>1.1.61</version>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <name>demo-spring-boot-main</name>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>com.xishankeji</groupId>
             <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-            <version>1.1.61</version>
+            <version>1.2.0</version>
         </dependency>
 
         <dependency>
