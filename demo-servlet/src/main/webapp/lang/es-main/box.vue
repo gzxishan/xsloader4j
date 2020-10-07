@@ -63,8 +63,8 @@
 		async created() {
 			let codeText = this.code;
 			if (!codeText) {
-				codeText = await require([`text!./code/${this.label}.js?__source=true`]);
-				this.outputText = await require([`text!./code/${this.label}.js`]);
+				codeText = await import(`text!./code/${this.label}.js?__source=true`);
+				this.outputText = await import(`text!./code/${this.label}.js`);
 			}
 			this.codeText = codeText;
 			let isSupport = this.ok;

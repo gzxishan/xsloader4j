@@ -258,7 +258,9 @@
 				"es2016",
 				"es2017"
 			],
-			plugins: [{
+			plugins: [
+				//['syntax-dynamic-import'],//保留import("...")，会被替换成__ImporT__("...")
+				{
 					visitor: otherOption.replaceType == "require.get" ? ReplaceRequireVisitor : undefined
 				},
 				//['transform-async-to-generator'], //es2017
@@ -268,12 +270,11 @@
                 ["transform-named-capturing-groups-regex"],//es2018
                 ["proposal-optional-catch-binding"],//es2018
                 ["proposal-unicode-property-regex", { "useUnicodeFlag": false }],//es2018
-                ["transform-regenerator"],
                 ['transform-react-jsx', {
                     pragma: "__serverBridge__.renderJsx(this)",
                     throwIfNamespace: false
                 }],
-                ["proposal-dynamic-import"],
+                ["transform-regenerator"],
 				["proposal-decorators", {
 					"legacy": true
 				}],
