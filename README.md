@@ -559,6 +559,8 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+
+### v1.2.0 2020/10/07
 1. 加入spring boot相关demo；
 2. 升级babel与polyfill；
 3. 转换的js支持到es2018；
