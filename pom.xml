@@ -13,6 +13,7 @@
         <module>xsloader4j-core</module>
         <module>xsloader4j-spring-boot-embed-starter</module>
         <module>demo-servlet</module>
+        <module>demo-spring-boot-main</module>
         <module>demo-spring-boot-servlet</module>
     </modules>
 
