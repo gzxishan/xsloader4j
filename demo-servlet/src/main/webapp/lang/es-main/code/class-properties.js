@@ -15,7 +15,7 @@ class Bork {
 let myBork = new Bork;
 
 //Property initializers are not on the prototype.
-console.log(myBork.__proto__.boundFunction); // > undefined
+//console.log(myBork.__proto__.boundFunction); // > undefined
 
 //Bound functions are bound to the class instance.
 console.log(myBork.boundFunction.call(undefined)); // > "bork"
