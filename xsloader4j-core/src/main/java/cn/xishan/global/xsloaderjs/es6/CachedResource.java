@@ -377,6 +377,12 @@ public class CachedResource
         return isSourceMap;
     }
 
+    public void writeResponse(HttpServletRequest request, HttpServletResponse response,
+            boolean isDebug, int forceCacheSeconds) throws IOException
+    {
+        writeResponse(false, request, response, isDebug, forceCacheSeconds);
+    }
+
     public void writeResponse(boolean isSource, HttpServletRequest request, HttpServletResponse response,
             boolean isDebug, int forceCacheSeconds) throws IOException
     {
