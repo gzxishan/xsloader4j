@@ -559,6 +559,7 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+1. 完善`ScriptEnv`；
 
 ### v1.2.1 2020/10/07
 1. 加入spring boot相关demo；

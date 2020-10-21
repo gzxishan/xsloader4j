@@ -25,6 +25,7 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
     protected V8Object v8Object;
 
     private List<Releasable> releasableList;
+    private boolean released = false;
 
     protected J2Object(J2Object root)
     {
@@ -52,7 +53,7 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
 
     public J2Object getRoot()
     {
-        return root;
+        return root == null ? this : root;
     }
 
 
@@ -171,8 +172,7 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
             } catch (Throwable e)
             {
                 LOGGER.error(e.getMessage(), e);
-                return null;
-                //throw new RuntimeException(e);
+                throw new RuntimeException(e);
             } finally
             {
                 for (int i = 0; i < length; i++)
@@ -199,9 +199,23 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
             {
                 LOGGER.warn(e.getMessage(), e);
             }
+        } else if (object instanceof AutoCloseable)
+        {
+            try
+            {
+                ((AutoCloseable) object).close();
+            } catch (Exception e)
+            {
+                LOGGER.warn(e.getMessage(), e);
+            }
         }
     }
 
+
+    public V8Object toV8Value(Map<String, Object> map)
+    {
+        return toV8Value(getV8(), map, getRoot());
+    }
 
     public static V8Object toV8Value(V8 runtime, Map<String, Object> map, IReleasableRegister releasableRegister)
     {
@@ -217,6 +231,11 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
             add(object, entry.getKey(), entry.getValue(), releasableRegister);
         }
         return object;
+    }
+
+    public V8Array toV8Value(Collection collection)
+    {
+        return toV8Value(getV8(), collection, getRoot());
     }
 
     public static V8Array toV8Value(V8 runtime, Collection collection, IReleasableRegister releasableRegister)
@@ -404,13 +423,17 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
 
     public void release()
     {
-        if (releasableList != null)
+        if (!released)
         {
-            for (Releasable releasable : releasableList)
+            released = true;
+            if (releasableList != null)
             {
-                release(releasable);
+                for (Releasable releasable : releasableList)
+                {
+                    release(releasable);
+                }
+                releasableList = null;
             }
-            releasableList = null;
         }
     }
 

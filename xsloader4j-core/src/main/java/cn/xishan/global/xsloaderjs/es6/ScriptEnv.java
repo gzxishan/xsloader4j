@@ -2,6 +2,7 @@ package cn.xishan.global.xsloaderjs.es6;
 
 import cn.xishan.global.xsloaderjs.es6.jbrowser.J2Object;
 import cn.xishan.global.xsloaderjs.es6.jbrowser.JsBridgeMethod;
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.eclipsesource.v8.*;
@@ -56,29 +57,65 @@ public class ScriptEnv
         root.autoRegisterMethod(object);
     }
 
-    public void voidScript(String name, String script, boolean parseEs6)
+    public void voidScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         root.getV8().executeVoidScript(script);
     }
 
-    public String stringScript(String name, String script, boolean parseEs6)
+    public void voidFun(String funName)
+    {
+        this.voidFun(funName, null);
+    }
+
+
+    public void voidFun(String funName, Object[] args)
+    {
+        root.getV8().executeVoidFunction(funName, toParameters(args));
+    }
+
+
+    public JSONObject jsonFun(String funName, Object[] args)
+    {
+        V8Object v8Object = root.getV8().executeObjectFunction(funName, toParameters(args));
+        try
+        {
+            return toJSON(v8Object);
+        } finally
+        {
+            v8Object.release();
+        }
+    }
+
+    public JSONArray arrayFun(String funName, Object[] args)
+    {
+        V8Array v8Array = root.getV8().executeArrayFunction(funName, toParameters(args));
+        try
+        {
+            return toArray(v8Array);
+        } finally
+        {
+            v8Array.release();
+        }
+    }
+
+    public String stringScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         return root.getV8().executeStringScript(script);
     }
 
-    public boolean boolScript(String name, String script, boolean parseEs6)
+    public boolean boolScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         return root.getV8().executeBooleanScript(script);
     }
@@ -92,21 +129,21 @@ public class ScriptEnv
         return root.getV8().executeIntegerScript(script);
     }
 
-    public double doubleScript(String name, String script, boolean parseEs6)
+    public double doubleScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         return root.getV8().executeDoubleScript(script);
     }
 
 
-    public JSONObject jsonScript(String name, String script, boolean parseEs6)
+    public JSONObject jsonScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         V8Object v8Object = root.getV8().executeObjectScript(script);
         JSONObject rs = null;
@@ -123,11 +160,11 @@ public class ScriptEnv
         return rs;
     }
 
-    public JSONArray arrayScript(String name, String script, boolean parseEs6)
+    public JSONArray arrayScript(String scriptName, String script, boolean parseEs6)
     {
         if (parseEs6)
         {
-            script = Es6Wrapper.parseEs6Script(name, script);
+            script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
         V8Array v8Array = root.getV8().executeArrayScript(script);
         JSONArray rs = null;
@@ -221,8 +258,13 @@ public class ScriptEnv
         return root;
     }
 
-    private V8Array toParameters(Object[] args)
+    public V8Array toParameters(Object[] args)
     {
+        if (OftenTool.isEmptyOf(args))
+        {
+            return null;
+        }
+
         V8Array parameters = root.newV8Array();
         for (Object obj : args)
         {
