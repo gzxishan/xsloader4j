@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.4</version>
+    <version>1.2.5</version>
 
     <modules>
         <module>xsloader4j-core</module>

@@ -344,6 +344,7 @@ new Vue({
 #### 1）*.js
 - 语法支持到es2018
 - 支持jsx语法
+- 某些IDE暂不支持jsx语法，可以用如下方式勉强避免错乱：（编译前，java后台会把Vue文件里的\`\jsx与\jsx\`删除）
 - 内置`<jsx>`组件（需要全局配置vue模块），通过x属性（返回jsx对象的函数或jsx对象，支持字符串等内容）可以直接显示编译后的jsx对象
 ```
 <div>
@@ -561,6 +562,7 @@ cnpm install --save @babel/polyfill
 ### v进行中
 1. 完善`ScriptEnv`；
 2. `ScriptEnv`的java抛出异常给js后，js端也会收到异常；
+3. 对于js文件，某些IDE暂不支持jsx语法，可以用如下方式勉强避免错乱：（编译前，java后台会把Vue文件里的\`\jsx与\jsx\`删除）
 
 ### v1.2.1 2020/10/07
 1. 加入spring boot相关demo；

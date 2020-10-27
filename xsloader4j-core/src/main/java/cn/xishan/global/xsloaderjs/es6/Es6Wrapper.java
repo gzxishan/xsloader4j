@@ -105,6 +105,12 @@ public class Es6Wrapper
         LOGGER.info("parse es6 script code:name={}", name);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null))
         {
+            if (es6Content != null)
+            {//替换`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
+                es6Content = es6Content.replace("`\\jsx", "");
+                es6Content = es6Content.replace("\\jsx`", "");
+            }
+
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
                     .push(name)
@@ -130,6 +136,12 @@ public class Es6Wrapper
 
             V8Object option = j2BaseInterface.newV8Object();
             option.add("replaceType", replaceType);
+
+            if (es6Content != null)
+            {//替换`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
+                es6Content = es6Content.replace("`\\jsx", "");
+                es6Content = es6Content.replace("\\jsx`", "");
+            }
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
