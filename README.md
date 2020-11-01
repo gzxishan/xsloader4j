@@ -563,6 +563,7 @@ cnpm install --save @babel/polyfill
 1. 完善`ScriptEnv`；
 2. `ScriptEnv`的java抛出异常给js后，js端也会收到异常；
 3. 对于js文件，某些IDE暂不支持jsx语法，可以用如下方式勉强避免错乱：（编译前，java后台会把Vue文件里的\`\jsx与\jsx\`删除）
+4. `default.html`加入`<meta name="renderer" content="webkit"/>`与`<meta name="force-rendering" content="webkit"/>`，阻止使用兼容模式；
 
 ### v1.2.1 2020/10/07
 1. 加入spring boot相关demo；
