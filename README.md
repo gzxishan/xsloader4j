@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.2.1**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.2.6**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.2.1-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.2.6-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -30,7 +30,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.6</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -38,7 +38,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.6</version>
 </dependency>
 ```
 ## 五、配置
@@ -166,7 +166,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
      }
 }
 ```
-## 六、使用
+## 六、使用与demo运行
 - xsloader脚本引入：
 ```html
 <script src="../xsloader.js" data-conf2="./xsloader.conf" async="async" type="text/javascript" charset="utf-8"></script>
@@ -560,6 +560,8 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+
+### v1.2.6 2020/11/06
 1. 完善`ScriptEnv`；
 2. `ScriptEnv`的java抛出异常给js后，js端也会收到异常；
 3. 对于js文件，某些IDE暂不支持jsx语法，可以用如下方式勉强避免错乱：（编译前，java后台会把Vue文件里的\`\jsx与\jsx\`删除）
