@@ -560,6 +560,7 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+1. 加入`IConfigFileCheck`；
 
 ### v1.2.6 2020/11/06
 1. 完善`ScriptEnv`；

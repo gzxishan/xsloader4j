@@ -37,10 +37,20 @@ public abstract class XsloaderConfigFilter implements Filter
 
     private FilterConfig filterConfig;
     private boolean isRequired;
+    private IConfigFileCheck configFileCheck;
+
+    public XsloaderConfigFilter(boolean isRequired, IConfigFileCheck configFileCheck)
+    {
+        this.isRequired = isRequired;
+
+        //默认比较文件修改时间
+        this.configFileCheck = configFileCheck == null ? (resourceFile, lastModified) -> resourceFile
+                .lastModified() != lastModified : configFileCheck;
+    }
 
     public XsloaderConfigFilter(boolean isRequired)
     {
-        this.isRequired = isRequired;
+        this(isRequired, null);
     }
 
     public XsloaderConfigFilter()
@@ -130,7 +140,7 @@ public abstract class XsloaderConfigFilter implements Filter
         OutputStream os = null;
         try
         {
-            if (resourceFile != null && resourceFile.lastModified() != lastEditTimeOfResourceFile)
+            if (resourceFile != null && configFileCheck.needReload(resourceFile, lastEditTimeOfResourceFile))
             {
                 loadConf();
                 lastEditTimeOfResourceFile = resourceFile.lastModified();

@@ -39,7 +39,7 @@ public class XsloaderFilter implements Filterer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
 
-    public static final String XSLOADER_VERSION="1.2.6";
+    public static final String XSLOADER_VERSION = "1.2.7";
 
     private byte[] content;
     private byte[] map;
@@ -92,6 +92,9 @@ public class XsloaderFilter implements Filterer
     @AutoSet(nullAble = true, classValue = IConfigDealt.class)
     private IConfigDealt configDealt;
 
+    @AutoSet(nullAble = true, classValue = IConfigFileCheck.class)
+    private IConfigFileCheck configFileCheck;
+
     @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties.")
     private String propertiesPrefix;
 
@@ -121,8 +124,8 @@ public class XsloaderFilter implements Filterer
         try
         {
             Map<String, Object> props = configData.getJSONByKeyPrefix(propertiesPrefix);
-            DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, configDealt, requestPath,
-                    resourcePath, props);
+            DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, configDealt,
+                    configFileCheck,requestPath, resourcePath, props);
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(defaultConfigFilter);
             defaultConfigFilter.init(null);
 
