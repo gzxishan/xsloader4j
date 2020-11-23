@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.31
+ * xsloader.js v1.1.32
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Sep 08 2020 22:21:10 GMT+0800 (GMT+08:00)
+ * build time:Mon Nov 23 2020 23:49:13 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2449,7 +2449,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.31"
+    version: "1.1.32"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -5813,6 +5813,7 @@
   });
 
   var L$n = U.global.xsloader;
+  var G$7 = U.global;
   var progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
 
   function httpRequest(option) {
@@ -5943,7 +5944,13 @@
           if (L$n.isArray(value)) {
             formData.append(x, L$n.xsJson2String(value));
           } else {
-            formData.append(x, value);
+            if (G$7.File && value instanceof G$7.File || G$7.Blob && value instanceof G$7.Blob) {
+              formData.append(x, value);
+            } else if (L$n.isObject(value)) {
+              formData.append(x, L$n.xsJson2String(value));
+            } else {
+              formData.append(x, value);
+            }
           }
         }
 
@@ -5958,7 +5965,7 @@
             continue;
           }
 
-          if (_typeof(_value) == "object") {
+          if (L$n.isObject(_value)) {
             _value = L$n.xsJson2String(_value);
           }
 
@@ -8289,9 +8296,9 @@
     debug: new Debug()
   });
 
-  var G$7 = U.global;
-  var L$u = G$7.xsloader;
-  var http = G$7._xshttp_request_;
+  var G$8 = U.global;
+  var L$u = G$8.xsloader;
+  var http = G$8._xshttp_request_;
   var DATA_CONF = "data-conf",
       DATA_CONFX = "data-xsloader-conf";
   var DATA_CONF2 = "data-conf2",
@@ -8394,8 +8401,8 @@
           if (isLocal && conf.service.hasGlobal) {
             loadServiceConfig("global servie", conf.service.confUrl, function (globalConfig) {
               var localConfig = conf;
-              G$7[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
-              G$7[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
+              G$8[globalConfig.main && globalConfig.main.localConfigVar || localConfig.main.localConfigVar] = localConfig;
+              G$8[globalConfig.main && globalConfig.main.globalConfigVar || localConfig.main.globalConfigVar] = globalConfig;
               var mainName, mainPath, loaderName;
               loaderName = globalConfig.chooseLoader.call(globalConfig, localConfig);
               var conf;
@@ -8443,7 +8450,7 @@
 
     function startLoad() {
       loadServiceConfig("local", serviceConfigUrl, function (localConfig) {
-        G$7[localConfig.main.localConfigVar] = localConfig;
+        G$8[localConfig.main.localConfigVar] = localConfig;
         var mainName = localConfig.main.name;
         var href = location.href;
         var index = href.lastIndexOf("?");
@@ -8487,8 +8494,8 @@
       loader.depsPaths = loader.depsPaths || {};
 
       if (L$u.endsWith(location.pathname, ".htmv")) {
-        if (G$7.__htmv_init_bridge_) {
-          G$7.__htmv_init_bridge_();
+        if (G$8.__htmv_init_bridge_) {
+          G$8.__htmv_init_bridge_();
         }
 
         mainName = "htmv-main";
