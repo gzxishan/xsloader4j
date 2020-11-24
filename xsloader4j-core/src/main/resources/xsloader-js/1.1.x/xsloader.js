@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.32
+ * xsloader.js v1.1.33
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon Nov 23 2020 23:49:13 GMT+0800 (GMT+08:00)
+ * build time:Tue Nov 24 2020 09:48:29 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,6 +126,19 @@
     return _setPrototypeOf(o, p);
   }
 
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -140,6 +153,23 @@
     }
 
     return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    return function () {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (_isNativeReflectConstruct()) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   var G;
@@ -2449,7 +2479,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.32"
+    version: "1.1.33"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -5941,6 +5971,10 @@
         for (var x in option.params) {
           var value = option.params[x];
 
+          if (value === null || value === undefined) {
+            value = "";
+          }
+
           if (L$n.isArray(value)) {
             formData.append(x, L$n.xsJson2String(value));
           } else {
@@ -5962,10 +5996,10 @@
           var _value = option.params[_x];
 
           if (_value === null || _value === undefined) {
-            continue;
+            _value = "";
           }
 
-          if (L$n.isObject(_value)) {
+          if (L$n.isArray(_value) || L$n.isObject(_value)) {
             _value = L$n.xsJson2String(_value);
           }
 
@@ -7569,6 +7603,8 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
+    var _super = _createSuper(Client);
+
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7576,7 +7612,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      _this = _super.call(this, cmd);
 
       _defineProperty(_assertThisInitialized(_this), "_source", void 0);
 
@@ -7942,12 +7978,14 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
+    var _super2 = _createSuper(Server);
+
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
+      _this5 = _super2.call(this, cmd);
 
       _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
 
