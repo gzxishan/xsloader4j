@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.33
+ * xsloader.js v1.1.34
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Nov 24 2020 09:48:29 GMT+0800 (GMT+08:00)
+ * build time:Thu Dec 03 2020 21:42:51 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2479,7 +2479,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.33"
+    version: "1.1.34"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3986,6 +3986,8 @@
 
       _classCallCheck(this, DefineObject);
 
+      _defineProperty(this, "id", U.getAndIncIdCount());
+
       _defineProperty(this, "thiz", void 0);
 
       _defineProperty(this, "isRequire", void 0);
@@ -4173,9 +4175,9 @@
     return DefineObject;
   }();
 
-  function getCurrentScript() {
-    var isRemoveQueryHash = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+  var hasCurrentPath = false;
 
+  function getCurrentScript() {
     function _getCurrentScriptOrSrc() {
       if (document.currentScript !== undefined) {
         var node = document.currentScript && document.currentScript.src && document.currentScript;
@@ -4263,17 +4265,28 @@
     }
 
     if (rs.node) {
-      rs.src = U.getNodeAbsolutePath(rs.node);
+      var __src = rs.node.getAttribute("_current_path_src_");
+
+      rs.src = __src || U.getNodeAbsolutePath(rs.node);
     }
 
-    if (rs) {
-      rs.scriptSrc = rs.src;
+    hasCurrentPath = !!L$9.__currentPath;
+
+    if (hasCurrentPath) {
+      var oldSrc = rs.src;
+      rs.srcBeforeCurrentPath = U.removeQueryHash(oldSrc);
+      rs.__currentPath = L$9.__currentPath;
+      rs.src = L$9.getPathWithRelative(oldSrc, L$9.__currentPath, false);
+      rs.src = L$9.appendArgs2Url(rs.src, oldSrc);
+      L$9.__currentPath = undefined;
+
+      if (rs.srcBeforeCurrentPath != U.removeQueryHash(rs.src)) {
+        rs.node.setAttribute("_current_path_src_", rs.src);
+      }
     }
 
-    if (isRemoveQueryHash) {
-      rs.src = U.removeQueryHash(rs.src);
-    }
-
+    rs.scriptSrc = rs.src;
+    rs.src = U.removeQueryHash(rs.src);
     return rs;
   }
 
@@ -4405,6 +4418,7 @@
     var src = rs.src;
     var scriptSrc = rs.scriptSrc;
     var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire);
+    defineObject.srcBeforeCurrentPath = rs.srcBeforeCurrentPath;
 
     if (!isSrcFromScriptLoad) {
       try {
@@ -4425,11 +4439,12 @@
     var handle = new Handle(defineObject);
     var isLoaderEnd = U.isLoaderEnd();
     L$9.asyncCall(function () {
-      if (isSrcFromScriptLoad && isLoaderEnd) {
+      if (isSrcFromScriptLoad && isLoaderEnd && !hasCurrentPath) {
         defineObject.src = lastSrc;
         defineObject.lastScriptSrc = lastScriptSrc;
       }
 
+      hasCurrentPath = false;
       theRealDefine([defineObject]);
     });
     return handle;
@@ -5199,6 +5214,15 @@
   function onModuleLoaded(defineObject, lastDefineObject) {
     moduleScript.appendLoadingModuleDeps(defineObject);
     var ifmodule = moduleScript.getModule(defineObject.src, defineObject.selfname);
+
+    if (!ifmodule && defineObject.srcBeforeCurrentPath) {
+      ifmodule = moduleScript.getModule(defineObject.srcBeforeCurrentPath);
+
+      if (ifmodule) {
+        ifmodule.src = defineObject.src;
+        ifmodule.scriptSrc = defineObject.scriptSrc;
+      }
+    }
 
     if (ifmodule) {
       if (ifmodule.state == "loading") {

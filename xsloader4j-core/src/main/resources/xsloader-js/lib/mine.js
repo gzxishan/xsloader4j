@@ -353,9 +353,21 @@
 				sourceMap
 			};
 		}
+		
+		let currentPath;
+		if(currentUrl){
+			let index=currentUrl.indexOf("://");
+			if(index>0){
+				index=currentUrl.indexOf("/",index+3);
+				if(index>0){
+					currentPath=currentUrl.substring(index);
+				}
+			}
+		}
 
 		let scriptPrefix =
-			`xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge'].concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}]),function(exports,__serverBridge__){
+			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
+			xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge'].concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}]),function(exports,__serverBridge__){
 				var thiz=this;
 				var module={};
 				var __real_require=__serverBridge__.getRequire(thiz);

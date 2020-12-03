@@ -105,10 +105,8 @@ public class CachedResource
      * @return
      * @throws IOException
      */
-    public static CachedResource save(String topFile, boolean isSourceMap, String path, long lastModified,
-            String encoding,
-            String contentType,
-            Es6Wrapper.Result<String> result) throws IOException
+    public static CachedResource save(String topFile, boolean isSourceMap, String path,String sourceMapName, long lastModified,
+            String encoding,String contentType,Es6Wrapper.Result<String> result) throws IOException
     {
         long updatetime = System.currentTimeMillis();
         CachedResource cachedResource = new CachedResource(isSourceMap);
@@ -137,7 +135,7 @@ public class CachedResource
         String code = result.getContent();
         if (result.getSourceMap() != null && result.isNeedAddSourceMappingURL())
         {
-            code += String.format("\n//# sourceMappingURL=%s.map", OftenStrUtil.getNameFormPath(path));
+            code += String.format("\n//# sourceMappingURL=%s.map", sourceMapName);
         }
 
         if (code == null)

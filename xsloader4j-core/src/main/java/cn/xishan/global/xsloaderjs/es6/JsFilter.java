@@ -49,7 +49,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
 
-    @Property(name = "xsloader.es6.extensions", defaultVal = ".js,.vue,.jsx")
+    @Property(name = "xsloader.es6.extensions", defaultVal = ".js,.vue,.jsx,/index.js,/index.vue,/index.jsx")
     private static String[] extensions;
 
     @Property(name = "xsloader.es6.v8flags")
@@ -244,7 +244,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @throws IOException
      */
     private static CachedResource parse(CachedResource cachedResource, boolean isSourceMap, String requestUrl,
-            String path, File file, IFileContentGetter fileContentGetter,
+            String path, String sourceMapName, File file, IFileContentGetter fileContentGetter,
             String encoding, String replaceType) throws IOException
     {
         if (cachedResource != null)
@@ -266,7 +266,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
                     hasSourceMap, replaceType);
-            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(),
+            cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "application/javascript", result);
         } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue"))
         {
@@ -274,20 +274,20 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper.Result<String> result = es6Wrapper
                     .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
             cachedResource = CachedResource
-                    .save(realPath,isSourceMap, path, file.lastModified(), encoding, "application/javascript",
-                            result);
+                    .save(realPath, isSourceMap, path, sourceMapName, file.lastModified(), encoding,
+                            "application/javascript", result);
         } else if (suffix.equals("scss") || suffix.equals("sass"))
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
-            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(), encoding, "text/css",
-                    result);
+            cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName,
+                    file.lastModified(), encoding, "text/css", result);
         } else if (suffix.equals("less"))
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
-            cachedResource = CachedResource.save(realPath,isSourceMap, path, file.lastModified(), encoding, "text/css",
-                    result);
+            cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
+                    encoding, "text/css", result);
         } else
         {
             throw new IOException("unknown suffix:" + suffix);
@@ -317,6 +317,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         CachedResource result = null;
         path = pathDealt.dealPath(servletContext, path);
         boolean isAuto = false;
+        String autoExtension = null;
         end:
         do
         {
@@ -326,13 +327,15 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             } else if (path.endsWith(".*"))
             {//自动后缀
                 String autoPath = null;
+                String _path = path.substring(0, path.length() - 2);
                 for (String ext : extensions)
                 {
-                    String rpath = path.substring(0, path.length() - 2) + ext;
+                    String rpath = _path + ext;
                     File file = pathDealt.getRealFile(servletContext, rpath);
                     if (file != null && file.exists())
                     {
                         autoPath = rpath;
+                        autoExtension = ext;
                         break;
                     }
                 }
@@ -421,12 +424,28 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                     requestUrl = requestUrl.substring(0, requestUrl.length() - 4);//.map
                 }
 
+                String sourceMapName;
+                if (autoExtension != null)
+                {
+                    int index=requestUrl.indexOf("://");
+                    index=requestUrl.indexOf("/",index+3);
+                    sourceMapName = requestUrl.substring(index, requestUrl.length() - 2) + autoExtension;
+                } else
+                {
+                    sourceMapName = OftenStrUtil.getNameFormPath(path);
+                }
+
+                if (autoExtension != null)
+                {
+                    requestUrl = requestUrl.substring(0, requestUrl.length() - 2) + autoExtension;
+                }
+
                 String finalPath = path;
 
                 CachedResource cachedResource = !useCache ? null : CachedResource.getByPath(isSourceMap, path);
                 if (cachedResource == null || cachedResource.needReload(realFile, isDebug))
                 {
-                    cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, realFile,
+                    cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, sourceMapName, realFile,
                             new IFileContentGetter()
                             {
 
@@ -480,7 +499,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         String path = OftenServletRequest.getPath(request);
-        boolean isSource="true".equals(request.getParameter("__source"));
+        boolean isSource = "true".equals(request.getParameter("__source"));
 
         String replaceType = JsFilter.replaceType;
 
@@ -506,7 +525,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             }
         } else
         {
-            cachedResource.writeResponse(isSource,request, response, isDebug, forceCacheSeconds);
+            cachedResource.writeResponse(isSource, request, response, isDebug, forceCacheSeconds);
             return true;
         }
     }
@@ -582,8 +601,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null);
         Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap, replaceType);
-        CachedResource cachedResource = CachedResource.save(filepath,isSourceMap, path, System.currentTimeMillis(), "utf-8",
-                "application/javascript", result);
+        CachedResource cachedResource = CachedResource
+                .save(filepath, isSourceMap, path, OftenStrUtil.getNameFormPath(path), System.currentTimeMillis(),
+                        "utf-8", "application/javascript", result);
         return cachedResource;
     }
 

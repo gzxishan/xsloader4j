@@ -68,7 +68,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
-- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx"，且取值只能是[.js,.jsx,.vue,.js+]中的值
+- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,/index.js,/index.vue,/index.jsx"，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+]中的值
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 - xsloader.htmv.enable：是否启用htmv，默认为false
@@ -337,7 +337,7 @@ new Vue({
 ### 2、引入其他库
 - 引入的第三方库需要遵循AMD规范
 - 一般打包的三方umd模块可以正常工作，可以参考项目`demo-servlet`
-- `注意`:import其他组件或模块，不能省略后缀名，如"./app.vue","./router.js"
+- `注意`:import其他组件或模块，可省略的后缀见`xsloader.es6.extensions`配置
 
 ### 3、代码转换说明
 
@@ -562,6 +562,8 @@ cnpm install --save @babel/polyfill
 ### v进行中
 1. 加入`IConfigFileCheck`；
 2. 修复xshttp在multiPart为true下，参数为对象时未能进行转换的bug；
+3. 完善xsloader.es6.extensions配置，默认为`.js,.vue,.jsx,/index.js,/index.vue,/index.jsx`；
+4. 编译js、jsx、vue时，加入`xsloader.__currentPath`；
 
 ### v1.2.6 2020/11/06
 1. 完善`ScriptEnv`；
