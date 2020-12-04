@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Fri Dec 04 2020 16:24:08 GMT+0800 (GMT+08:00)
+ * build time:Fri Dec 04 2020 17:26:59 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -242,7 +242,7 @@
   }
 
   function dealPathMayAbsolute(path, currentUrl) {
-    currentUrl = currentUrl || location.href;
+    currentUrl = currentUrl || path;
     var rs = ABSOLUTE_PROTOCOL_REG.exec(path);
     var finalPath;
     var absolute;
@@ -302,7 +302,7 @@
       }
     }
 
-    var absolute = dealPathMayAbsolute(relative);
+    var absolute = dealPathMayAbsolute(relative, path);
 
     if (absolute.absolute) {
       return absolute.path + relativeQuery;
