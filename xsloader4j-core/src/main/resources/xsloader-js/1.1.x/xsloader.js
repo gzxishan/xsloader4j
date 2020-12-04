@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.34
+ * xsloader.js v1.1.35
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Dec 03 2020 21:42:51 GMT+0800 (GMT+08:00)
+ * build time:Fri Dec 04 2020 16:24:08 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -544,7 +544,7 @@
         m = index > 0 ? m.substring(0, index) : m;
         var is = isJsFile(m);
 
-        if (config.autoExt && /\/[^\/.]+$/.test(m)) {
+        if (config.autoExt && /\/[^\/\.]+$/.test(m)) {
           deps[i] = m + config.autoExtSuffix + query + pluginParam;
         } else if (!is && !/\.[^\/\s]*$/.test(m) && (L.startsWith(m, ".") || dealPathMayAbsolute(m).absolute)) {
           deps[i] = m + ".js" + query + pluginParam;
@@ -2479,7 +2479,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.34"
+    version: "1.1.35"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -2503,6 +2503,10 @@
   var L$7 = U.global.xsloader;
   var theDefinedMap = {};
   var lastDefinObjectMap = {};
+
+  L$7.__showModules = function () {
+    console.log(theDefinedMap);
+  };
 
   var ModuleDef = function () {
     function ModuleDef(src) {
@@ -2733,7 +2737,7 @@
       if (name) {
         var lasfDef = theDefinedMap[name];
 
-        if (theDefinedMap[name] && lasfDef != moduleDef && !lasfDef.isPreDependOn) {
+        if (theDefinedMap[name] && lasfDef != moduleDef && !lasfDef.isPreDependOn && !(lasfDef.modules[name] && lasfDef.modules[name].id == module.id)) {
           throw new Error("already define module:\n\tname=" + name + ",current.src=" + src + ",\n\tthat.src=" + theDefinedMap[name].src);
         } else {
           moduleDef.modules[name] = module;
@@ -2786,8 +2790,8 @@
 
   var L$8 = U.global.xsloader;
 
-  function newModuleInstance(module, thatInvoker, relyCallback, pluginArgs) {
-    var index = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+  function newModuleInstance(module, thatInvoker, relyCallback) {
+    var index = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
     var instanceModule = {
       index: index,
       relyCallback: relyCallback,
@@ -2844,6 +2848,17 @@
 
         return this._object;
       },
+      _dealPluginArgs: function _dealPluginArgs(pluginArgs) {
+        if (this._object && this._object.dealPluginArgs) {
+          return this._object.dealPluginArgs.call(this.thiz, pluginArgs);
+        } else {
+          var config = L$8.config();
+          var argArr = [pluginArgs];
+          U.replaceModulePrefix(config, argArr);
+          pluginArgs = argArr[0];
+          return pluginArgs;
+        }
+      },
       _getCacheKey: function _getCacheKey(pluginArgs) {
         if (this._object.getCacheKey) {
           return this._object.getCacheKey.call(this.thiz, pluginArgs);
@@ -2872,13 +2887,21 @@
 
         return this.module.setSinglePluginResult(willCache, id, pluginArgs, obj);
       },
-      initInstance: function initInstance(justForSingle) {
+      initInstance: function initInstance(justForSingle, originPluginArgs) {
         var _this2 = this;
 
         var relyCallback = this.relyCallback;
         this._module_ = this.module.dealInstance(this);
 
         this._setDepModuleObjectGen(this.module.loopObject || this.module.moduleObject);
+
+        var pluginArgs = undefined;
+
+        if (!L$8.isEmpty(originPluginArgs)) {
+          pluginArgs = this._dealPluginArgs(originPluginArgs);
+        } else {
+          pluginArgs = originPluginArgs;
+        }
 
         if (pluginArgs !== undefined) {
           if (!this._object) {
@@ -2896,7 +2919,7 @@
           var hasFinished = false;
 
           var onload = function onload(result, ignoreAspect) {
-            if (result == undefined) {
+            if (result === undefined) {
               result = {
                 __default: true
               };
@@ -3095,8 +3118,8 @@
         if (_state == 'defined' || thiz.loopObject) {
           var theCallback = function theCallback() {
             if (fun) {
-              var depModule = newModuleInstance(thiz, fun.thatInvoker, fun.relyCallback, fun.pluginArgs, fun.index);
-              depModule.initInstance();
+              var depModule = newModuleInstance(thiz, fun.thatInvoker, fun.relyCallback, fun.index);
+              depModule.initInstance(false, fun.pluginArgs);
             }
           };
 
@@ -3392,25 +3415,39 @@
 
     function checkFinish(index, dep_name, depModule, syncHandle) {
       depModules[index] = depModule;
+      var isFinish = depCount <= 0 && !isError;
+      var customerResult;
 
-      if (depCount <= 0 && !isError) {
+      if (isFinish) {
         everyOkCallback(depModules, module);
       } else if (isError) {
-        module.setState('error', isError);
-
         if (!hasCallErr) {
-          hasCallErr = true;
           var err = new U.PluginError(isError, invoker_of_module, {
             index: index,
             dep_name: dep_name
           });
-          errCallback(err, invoker_of_module);
+          customerResult = errCallback(err, invoker_of_module);
+
+          if (customerResult && customerResult.ignoreErrState) {
+            if (customerResult.onGetModule) {
+              module.moduleObject = customerResult.onGetModule();
+            }
+
+            if (isFinish) {
+              everyOkCallback(depModules, module);
+            }
+          } else {
+            hasCallErr = true;
+            module.setState('error', isError);
+          }
         }
       }
 
       if (!isError && syncHandle) {
         syncHandle();
       }
+
+      return customerResult;
     }
 
     U.each(module.deps, function (dep, index, ary, syncHandle) {
@@ -3424,7 +3461,13 @@
       }
 
       var relyItFun = function relyItFun() {
-        moduleDef.getModule(dep).relyIt(invoker_of_module, function (depModule, err) {
+        var dmod = moduleDef.getModule(dep);
+
+        if (!dmod) {
+          console.warn("not found module define: dep=".concat(dep));
+        }
+
+        dmod.relyIt(invoker_of_module, function (depModule, err) {
           if (!err) {
             depCount--;
 
@@ -3441,7 +3484,15 @@
             isError = err;
           }
 
-          checkFinish(index, originDep, depModule, syncHandle);
+          var customerResult = checkFinish(index, originDep, depModule, syncHandle);
+
+          if (customerResult && customerResult.ignoreErrState) {
+            isError = false;
+
+            if (customerResult.onFinish) {
+              customerResult.onFinish();
+            }
+          }
         }, pluginArgs, index);
       };
 
@@ -3591,6 +3642,7 @@
 
             var module2 = _newModule(m2Name, urls[0], invoker_of_module, index);
 
+            moduleDef.setModule(null, module2);
             module2.setState("loading");
             var configDeps = [];
 
@@ -3741,7 +3793,7 @@
     }, {
       key: "onError",
       value: function onError(err, invoker) {
-        this.defineObject.handle.onError(err, invoker);
+        return this.defineObject.handle.onError(err, invoker);
       }
     }]);
 
@@ -4490,12 +4542,6 @@
       if (pluginIndex > 0) {
         pluginArgs = deps.substring(pluginIndex + 1);
         deps = deps.substring(0, pluginIndex);
-
-        if (pluginArgs) {
-          var argArr = [pluginArgs];
-          U.replaceModulePrefix(config, argArr);
-          pluginArgs = argArr[0];
-        }
       }
 
       var module = moduleScript.getModule(deps);
@@ -4514,7 +4560,7 @@
       var theMod;
       moduleScript.newModuleInstance(module, thatInvoker, function (depModule) {
         theMod = depModule.moduleObject();
-      }, pluginArgs).initInstance(true);
+      }).initInstance(true, pluginArgs);
 
       if (theMod === undefined) {
         throw Error("the module '" + originDeps + "' is not load!");
@@ -4534,6 +4580,7 @@
 
     U.appendInnerDeps(deps, callback);
     var timeid;
+    var tagString;
     var loading;
     var isOk = false;
     var customerErrCallback;
@@ -4596,14 +4643,18 @@
     };
 
     handle.error(function (err, invoker) {
-      isErr = !!err;
       clearTimer(true);
 
       if (customerErrCallback) {
-        customerErrCallback.call(handle, err, invoker);
-      } else {
-        handle.logError(err, invoker);
+        var result = customerErrCallback.call(handle, err, invoker);
+
+        if (result && result.ignoreErrState) {
+          return result;
+        }
       }
+
+      isErr = !!err;
+      handle.logError(err, invoker);
     });
 
     handle.error = function (errCallback) {
@@ -4611,36 +4662,39 @@
       return this;
     };
 
-    L$9.asyncCall(function () {
-      if (handle.waitTime) {
-        var checkResultFun = function checkResultFun() {
-          try {
-            var ifmodule = moduleScript.getModule(selfname);
+    handle.setTag = function (tag) {
+      tagString = tag;
+      return this;
+    };
 
-            if ((!ifmodule || ifmodule.state != 'defined') && !isErr) {
-              var _module = ifmodule;
-              handle.onError("require timeout:selfname=" + selfname + ",\n\tdeps=[" + (deps ? deps.join(",") : "") + "]");
+    if (handle.waitTime) {
+      var checkResultFun = function checkResultFun() {
+        try {
+          var ifmodule = moduleScript.getModule(selfname);
 
-              if (_module) {
-                U.each(_module.deps, function (dep) {
-                  var mod = moduleScript.getModule(dep);
+          if ((!ifmodule || ifmodule.state != 'defined') && !isErr) {
+            var _module = ifmodule;
+            handle.onError("require timeout:selfname=".concat(selfname).concat(tagString ? ',tag=' + tagString : '', ",\n\tdeps=[").concat(deps ? deps.join(",") : "", "]"));
 
-                  if (mod && mod.printOnNotDefined) {
-                    mod.printOnNotDefined();
-                  }
-                });
-              }
+            if (_module) {
+              U.each(_module.deps, function (dep) {
+                var mod = moduleScript.getModule(dep);
+
+                if (mod && mod.printOnNotDefined) {
+                  mod.printOnNotDefined();
+                }
+              });
             }
-          } catch (e) {
-            console.error(e);
           }
+        } catch (e) {
+          console.error(e);
+        }
 
-          clearTimer();
-        };
+        clearTimer();
+      };
 
-        timeid = setTimeout(checkResultFun, handle.waitTime);
-      }
-    });
+      timeid = setTimeout(checkResultFun, handle.waitTime);
+    }
 
     if (typeof Promise != "undefined" && arguments.length == 1 && !callback) {
       var promise = new Promise(function (resolve, inject) {
@@ -5221,6 +5275,7 @@
       if (ifmodule) {
         ifmodule.src = defineObject.src;
         ifmodule.scriptSrc = defineObject.scriptSrc;
+        moduleScript.setModule(null, ifmodule);
       }
     }
 
@@ -5284,7 +5339,7 @@
             defineObject.handle.onError(e);
           }
         }, function (err, invoker) {
-          defineObject.handle.onError(err, invoker);
+          return defineObject.handle.onError(err, invoker);
         });
       };
 
@@ -5362,7 +5417,7 @@
         error: function error(err, invoker) {
           onerror(new U.PluginError(err, invoker));
         }
-      });
+      }).setTag("".concat(script.INNER_DEPS_PLUGIN, "![").concat(deps.join(','), "]"));
     },
     getCacheKey: function getCacheKey(depId) {
       return depId;
@@ -5389,8 +5444,16 @@
       }).error(function (err, invoker) {
         console.info("try!:require '".concat(dep, "' failed"));
         this.logError(err, invoker, "info");
-        onload(null);
-      });
+        return {
+          ignoreErrState: true,
+          onGetModule: function onGetModule() {
+            return null;
+          },
+          onFinish: function onFinish() {
+            onload(null);
+          }
+        };
+      }).setTag("try!".concat(arg));
 
       if (handle.waitTime && handle.waitTime > 1000) {
         handle.waitTime -= 1000;
@@ -5410,7 +5473,7 @@
         }
       }).error(function (e) {
         onerror(e);
-      });
+      }).setTag("nodeps!".concat(arg));
     }
   });
 
@@ -5445,7 +5508,7 @@
             onload(mod);
           }).error(function (e) {
             onerror(e);
-          });
+          }).setTag("exists!".concat(arg));
         } else {
           var obj = undefined;
 
@@ -5517,7 +5580,7 @@
         }
       }).error(function (e) {
         onerror(e);
-      });
+      }).setTag("name!".concat(arg));
     }
   });
 
@@ -5795,6 +5858,9 @@
       }).fail(function (err) {
         onerror(err);
       }).done();
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
     }
   });
 
@@ -5815,7 +5881,7 @@
       this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
         window[moduleName] = mod;
         onload(mod);
-      });
+      }).setTag("window!".concat(arg));
     }
   });
 
@@ -5849,7 +5915,7 @@
         onload(mod);
       }).then({
         orderDep: true
-      });
+      }).setTag("withdeps!".concat(arg));
     }
   });
 
@@ -5863,6 +5929,9 @@
       }).fail(function (err) {
         onerror(err);
       }).done();
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
     }
   });
 
@@ -6999,6 +7068,9 @@
           }, config.plugins.image.timeout);
         }
       });
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
     }
   });
 
@@ -7022,7 +7094,7 @@
         onload(mod);
       }).error(function (err, invoker) {
         onerror(err);
-      });
+      }).setTag("default!".concat(arg));
     }
   });
 

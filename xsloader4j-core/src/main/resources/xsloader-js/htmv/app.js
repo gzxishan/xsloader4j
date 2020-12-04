@@ -9,6 +9,7 @@ window.__htmv_init_bridge_=function(){
                     app:App
                 }
             });
-		});
+		})
+		.setTag("#{app}");
     });
 };

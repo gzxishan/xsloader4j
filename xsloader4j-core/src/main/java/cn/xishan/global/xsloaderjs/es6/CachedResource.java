@@ -1,5 +1,6 @@
 package cn.xishan.global.xsloaderjs.es6;
 
+import cn.xishan.global.xsloaderjs.XsloaderFilter;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
@@ -32,7 +33,7 @@ public class CachedResource
     private String encoding;
     private JSONArray files;
     private JSONArray filesLastModified;
-    private static String VERSION = "v0";
+    private static String VERSION = XsloaderFilter.XSLOADER_VERSION;
     private static String tempId = "default";
     private boolean isSourceMap;
 
