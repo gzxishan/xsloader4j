@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Fri Dec 04 2020 17:26:59 GMT+0800 (GMT+08:00)
+ * build time:Sun Dec 06 2020 19:08:18 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -155,21 +142,18 @@
     return _assertThisInitialized(self);
   }
 
-  function _createSuper(Derived) {
-    return function () {
-      var Super = _getPrototypeOf(Derived),
-          result;
+  var id = 0;
 
-      if (_isNativeReflectConstruct()) {
-        var NewTarget = _getPrototypeOf(this).constructor;
+  function _classPrivateFieldLooseKey(name) {
+    return "__private_" + id++ + "_" + name;
+  }
 
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
+  function _classPrivateFieldLooseBase(receiver, privateKey) {
+    if (!Object.prototype.hasOwnProperty.call(receiver, privateKey)) {
+      throw new TypeError("attempted to use private field on non-instance");
+    }
 
-      return _possibleConstructorReturn(this, result);
-    };
+    return receiver;
   }
 
   var G;
@@ -2514,20 +2498,13 @@
 
       _classCallCheck(this, ModuleDef);
 
-      _defineProperty(this, "src", void 0);
-
-      _defineProperty(this, "defaultModule", void 0);
-
-      _defineProperty(this, "modules", void 0);
-
-      _defineProperty(this, "isPreDependOn", void 0);
-
-      _defineProperty(this, "_preModule", void 0);
-
-      _defineProperty(this, "_preIndex", void 0);
-
-      _defineProperty(this, "targetDef", void 0);
-
+      this.src = void 0;
+      this.defaultModule = void 0;
+      this.modules = void 0;
+      this.isPreDependOn = void 0;
+      this._preModule = void 0;
+      this._preIndex = void 0;
+      this.targetDef = void 0;
       this.src = src;
       this.isPreDependOn = isPreDependOn;
       this.modules = {};
@@ -3005,7 +2982,7 @@
       selfname: defineObject.selfname,
       parent: defineObject.parentDefine,
       description: function description() {
-        return "selfname=" + (this.selfname || "") + ",src=" + this.src;
+        return "id=".concat(this.id, ",selfname=").concat(this.selfname || "", ",src=").concat(this.src);
       },
       deps: defineObject.deps || [],
       relys: [],
@@ -3254,6 +3231,13 @@
     };
 
     moduleMap.printOnNotDefined = function () {
+      var _this3 = this;
+
+      if (this.refmodule && this.refmodule.printOnNotDefined) {
+        this.refmodule.printOnNotDefined();
+        return;
+      }
+
       var root = {
         nodes: []
       };
@@ -3274,19 +3258,33 @@
 
       findLeaf(root);
 
-      function genErrs(node, infos) {
+      function genErrs(node, infos, nodePaths) {
         infos.push(node.err);
+        nodePaths.push(node);
 
         if (node.parent) {
-          genErrs(node.parent, infos);
+          genErrs(node.parent, infos, nodePaths);
         }
       }
 
       console.error("{-----------------------------------------------------------------------------------------------");
       console.error("load module error:id=" + this.id + "," + (this.selfname ? "selfname=" + this.selfname + "," : "") + "my page=" + location.href);
+      var logedPathMap = {};
       U.each(leafs, function (leaf) {
         var infos = [];
-        genErrs(leaf, infos);
+        var nodePaths = [];
+        genErrs(leaf, infos, nodePaths);
+
+        if (nodePaths.length) {
+          var key = nodePaths[0].id + "-" + nodePaths[nodePaths.length - 1].id;
+
+          if (logedPathMap[key]) {
+            return;
+          } else {
+            logedPathMap[key] = true;
+          }
+        }
+
         infos = infos.reverse();
 
         for (var i = 1; i < infos.length;) {
@@ -3296,7 +3294,8 @@
             as.push(infos[i++]);
           }
 
-          console.warn(as.join("\n\t--->"));
+          console.warn(as.join("\n-----[".concat(_this3.id, "]-->")));
+          console.log("");
         }
 
         var errModule = leaf.module;
@@ -3306,6 +3305,15 @@
         }
 
         if (errModule) {
+          var getName = function getName(dep) {
+            var index = dep.lastIndexOf("/");
+            return dep.substring(index + 1);
+          };
+
+          var getState = function getState(state) {
+            return state == "defined" ? state : "【" + (state || "") + "】";
+          };
+
           var _as = [];
 
           for (var _i = 0; _i < errModule.deps.length; _i++) {
@@ -3316,16 +3324,31 @@
               dep = dep.substring(0, index);
             }
 
+            if (_i % 5 == 0) {
+              _as.push("\t");
+            }
+
             var depMod = moduleDef.getModule(dep);
 
             if (depMod) {
-              _as.push(dep + ":" + depMod.state);
+              _as.push(getName(dep) + ":" + getState(depMod.state));
             } else {
-              _as.push(dep + ":null");
+              _as.push(getName(dep) + ":");
+            }
+
+            if (_i < errModule.deps.length - 1) {
+              _as.push(",");
+            }
+
+            if ((_i + 1) % 5 == 0) {
+              _as.push("\n");
             }
           }
 
-          console.warn("failed module:" + errModule.description() + ",\n\tdeps state infos [" + _as.join(",") + "]");
+          console.warn("failed module:" + errModule.description());
+          console.warn("deps state infos:{");
+          console.warn(_as.join(""));
+          console.warn("}");
 
           for (var _i2 = 0; _i2 < errModule.deps.length; _i2++) {
             var _dep = errModule.deps[_i2];
@@ -3339,9 +3362,9 @@
             var _depMod = moduleDef.getModule(_dep);
 
             if (_depMod) {
-              console.warn("\t" + _dep + ":src=" + _depMod.src + ",absUrl=" + (_depMod.thiz && _depMod.thiz.absUrl()));
+              console.warn("[dep]" + getName(_dep) + ":" + "state=" + getState(_depMod.state) + "\n\tsrc=" + _depMod.src + "\n\tabsUrl=" + (_depMod.thiz && _depMod.thiz.absUrl()));
             } else {
-              console.warn(_dep + ":");
+              console.warn("[dep]" + getName(_dep) + ":");
             }
           }
         }
@@ -3350,8 +3373,11 @@
     };
 
     moduleMap._printOnNotDefined = function (parentNode) {
+      var _this4 = this;
+
       var node = {
         err: "[" + this.description() + "].state=" + this.state,
+        id: this.id,
         module: this,
         parent: parentNode,
         nodes: []
@@ -3363,6 +3389,10 @@
       }
 
       U.each(this.deps, function (dep) {
+        if (dep == "exports") {
+          return;
+        }
+
         var indexPlguin = dep.indexOf("!");
 
         if (indexPlguin > 0) {
@@ -3370,6 +3400,11 @@
         }
 
         var mod = moduleDef.getModule(dep);
+
+        if (!mod && dep.indexOf("/") >= 0) {
+          dep = _this4.thiz.getUrl(dep, false);
+          mod = moduleDef.getModule(dep);
+        }
 
         if (mod && mod.state == "defined") {
           mod._printOnNotDefined(node);
@@ -3382,6 +3417,7 @@
         } else {
           node.nodes.push({
             parent: parentNode,
+            id: U.getAndIncIdCount(),
             nodes: [],
             err: "[" + dep + "] has not module"
           });
@@ -3771,8 +3807,7 @@
     function Handle(defineObject) {
       _classCallCheck(this, Handle);
 
-      _defineProperty(this, "defineObject", void 0);
-
+      this.defineObject = void 0;
       this.defineObject = defineObject;
     }
 
@@ -3803,8 +3838,7 @@
   var ThisInvoker = function ThisInvoker(invoker) {
     _classCallCheck(this, ThisInvoker);
 
-    _defineProperty(this, "invoker", void 0);
-
+    this.invoker = void 0;
     this.invoker = invoker;
   };
 
@@ -3832,7 +3866,15 @@
       } else if (L$9.startsWith(relativeUrl, ".") || U.dealPathMayAbsolute(relativeUrl).absolute) {
         url = U.getPathWithRelative(optionalAbsUrl || this.absUrl(), relativeUrl);
       } else {
-        url = L$9.config().baseUrl + relativeUrl;
+        var config = L$9.config();
+        var argArr = [relativeUrl];
+        U.replaceModulePrefix(config, argArr);
+
+        if (L$9.startsWith(argArr[0], relativeUrl)) {
+          url = L$9.config().baseUrl + relativeUrl;
+        } else {
+          url = argArr[0];
+        }
       }
 
       if (appendArgs) {
@@ -3902,16 +3944,28 @@
     };
 
     invoker.withAbsUrl = function (absUrlStr) {
-      if (!absUrlStr) {
-        absUrlStr = invoker.absUrl();
-      }
-
       var moduleMap = {
         module: module,
-        src: invoker.src(),
-        scriptSrc: invoker.scriptSrc(),
+
+        get src() {
+          return invoker.src();
+        },
+
+        set src(val) {
+          throw "not support!";
+        },
+
+        get scriptSrc() {
+          return invoker.scriptSrc();
+        },
+
+        set scriptSrc(val) {
+          throw "not support!";
+        },
+
         absUrl: function absUrl() {
-          return absUrlStr;
+          var url = absUrlStr || invoker.absUrl();
+          return url;
         },
         name: invoker.getName(),
         invoker: invoker.invoker()
@@ -3924,10 +3978,8 @@
     function Invoker(moduleMap) {
       _classCallCheck(this, Invoker);
 
-      _defineProperty(this, "_im", void 0);
-
-      _defineProperty(this, "_id", void 0);
-
+      this._im = void 0;
+      this._id = void 0;
       this._im = new L$9.InVar(moduleMap);
       this._id = U.getAndIncIdCount();
       moduleMap.thiz = this;
@@ -4038,36 +4090,21 @@
 
       _classCallCheck(this, DefineObject);
 
-      _defineProperty(this, "id", U.getAndIncIdCount());
-
-      _defineProperty(this, "thiz", void 0);
-
-      _defineProperty(this, "isRequire", void 0);
-
-      _defineProperty(this, "scriptSrc", void 0);
-
-      _defineProperty(this, "src", void 0);
-
-      _defineProperty(this, "parentDefine", void 0);
-
-      _defineProperty(this, "handle", void 0);
-
-      _defineProperty(this, "selfname", void 0);
-
-      _defineProperty(this, "deps", void 0);
-
-      _defineProperty(this, "callback", void 0);
-
-      _defineProperty(this, "thatInvoker", void 0);
-
-      _defineProperty(this, "_directDepLength", 0);
-
-      _defineProperty(this, "directDepLength", 0);
-
-      _defineProperty(this, "names", []);
-
-      _defineProperty(this, "index", void 0);
-
+      this.id = U.getAndIncIdCount();
+      this.thiz = void 0;
+      this.isRequire = void 0;
+      this._scriptSrc = void 0;
+      this._src = void 0;
+      this.parentDefine = void 0;
+      this.handle = void 0;
+      this.selfname = void 0;
+      this.deps = void 0;
+      this.callback = void 0;
+      this.thatInvoker = void 0;
+      this._directDepLength = 0;
+      this.directDepLength = 0;
+      this.names = [];
+      this.index = void 0;
       this.parentDefine = currentDefineModuleQueue.peek();
       this.thatInvoker = getInvoker(thiz);
       this.scriptSrc = scriptSrc;
@@ -4221,6 +4258,22 @@
       key: "absUrlFromDefineObject",
       value: function absUrlFromDefineObject() {
         return this.handle.absUrl || this.handle.absoluteUrl || this.src;
+      }
+    }, {
+      key: "src",
+      get: function get() {
+        return this._src;
+      },
+      set: function set(val) {
+        this._src = val;
+      }
+    }, {
+      key: "scriptSrc",
+      get: function get() {
+        return this._scriptSrc;
+      },
+      set: function set(val) {
+        this._scriptSrc = val;
       }
     }]);
 
@@ -4642,6 +4695,42 @@
       console[logFun](U.unwrapError(err));
     };
 
+    var _checkResultFun = function checkResultFun() {
+      var forTimeout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      try {
+        if (!_checkResultFun) {
+          return;
+        }
+
+        var ifmodule = moduleScript.getModule(selfname);
+
+        if ((!ifmodule || ifmodule.state != 'defined') && (isErr || forTimeout)) {
+          if (forTimeout) {
+            handle.onError("require timeout:".concat(tagString ? 'tag=' + tagString : '', ",\n") + "\tdeps=[".concat(deps ? deps.join(",") : "", "]\n") + "".concat(thatInvoker ? '\tinvokerSrc=' + thatInvoker.src() : ''));
+          }
+
+          if (ifmodule) {
+            U.each(ifmodule.deps, function (dep) {
+              if (thatInvoker) {
+                dep = thatInvoker.getUrl(dep, false);
+              }
+
+              var mod = moduleScript.getModule(dep);
+
+              if (mod && mod.printOnNotDefined) {
+                mod.printOnNotDefined();
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      clearTimer();
+    };
+
     handle.error(function (err, invoker) {
       clearTimer(true);
 
@@ -4654,7 +4743,18 @@
       }
 
       isErr = !!err;
-      handle.logError(err, invoker);
+
+      try {
+        handle.logError(err, invoker);
+      } catch (e) {
+        console.warn(e);
+      }
+
+      if (_checkResultFun) {
+        var fun = _checkResultFun;
+        _checkResultFun = null;
+        fun();
+      }
     });
 
     handle.error = function (errCallback) {
@@ -4668,32 +4768,9 @@
     };
 
     if (handle.waitTime) {
-      var checkResultFun = function checkResultFun() {
-        try {
-          var ifmodule = moduleScript.getModule(selfname);
-
-          if ((!ifmodule || ifmodule.state != 'defined') && !isErr) {
-            var _module = ifmodule;
-            handle.onError("require timeout:selfname=".concat(selfname).concat(tagString ? ',tag=' + tagString : '', ",\n\tdeps=[").concat(deps ? deps.join(",") : "", "]"));
-
-            if (_module) {
-              U.each(_module.deps, function (dep) {
-                var mod = moduleScript.getModule(dep);
-
-                if (mod && mod.printOnNotDefined) {
-                  mod.printOnNotDefined();
-                }
-              });
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
-
-        clearTimer();
-      };
-
-      timeid = setTimeout(checkResultFun, handle.waitTime);
+      timeid = setTimeout(function () {
+        _checkResultFun(true);
+      }, handle.waitTime);
     }
 
     if (typeof Promise != "undefined" && arguments.length == 1 && !callback) {
@@ -5268,15 +5345,10 @@
   function onModuleLoaded(defineObject, lastDefineObject) {
     moduleScript.appendLoadingModuleDeps(defineObject);
     var ifmodule = moduleScript.getModule(defineObject.src, defineObject.selfname);
+    var moduleBeforeCurrentPath;
 
     if (!ifmodule && defineObject.srcBeforeCurrentPath) {
-      ifmodule = moduleScript.getModule(defineObject.srcBeforeCurrentPath);
-
-      if (ifmodule) {
-        ifmodule.src = defineObject.src;
-        ifmodule.scriptSrc = defineObject.scriptSrc;
-        moduleScript.setModule(null, ifmodule);
-      }
+      moduleBeforeCurrentPath = moduleScript.getModule(defineObject.srcBeforeCurrentPath);
     }
 
     if (ifmodule) {
@@ -5285,6 +5357,7 @@
       }
     } else {
       ifmodule = moduleScript.newModule(defineObject);
+      moduleBeforeCurrentPath && moduleBeforeCurrentPath.toOtherModule(ifmodule);
     }
 
     if (defineObject.selfname != defineObject.src) {
@@ -5434,30 +5507,151 @@
   });
 
   var L$e = U.global.xsloader;
+
+  var _state = _classPrivateFieldLooseKey("state");
+
+  var _mod = _classPrivateFieldLooseKey("mod");
+
+  var _err = _classPrivateFieldLooseKey("err");
+
+  var _successArray = _classPrivateFieldLooseKey("successArray");
+
+  var _failedArray = _classPrivateFieldLooseKey("failedArray");
+
+  var _finishArray = _classPrivateFieldLooseKey("finishArray");
+
+  var _invokeFuns = _classPrivateFieldLooseKey("invokeFuns");
+
+  var TryModule = function () {
+    function TryModule(promise) {
+      var _this = this;
+
+      _classCallCheck(this, TryModule);
+
+      Object.defineProperty(this, _invokeFuns, {
+        value: _invokeFuns2
+      });
+      Object.defineProperty(this, _state, {
+        writable: true,
+        value: "loading"
+      });
+      Object.defineProperty(this, _mod, {
+        writable: true,
+        value: undefined
+      });
+      Object.defineProperty(this, _err, {
+        writable: true,
+        value: undefined
+      });
+      Object.defineProperty(this, _successArray, {
+        writable: true,
+        value: []
+      });
+      Object.defineProperty(this, _failedArray, {
+        writable: true,
+        value: []
+      });
+      Object.defineProperty(this, _finishArray, {
+        writable: true,
+        value: []
+      });
+      promise.then(function (mod) {
+        _classPrivateFieldLooseBase(_this, _state)[_state] = "defined";
+        _classPrivateFieldLooseBase(_this, _mod)[_mod] = mod;
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _successArray)[_successArray], [mod]);
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [true, mod]);
+      }, function (err) {
+        _classPrivateFieldLooseBase(_this, _state)[_state] = "failed";
+        _classPrivateFieldLooseBase(_this, _mod)[_mod] = err;
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _failedArray)[_failedArray], [err]);
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [false, err]);
+      });
+    }
+
+    _createClass(TryModule, [{
+      key: "state",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _state)[_state];
+      }
+    }, {
+      key: "module",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _mod)[_mod];
+      }
+    }, {
+      key: "err",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _err)[_err];
+      }
+    }, {
+      key: "isOk",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
+      }
+    }, {
+      key: "success",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
+          callback(_classPrivateFieldLooseBase(this, _mod)[_mod]);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _successArray)[_successArray].push(callback);
+        }
+      }
+    }, {
+      key: "failed",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed") {
+          callback(_classPrivateFieldLooseBase(this, _err)[_err]);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _failedArray)[_failedArray].push(callback);
+        }
+      }
+    }, {
+      key: "finish",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed" || _classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
+          var isOk = _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
+          var res = isOk ? _classPrivateFieldLooseBase(this, _mod)[_mod] : _classPrivateFieldLooseBase(this, _err)[_err];
+          callback(isOk, res);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _finishArray)[_finishArray].push(callback);
+        }
+      }
+    }]);
+
+    return TryModule;
+  }();
+
+  var _invokeFuns2 = function _invokeFuns2(funs, args) {
+    for (var i = 0; i < funs.length; i++) {
+      try {
+        funs[i].apply(this, args);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  L$e.TryModule = TryModule;
   L$e.define("try", {
     isSingle: true,
     pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var _this2 = this;
+
       var dep = arg;
-
-      var handle = this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-        onload(mod);
-      }).error(function (err, invoker) {
-        console.info("try!:require '".concat(dep, "' failed"));
-        this.logError(err, invoker, "info");
-        return {
-          ignoreErrState: true,
-          onGetModule: function onGetModule() {
-            return null;
-          },
-          onFinish: function onFinish() {
-            onload(null);
-          }
-        };
-      }).setTag("try!".concat(arg));
-
-      if (handle.waitTime && handle.waitTime > 1000) {
-        handle.waitTime -= 1000;
-      }
+      var tryModule = new TryModule(new Promise(function (resolve, reject) {
+        _this2.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
+          resolve(mod);
+        }).error(function (err, invoker) {
+          console.warn("try!:require '".concat(dep, "' failed"));
+          reject(err);
+        }).setTag("try!".concat(arg));
+      }));
+      onload(tryModule);
     }
   });
 
@@ -5592,18 +5786,12 @@
       function Node(src) {
         _classCallCheck(this, Node);
 
-        _defineProperty(this, "parent", void 0);
-
-        _defineProperty(this, "children", {});
-
-        _defineProperty(this, "_maxindex", -1);
-
-        _defineProperty(this, "_minindex", void 0);
-
-        _defineProperty(this, "doms", {});
-
-        _defineProperty(this, "src", void 0);
-
+        this.parent = void 0;
+        this.children = {};
+        this._maxindex = -1;
+        this._minindex = void 0;
+        this.doms = {};
+        this.src = void 0;
         this.src = src;
       }
 
@@ -7617,10 +7805,8 @@
     function Callback(thiz, callback) {
       _classCallCheck(this, Callback);
 
-      _defineProperty(this, "thiz", void 0);
-
-      _defineProperty(this, "callback", void 0);
-
+      this.thiz = void 0;
+      this.callback = void 0;
       this.thiz = thiz;
       this.callback = callback;
     }
@@ -7657,10 +7843,8 @@
 
       _classCallCheck(this, Base);
 
-      _defineProperty(this, "_cmd", void 0);
-
-      _defineProperty(this, "_id", void 0);
-
+      this._cmd = void 0;
+      this._id = void 0;
       this._cmd = cmd;
       this._id = L$t.randId();
     }
@@ -7699,8 +7883,6 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
-    var _super = _createSuper(Client);
-
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7708,54 +7890,30 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
-
-      _defineProperty(_assertThisInitialized(_this), "_source", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_origin", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_fromid", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_connect", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_connected", false);
-
-      _defineProperty(_assertThisInitialized(_this), "_destroyed", false);
-
-      _defineProperty(_assertThisInitialized(_this), "_onConnect", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_onConnectFail", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_isself", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_conntimeout", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_sleeptimeout", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_rtimer", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_starttime", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_failed", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_heartTimeout", 30 * 1000);
-
-      _defineProperty(_assertThisInitialized(_this), "_heartTime", 10 * 1000);
-
-      _defineProperty(_assertThisInitialized(_this), "_lastSendHeartTime", 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_lastReceiveHeartTime", 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_onHeartTimeout", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_onClosed", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_onMessage", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_onConnected", void 0);
-
-      _defineProperty(_assertThisInitialized(_this), "_createTime", currentTimemillis());
-
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      _this._source = void 0;
+      _this._origin = void 0;
+      _this._fromid = void 0;
+      _this._connect = void 0;
+      _this._connected = false;
+      _this._destroyed = false;
+      _this._onConnect = void 0;
+      _this._onConnectFail = void 0;
+      _this._isself = void 0;
+      _this._conntimeout = void 0;
+      _this._sleeptimeout = void 0;
+      _this._rtimer = void 0;
+      _this._starttime = void 0;
+      _this._failed = void 0;
+      _this._heartTimeout = 30 * 1000;
+      _this._heartTime = 10 * 1000;
+      _this._lastSendHeartTime = 0;
+      _this._lastReceiveHeartTime = 0;
+      _this._onHeartTimeout = void 0;
+      _this._onClosed = void 0;
+      _this._onMessage = void 0;
+      _this._onConnected = void 0;
+      _this._createTime = currentTimemillis();
       _this._source = new L$t.InVar(source);
       _this._origin = origin;
       _this._fromid = fromid;
@@ -8074,29 +8232,19 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
-
-      _defineProperty(_assertThisInitialized(_this5), "_start", void 0);
-
-      _defineProperty(_assertThisInitialized(_this5), "_destroyed", false);
-
-      _defineProperty(_assertThisInitialized(_this5), "_onConnect", void 0);
-
-      _defineProperty(_assertThisInitialized(_this5), "_onConnectTimeout", void 0);
-
-      _defineProperty(_assertThisInitialized(_this5), "_onConnected", void 0);
-
-      _defineProperty(_assertThisInitialized(_this5), "_conntimeout", void 0);
-
-      _defineProperty(_assertThisInitialized(_this5), "_sleeptimeout", void 0);
-
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
+      _this5._start = void 0;
+      _this5._destroyed = false;
+      _this5._onConnect = void 0;
+      _this5._onConnectTimeout = void 0;
+      _this5._onConnected = void 0;
+      _this5._conntimeout = void 0;
+      _this5._sleeptimeout = void 0;
       _this5._id = L$t.randId();
 
       _this5.onConnectTimeout = function (client) {
@@ -8218,8 +8366,7 @@
     function IfmsgServer(cmd, option) {
       _classCallCheck(this, IfmsgServer);
 
-      _defineProperty(this, "_server", void 0);
-
+      this._server = void 0;
       var gconfig = L$t.config().plugins.ifmsg;
       option = L$t.extend({
         connTimeout: gconfig.connTimeout,
@@ -8288,8 +8435,7 @@
     function IfmsgClient(cmd, option) {
       _classCallCheck(this, IfmsgClient);
 
-      _defineProperty(this, "_client", void 0);
-
+      this._client = void 0;
       var gconfig = L$t.config().plugins.ifmsg;
       option = L$t.extend({
         connTimeout: gconfig.connTimeout,
