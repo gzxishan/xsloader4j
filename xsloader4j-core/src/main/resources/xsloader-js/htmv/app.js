@@ -1,7 +1,7 @@
 
 window.__htmv_init_bridge_=function(){
-	xsloader.define("htmv-main",["vue","default!#{app}"],function(Vue,App){
-		//this.require(["vue","default!#{app}"],function(Vue,App){
+	xsloader.define("htmv-main",["vue"],function(Vue){//须先等待vue加载完成
+		this.require(["default!#{app}"],function(App){
 			new Vue({
                 el: '##{app-id}',
                 template:"<app class='#{app-class}'></app>",
@@ -9,7 +9,6 @@ window.__htmv_init_bridge_=function(){
                     app:App
                 }
             });
-//		})
-//		.setTag("#{app}");
+		}).setTag("#{app}");
     });
 };
