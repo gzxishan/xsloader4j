@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.35
+ * xsloader.js v1.1.36
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Sun Dec 06 2020 19:08:18 GMT+0800 (GMT+08:00)
+ * build time:Mon Dec 07 2020 15:11:07 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,6 +126,19 @@
     return _setPrototypeOf(o, p);
   }
 
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -140,6 +153,23 @@
     }
 
     return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    return function () {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (_isNativeReflectConstruct()) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   var id = 0;
@@ -2463,7 +2493,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.35"
+    version: "1.1.36"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -3967,6 +3997,9 @@
           var url = absUrlStr || invoker.absUrl();
           return url;
         },
+        absUrlFromModule: function absUrlFromModule() {
+          return this.absUrl();
+        },
         name: invoker.getName(),
         invoker: invoker.invoker()
       };
@@ -4203,6 +4236,11 @@
         }
 
         _dealEmbedDeps(deps, this);
+
+        for (var i = 0; i < deps.length; i++) {
+          var dep = deps[i];
+          deps[i] = config.replaceDepAlias(deps[i]);
+        }
 
         U.replaceModulePrefix(config, deps);
 
@@ -4588,26 +4626,28 @@
         }
       }
 
-      var originDeps = deps;
+      var originDep = deps;
+      var oneDep = deps;
       var pluginArgs = undefined;
-      var pluginIndex = deps.indexOf("!");
+      var pluginIndex = oneDep.indexOf("!");
 
       if (pluginIndex > 0) {
-        pluginArgs = deps.substring(pluginIndex + 1);
-        deps = deps.substring(0, pluginIndex);
+        pluginArgs = oneDep.substring(pluginIndex + 1);
+        oneDep = oneDep.substring(0, pluginIndex);
       }
 
-      var module = moduleScript.getModule(deps);
+      oneDep = config.replaceDepAlias(oneDep);
+      var module = moduleScript.getModule(oneDep);
 
       if (!module) {
-        deps = thatInvoker.getUrl(deps, false);
-        module = moduleScript.getModule(deps);
+        oneDep = thatInvoker.getUrl(oneDep, false);
+        module = moduleScript.getModule(oneDep);
       }
 
       if (!module) {
-        throw new Error("the module '" + originDeps + "' is not load!");
+        throw new Error("the module '" + originDep + "' is not load!");
       } else if (module.state != "defined") {
-        throw new Error("the module '" + originDeps + "' is not defined:" + module.state);
+        throw new Error("the module '" + originDep + "' is not defined:" + module.state);
       }
 
       var theMod;
@@ -4616,7 +4656,7 @@
       }).initInstance(true, pluginArgs);
 
       if (theMod === undefined) {
-        throw Error("the module '" + originDeps + "' is not load!");
+        throw Error("the module '" + originDep + "' is not load!");
       }
 
       return theMod;
@@ -4939,6 +4979,7 @@
       ignoreProperties: false,
       paths: {},
       depsPaths: {},
+      aliasPaths: {},
       deps: {},
       jsExts: undefined,
       autoExt: true,
@@ -5057,6 +5098,13 @@
       dealUrlArgs: function dealUrlArgs(url) {
         url = U.getPathWithRelative(location.href, url);
         return this.dealUrl(url, url);
+      },
+      replaceDepAlias: function replaceDepAlias(dep) {
+        if (!L$a.startsWith(dep, '.') && this.aliasPaths[dep]) {
+          dep = this.aliasPaths[dep];
+        }
+
+        return dep;
       },
       defaultVersion: {},
       plugins: {},
@@ -7883,6 +7931,8 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
+    var _super = _createSuper(Client);
+
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7890,7 +7940,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      _this = _super.call(this, cmd);
       _this._source = void 0;
       _this._origin = void 0;
       _this._fromid = void 0;
@@ -8232,12 +8282,14 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
+    var _super2 = _createSuper(Server);
+
     function Server(cmd) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
+      _this5 = _super2.call(this, cmd);
       _this5._start = void 0;
       _this5._destroyed = false;
       _this5._onConnect = void 0;
