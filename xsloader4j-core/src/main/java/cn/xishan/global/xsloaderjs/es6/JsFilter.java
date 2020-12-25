@@ -85,6 +85,20 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(name = "xsloader.es6.dealt.static")
     private static String[] staticPath;
 
+    /**
+     * 是否替换以下字符：
+     * <ol>
+     *     <li>
+     *         移除：“`\jsx”与“jsx\`”
+     *     </li>
+     *     <li>
+     *         替换：“行首空白符//#//”或“行首空白符///#”为“行首空白符#”
+     *     </li>
+     * </ol>
+     */
+    @Property(name = "xsloader.es6.dealt.removeSChars",defaultVal = "true")
+    static Boolean removeSChars;
+
     @AutoSet
     ServletContext servletContext;
 

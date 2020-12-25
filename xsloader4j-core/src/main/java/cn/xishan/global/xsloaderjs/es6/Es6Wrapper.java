@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/26.
@@ -105,11 +106,7 @@ public class Es6Wrapper
         LOGGER.info("parse es6 script code:name={}", name);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null))
         {
-            if (es6Content != null)
-            {//替换`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
-                es6Content = es6Content.replace("`\\jsx", "");
-                es6Content = es6Content.replace("\\jsx`", "");
-            }
+            es6Content=removeSChars(es6Content);
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -122,6 +119,25 @@ public class Es6Wrapper
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
+    }
+
+    private static String removeSChars(String content)
+    {
+        if (content != null)
+        {
+            boolean remove = JsFilter.removeSChars == null || JsFilter.removeSChars;
+            if (remove)
+            {
+                //移除`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
+                content = content.replace("`\\jsx", "");
+                content = content.replace("\\jsx`", "");
+
+                //替换：“行首空白符//#//”为“行首空白符#”
+                content = content.replaceAll("(^|\\n)(\\s*)((//#//)|///#)", "$1$2#");
+            }
+        }
+
+        return content;
     }
 
     public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
@@ -137,11 +153,7 @@ public class Es6Wrapper
             V8Object option = j2BaseInterface.newV8Object();
             option.add("replaceType", replaceType);
 
-            if (es6Content != null)
-            {//替换`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
-                es6Content = es6Content.replace("`\\jsx", "");
-                es6Content = es6Content.replace("\\jsx`", "");
-            }
+            es6Content=removeSChars(es6Content);
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -192,11 +204,7 @@ public class Es6Wrapper
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
         {
-            if (vueContent != null)
-            {//替换`\jsx与\jsx`：临时解决HBuilderX对Vue文件暂不支持jsx语法的问题
-                vueContent = vueContent.replace("`\\jsx", "");
-                vueContent = vueContent.replace("\\jsx`", "");
-            }
+            vueContent=removeSChars(vueContent);
 
             Result<String> result = new Result<>();
             j2BaseInterface.threadLocal.set(result);
