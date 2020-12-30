@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Dec 31 2020 00:40:00 GMT+0800 (GMT+08:00)
+ * build time:Thu Dec 31 2020 01:20:15 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -6779,10 +6779,6 @@
       getImporter: function getImporter(thiz) {
         var vtemplate = this.getVtemplate(thiz);
         return function (name) {
-          if (!L$f.startsWith(name, "default!")) {
-            name = "default!" + name;
-          }
-
           return new Promise(vtemplate(name));
         };
       },
