@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.36
+ * xsloader.js v1.1.37
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2020 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon Dec 07 2020 15:11:07 GMT+0800 (GMT+08:00)
+ * build time:Wed Dec 30 2020 11:35:35 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -156,11 +156,13 @@
   }
 
   function _createSuper(Derived) {
-    return function () {
+    var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+    return function _createSuperInternal() {
       var Super = _getPrototypeOf(Derived),
           result;
 
-      if (_isNativeReflectConstruct()) {
+      if (hasNativeReflectConstruct) {
         var NewTarget = _getPrototypeOf(this).constructor;
 
         result = Reflect.construct(Super, arguments, NewTarget);
@@ -1211,9 +1213,9 @@
     };
   }
 
-  var U = _objectSpread2({}, urls, {
+  var U = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, urls), {}, {
     global: global$1
-  }, base, {}, loading, {
+  }, base), loading), {}, {
     base64: Base64
   });
 
@@ -2493,17 +2495,17 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.36"
+    version: "1.1.37"
   };
 
-  var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
+  var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
 
   for (var k in toGlobal) {
     L$6[k] = toGlobal[k];
     G$5[k] = toGlobal[k];
   }
 
-  var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
+  var justLoader = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, is), funs), browser), {}, {
     ignoreAspect_: {},
     each: U.each,
     Base64: U.base64,
@@ -3755,7 +3757,7 @@
     }, defineObject.handle.orderDep);
   }
 
-  var moduleScript = _objectSpread2({}, moduleDef, {
+  var moduleScript = _objectSpread2(_objectSpread2({}, moduleDef), {}, {
     newModule: newModule,
     everyRequired: everyRequired,
     newModuleInstance: newModuleInstance,
@@ -5515,663 +5517,6 @@
   define("exports", function () {});
 
   var L$c = U.global.xsloader;
-  L$c.define(script.INNER_DEPS_PLUGIN, {
-    pluginMain: function pluginMain(depId, onload, onerror, config) {
-      var depsObj = script.innerDepsMap[depId];
-      var deps = depsObj.deps;
-      var newInvoker = this.invoker().withAbsUrl(depsObj.absUrl);
-
-      newInvoker.src = function () {
-        return depsObj.src;
-      };
-
-      newInvoker.require(deps, function () {
-        var args = [];
-
-        for (var k = 0; k < arguments.length; k++) {
-          args.push(arguments[k]);
-        }
-
-        onload(args);
-      }).then({
-        orderDep: depsObj.orderDep,
-        error: function error(err, invoker) {
-          onerror(new U.PluginError(err, invoker));
-        }
-      }).setTag("".concat(script.INNER_DEPS_PLUGIN, "![").concat(deps.join(','), "]"));
-    },
-    getCacheKey: function getCacheKey(depId) {
-      return depId;
-    }
-  });
-
-  var L$d = U.global.xsloader;
-  L$d.define("ready", {
-    pluginMain: function pluginMain(depId, onload, onerror, config) {
-      L$d.onReady(function () {
-        onload();
-      });
-    }
-  });
-
-  var L$e = U.global.xsloader;
-
-  var _state = _classPrivateFieldLooseKey("state");
-
-  var _mod = _classPrivateFieldLooseKey("mod");
-
-  var _err = _classPrivateFieldLooseKey("err");
-
-  var _successArray = _classPrivateFieldLooseKey("successArray");
-
-  var _failedArray = _classPrivateFieldLooseKey("failedArray");
-
-  var _finishArray = _classPrivateFieldLooseKey("finishArray");
-
-  var _invokeFuns = _classPrivateFieldLooseKey("invokeFuns");
-
-  var TryModule = function () {
-    function TryModule(promise) {
-      var _this = this;
-
-      _classCallCheck(this, TryModule);
-
-      Object.defineProperty(this, _invokeFuns, {
-        value: _invokeFuns2
-      });
-      Object.defineProperty(this, _state, {
-        writable: true,
-        value: "loading"
-      });
-      Object.defineProperty(this, _mod, {
-        writable: true,
-        value: undefined
-      });
-      Object.defineProperty(this, _err, {
-        writable: true,
-        value: undefined
-      });
-      Object.defineProperty(this, _successArray, {
-        writable: true,
-        value: []
-      });
-      Object.defineProperty(this, _failedArray, {
-        writable: true,
-        value: []
-      });
-      Object.defineProperty(this, _finishArray, {
-        writable: true,
-        value: []
-      });
-      promise.then(function (mod) {
-        _classPrivateFieldLooseBase(_this, _state)[_state] = "defined";
-        _classPrivateFieldLooseBase(_this, _mod)[_mod] = mod;
-
-        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _successArray)[_successArray], [mod]);
-
-        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [true, mod]);
-      }, function (err) {
-        _classPrivateFieldLooseBase(_this, _state)[_state] = "failed";
-        _classPrivateFieldLooseBase(_this, _mod)[_mod] = err;
-
-        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _failedArray)[_failedArray], [err]);
-
-        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [false, err]);
-      });
-    }
-
-    _createClass(TryModule, [{
-      key: "state",
-      get: function get() {
-        return _classPrivateFieldLooseBase(this, _state)[_state];
-      }
-    }, {
-      key: "module",
-      get: function get() {
-        return _classPrivateFieldLooseBase(this, _mod)[_mod];
-      }
-    }, {
-      key: "err",
-      get: function get() {
-        return _classPrivateFieldLooseBase(this, _err)[_err];
-      }
-    }, {
-      key: "isOk",
-      get: function get() {
-        return _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
-      }
-    }, {
-      key: "success",
-      set: function set(callback) {
-        if (_classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
-          callback(_classPrivateFieldLooseBase(this, _mod)[_mod]);
-        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
-          _classPrivateFieldLooseBase(this, _successArray)[_successArray].push(callback);
-        }
-      }
-    }, {
-      key: "failed",
-      set: function set(callback) {
-        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed") {
-          callback(_classPrivateFieldLooseBase(this, _err)[_err]);
-        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
-          _classPrivateFieldLooseBase(this, _failedArray)[_failedArray].push(callback);
-        }
-      }
-    }, {
-      key: "finish",
-      set: function set(callback) {
-        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed" || _classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
-          var isOk = _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
-          var res = isOk ? _classPrivateFieldLooseBase(this, _mod)[_mod] : _classPrivateFieldLooseBase(this, _err)[_err];
-          callback(isOk, res);
-        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
-          _classPrivateFieldLooseBase(this, _finishArray)[_finishArray].push(callback);
-        }
-      }
-    }]);
-
-    return TryModule;
-  }();
-
-  var _invokeFuns2 = function _invokeFuns2(funs, args) {
-    for (var i = 0; i < funs.length; i++) {
-      try {
-        funs[i].apply(this, args);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
-
-  L$e.TryModule = TryModule;
-  L$e.define("try", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      var _this2 = this;
-
-      var dep = arg;
-      var tryModule = new TryModule(new Promise(function (resolve, reject) {
-        _this2.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-          resolve(mod);
-        }).error(function (err, invoker) {
-          console.warn("try!:require '".concat(dep, "' failed"));
-          reject(err);
-        }).setTag("try!".concat(arg));
-      }));
-      onload(tryModule);
-    }
-  });
-
-  var L$f = U.global.xsloader;
-  L$f.define("nodeps", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      this.invoker().withAbsUrl().require([arg], function (mod, depModuleArgs) {
-        onload(mod);
-      }).then({
-        depBefore: function depBefore(index, dep, depDeps) {
-          depDeps.splice(0, depDeps.length);
-        }
-      }).error(function (e) {
-        onerror(e);
-      }).setTag("nodeps!".concat(arg));
-    }
-  });
-
-  var L$g = U.global.xsloader;
-  L$g.define("exists", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      var vars = arg.split("|");
-
-      for (var i = 0; i < vars.length; i++) {
-        vars[i] = vars[i].trim();
-      }
-
-      if (vars.length == 0) {
-        onerror("args error for exists!");
-      } else {
-        var moduleNames = vars[0].replace(/\s/g, " ").split(" or ");
-        var moduleName;
-        var module;
-
-        for (var _i = 0; _i < moduleNames.length; _i++) {
-          moduleName = moduleNames[_i].trim();
-          module = moduleScript.getModule(moduleName);
-
-          if (module) {
-            break;
-          }
-        }
-
-        if (module) {
-          this.invoker().withAbsUrl().require([moduleName], function (mod, depModuleArgs) {
-            onload(mod);
-          }).error(function (e) {
-            onerror(e);
-          }).setTag("exists!".concat(arg));
-        } else {
-          var obj = undefined;
-
-          for (var _i2 = 1; _i2 < vars.length; _i2++) {
-            if (window[vars[_i2]]) {
-              obj = window[vars[_i2]];
-              break;
-            }
-          }
-
-          if (obj === undefined) {
-            onerror("not found:" + arg);
-          } else {
-            onload(obj);
-          }
-        }
-      }
-    }
-  });
-
-  var L$h = U.global.xsloader;
-  L$h.define("name", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      var index = arg.indexOf("=>>");
-
-      if (index == -1) {
-        onerror("expected:=>>");
-        return;
-      }
-
-      var moduleName = arg.substring(0, index);
-      moduleName = moduleName.replace(/，/g, ',');
-      var names = moduleName.split(",");
-      var dep = arg.substring(index + 3);
-
-      this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-        var existsMods = [];
-
-        for (var i = 0; i < names.length; i++) {
-          var newName = names[i];
-          var lastM = moduleScript.getModule(newName);
-
-          if (lastM && lastM.state != "init" && !lastM.preDependModule) {
-            var errinfo = "\tselfname=" + newName + ",state=" + lastM.state + ",src=" + lastM.src;
-
-            if (lastM.id === depModuleArgs[0].module.id) {
-              console.info("already define name by self:" + errinfo);
-            } else {
-              existsMods.push(errinfo);
-            }
-
-            continue;
-          }
-
-          var module = depModuleArgs[0].module;
-
-          if (lastM && !lastM.preDependModule) {
-            lastM.toOtherModule(module);
-          } else {
-            moduleScript.setModule(newName, module);
-          }
-        }
-
-        if (existsMods.length) {
-          onerror("already exists:" + existsMods.join('\n'));
-        } else {
-          onload(mod);
-        }
-      }).error(function (e) {
-        onerror(e);
-      }).setTag("name!".concat(arg));
-    }
-  });
-
-  var L$i = U.global.xsloader;
-  L$i.define("css", function () {
-    var lastDom;
-
-    var Node = function () {
-      function Node(src) {
-        _classCallCheck(this, Node);
-
-        this.parent = void 0;
-        this.children = {};
-        this._maxindex = -1;
-        this._minindex = void 0;
-        this.doms = {};
-        this.src = void 0;
-        this.src = src;
-      }
-
-      _createClass(Node, [{
-        key: "addChild",
-        value: function addChild(src, node) {
-          this.children[src] = node;
-          node.parent = this;
-        }
-      }, {
-        key: "getChild",
-        value: function getChild(src) {
-          return this.children[src];
-        }
-      }, {
-        key: "findAnchor",
-        value: function findAnchor(index, dom) {
-          if (dom) {
-            this.doms[index] = dom;
-          }
-
-          var anchorDom;
-
-          if (this._maxindex == -1) {
-            this._maxindex = index;
-            this._minindex = index;
-            var p = this.parent;
-
-            while (p) {
-              if (p._maxindex == -1) {
-                p = p.parent;
-              } else {
-                anchorDom = p.doms[p._minindex];
-                break;
-              }
-            }
-          } else {
-            if (index > this._maxindex) {
-              anchorDom = this.doms[this._maxindex].nextSibling;
-              this._maxindex = index;
-            } else {
-              if (this._minindex > index) {
-                this._minindex = index;
-              }
-
-              for (var i = index + 1; i < this._maxindex; i++) {
-                if (this.doms[i]) {
-                  anchorDom = this.doms[i];
-                  break;
-                }
-              }
-            }
-          }
-
-          if (!anchorDom) {
-            anchorDom = lastDom ? lastDom.nextSibling : L$i.script().nextSibling;
-          }
-
-          return anchorDom;
-        }
-      }]);
-
-      return Node;
-    }();
-
-    var engine = window.navigator.userAgent.match(/Trident\/([^ ;]*)|AppleWebKit\/([^ ;]*)|Opera\/([^ ;]*)|rv\:([^ ;]*)(.*?)Gecko\/([^ ;]*)|MSIE\s([^ ;]*)|AndroidWebKit\/([^ ;]*)/) || 0;
-    var useImportLoad = false;
-    var useOnload = true;
-    if (engine[1] || engine[7]) useImportLoad = parseInt(engine[1]) < 6 || parseInt(engine[7]) <= 9;else if (engine[2] || engine[8] || 'WebkitAppearance' in document.documentElement.style) useOnload = false;else if (engine[4]) useImportLoad = parseInt(engine[4]) < 18;
-    var cssAPI = {};
-    var cssIndex = 0;
-    var rootNodes = {};
-
-    function domIndex(dom) {
-      var index = 0;
-
-      while (dom = dom.previousSibling) {
-        index++;
-      }
-
-      return index;
-    }
-
-    function buildAndGetNode(mthiz) {
-      var src = mthiz.src();
-      var p = mthiz.invoker();
-
-      while (p && p.src() == src) {
-        p = p.invoker();
-      }
-
-      if (p) {
-        var pnode = buildAndGetNode(p);
-        var node = pnode.getChild(src);
-
-        if (!node) {
-          node = new Node(src);
-          pnode.addChild(src, node);
-        }
-
-        return node;
-      } else {
-        if (!rootNodes[src]) {
-          rootNodes[src] = new Node(src);
-        }
-
-        return rootNodes[src];
-      }
-    }
-
-    function appendCssDom(dom, cssThis, inverse) {
-      if (cssThis && inverse) {
-        var mthis = cssThis.invoker();
-        var node = buildAndGetNode(mthis);
-        dom.setAttribute("data-insert-index", cssIndex++);
-        var index = cssThis.getIndex();
-        var nextDom = node.findAnchor(index, dom);
-        script.head().insertBefore(dom, nextDom);
-
-        if (!lastDom || domIndex(dom) > domIndex(lastDom)) {
-          lastDom = dom;
-        }
-      } else {
-        L$i.appendHeadDom(dom);
-      }
-    }
-
-    var curStyle, curSheet;
-
-    var createStyle = function createStyle(mthis, inverse) {
-      curStyle = document.createElement('style');
-      appendCssDom(curStyle, mthis, inverse);
-      curSheet = curStyle.styleSheet || curStyle.sheet;
-    };
-
-    var ieCnt = 0;
-    var ieLoads = [];
-    var ieCurCallback;
-
-    var createIeLoad = function createIeLoad(url, mthis, inverse) {
-      curSheet.addImport(url);
-
-      curStyle.onload = function () {
-        processIeLoad(mthis, inverse);
-      };
-
-      ieCnt++;
-
-      if (ieCnt == 31) {
-        createStyle(mthis, inverse);
-        ieCnt = 0;
-      }
-    };
-
-    var processIeLoad = function processIeLoad(mthis, inverse) {
-      ieCurCallback();
-      var nextLoad = ieLoads.shift();
-
-      if (!nextLoad) {
-        ieCurCallback = null;
-        return;
-      }
-
-      ieCurCallback = nextLoad[1];
-      createIeLoad(nextLoad[0], mthis, inverse);
-    };
-
-    var importLoad = function importLoad(url, callback, mthis, inverse) {
-      callback = callback || function () {};
-
-      if (!curSheet || !curSheet.addImport) createStyle(mthis, inverse);
-
-      if (curSheet && curSheet.addImport) {
-        if (ieCurCallback) {
-          ieLoads.push([url, callback]);
-        } else {
-          createIeLoad(url, mthis, inverse);
-          ieCurCallback = callback;
-        }
-      } else {
-        curStyle.textContent = '@import "' + url + '";';
-        var loadInterval = setInterval(function () {
-          try {
-            curStyle.sheet.cssRules;
-            clearInterval(loadInterval);
-            callback();
-          } catch (e) {
-            console.warn(e);
-          }
-        }, 10);
-      }
-    };
-
-    var linkLoad = function linkLoad(url, callback, mthis, inverse) {
-      callback = callback || function () {};
-
-      var link = document.createElement('link');
-      link.type = 'text/css';
-      link.rel = 'stylesheet';
-      if (useOnload) link.onload = function () {
-        link.onload = function () {};
-
-        setTimeout(callback, 7);
-      };else {
-        var loadInterval = setInterval(function () {
-          for (var i = 0; i < document.styleSheets.length; i++) {
-            var sheet = document.styleSheets[i];
-
-            if (sheet.href == link.href) {
-              clearInterval(loadInterval);
-              return callback();
-            }
-          }
-        }, 10);
-      }
-      link.href = url;
-      appendCssDom(link, mthis, inverse);
-    };
-
-    cssAPI.pluginMain = function (cssId, onload, onerror, config) {
-      var inverse = !(config.plugins.css && config.plugins.css.inverse === false);
-      (useImportLoad ? importLoad : linkLoad)(this.invoker().getUrl(cssId, true), onload, this, inverse);
-    };
-
-    cssAPI.getCacheKey = function (cssId) {
-      var invoker = this.invoker();
-      return invoker ? invoker.getUrl(cssId, true) : cssId;
-    };
-
-    cssAPI.loadCss = function (cssPath, callback) {
-      (useImportLoad ? importLoad : linkLoad)(L$i.getUrl(cssPath), callback);
-    };
-
-    cssAPI.loadCsses = function () {
-      var args = arguments;
-
-      for (var i = 0; i < args.length; i++) {
-        (useImportLoad ? importLoad : linkLoad)(L$i.getUrl(args[i]), null);
-      }
-    };
-
-    return cssAPI;
-  });
-
-  var L$j = U.global.xsloader;
-  L$j.define("text", ["xshttp"], {
-    isSingle: true,
-    pluginMain: function pluginMain(name, onload, onerror, config, http) {
-      var url = this.invoker().getUrl(name, true);
-      http().url(url).handleAs("text").ok(function (text) {
-        onload(text);
-      }).fail(function (err) {
-        onerror(err);
-      }).done();
-    },
-    dealPluginArgs: function dealPluginArgs(pluginArgs) {
-      return pluginArgs;
-    }
-  });
-
-  var L$k = U.global.xsloader;
-  L$k.define("window", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config, http) {
-      var index = arg.indexOf("=>>");
-
-      if (index == -1) {
-        onerror("expected:=>>");
-        return;
-      }
-
-      var moduleName = arg.substring(0, index);
-      var dep = arg.substring(index + 3);
-
-      this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-        window[moduleName] = mod;
-        onload(mod);
-      }).setTag("window!".concat(arg));
-    }
-  });
-
-  var L$l = U.global.xsloader;
-  L$l.define("withdeps", {
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      var index = arg.indexOf("=>>");
-
-      if (index == -1) {
-        onerror("expected:=>>");
-        return;
-      }
-
-      var moduleName = arg.substring(0, index);
-      var depsStr = arg.substring(index + 3);
-      var deps;
-
-      try {
-        deps = L$l.xsParseJson(depsStr);
-
-        if (!L$l.isArray(deps)) {
-          onerror("deps is not Array:" + depsStr);
-          return;
-        }
-      } catch (e) {
-        onerror("deps error:" + depsStr);
-        return;
-      }
-
-      this.invoker().withAbsUrl().require([[false].concat(deps), moduleName], function (_deps, mod, depModuleArgs) {
-        onload(mod);
-      }).then({
-        orderDep: true
-      }).setTag("withdeps!".concat(arg));
-    }
-  });
-
-  var L$m = U.global.xsloader;
-  L$m.define("json", ["xshttp"], {
-    isSingle: true,
-    pluginMain: function pluginMain(name, onload, onerror, config, http) {
-      var url = this.invoker().getUrl(name, true);
-      http().url(url).handleAs("json").ok(function (json) {
-        onload(json);
-      }).fail(function (err) {
-        onerror(err);
-      }).done();
-    },
-    dealPluginArgs: function dealPluginArgs(pluginArgs) {
-      return pluginArgs;
-    }
-  });
-
-  var L$n = U.global.xsloader;
   var G$7 = U.global;
   var progIds = ['Msxml2.XMLHTTP', 'Microsoft.XMLHTTP', 'Msxml2.XMLHTTP.4.0'];
 
@@ -6304,13 +5649,13 @@
             value = "";
           }
 
-          if (L$n.isArray(value)) {
-            formData.append(x, L$n.xsJson2String(value));
+          if (L$c.isArray(value)) {
+            formData.append(x, L$c.xsJson2String(value));
           } else {
             if (G$7.File && value instanceof G$7.File || G$7.Blob && value instanceof G$7.Blob) {
               formData.append(x, value);
-            } else if (L$n.isObject(value)) {
-              formData.append(x, L$n.xsJson2String(value));
+            } else if (L$c.isObject(value)) {
+              formData.append(x, L$c.xsJson2String(value));
             } else {
               formData.append(x, value);
             }
@@ -6328,8 +5673,8 @@
             _value = "";
           }
 
-          if (L$n.isArray(_value) || L$n.isObject(_value)) {
-            _value = L$n.xsJson2String(_value);
+          if (L$c.isArray(_value) || L$c.isObject(_value)) {
+            _value = L$c.xsJson2String(_value);
           }
 
           body += "&" + encodeURIComponent(_x) + "=" + encodeURIComponent(_value);
@@ -6404,7 +5749,7 @@
 
             if (option.handleType === "json") {
               try {
-                result = L$n.xsParseJson(xhr.responseText);
+                result = L$c.xsParseJson(xhr.responseText);
               } catch (e) {
                 _doOnFailResponseHook(option, xhr, new Error("parse-json-error:" + e), "parse-json-error");
 
@@ -6558,14 +5903,14 @@
   };
 
   window._xshttp_request_ = httpRequest;
-  L$n.define("xshttp", [], function () {
+  L$c.define("xshttp", [], function () {
     return httpRequest;
   });
 
-  var L$o = U.global.xsloader;
-  L$o.define("request", ["xshttp"], function (http) {
+  var L$d = U.global.xsloader;
+  L$d.define("request", ["xshttp"], function (http) {
     var Request = function Request(option) {
-      option = L$o.extend({
+      option = L$d.extend({
         params: undefined,
         headers: undefined,
         method: undefined,
@@ -6590,7 +5935,7 @@
     return Request;
   });
 
-  var L$p = U.global.xsloader;
+  var L$e = U.global.xsloader;
 
   try {
     var isDebug = function isDebug(type) {
@@ -6782,7 +6127,7 @@
             osource: source,
             active: isActive,
             connectingSource: connectingSource,
-            id: L$p.randId(),
+            id: L$e.randId(),
             refused: {}
           };
 
@@ -6957,7 +6302,7 @@
             console.log(msg);
           }
 
-          source.postMessage(L$p.xsJson2String(msg), "*");
+          source.postMessage(L$e.xsJson2String(msg), "*");
         }
 
         window.addEventListener('message', function (event) {
@@ -6970,7 +6315,7 @@
             var data;
 
             try {
-              data = L$p.xsParseJson(event.data);
+              data = L$e.xsParseJson(event.data);
             } catch (e) {
               console.warn("error data:", event.data);
               console.warn(e);
@@ -7028,7 +6373,7 @@
 
         this.send = function (data) {
           var msg = {
-            id: L$p.randId(),
+            id: L$e.randId(),
             data: data
           };
           msgQueue.append(msg);
@@ -7149,8 +6494,8 @@
       };
 
       var _connectWindow = function _connectWindow(winObjOrCallback, option, notActive) {
-        var gconfig = L$p.config().plugins.xsmsg;
-        option = L$p.extendDeep({
+        var gconfig = L$e.config().plugins.xsmsg;
+        option = L$e.extendDeep({
           cmd: "default-cmd",
           listener: null,
           connected: null,
@@ -7262,88 +6607,26 @@
         isXsMsgDebug = isDebug;
       };
 
-      L$p.define("xsmsg", handleApi);
+      L$e.define("xsmsg", handleApi);
     }
 
-    L$p.define("XsLinkedList", function () {
+    L$e.define("XsLinkedList", function () {
       return LinkedList;
     });
   } catch (e) {
     console.error(e);
   }
 
-  var L$q = U.global.xsloader;
-  L$q.define("image", {
-    pluginMain: function pluginMain(name, onload, onerror, config) {
-      var src = this.invoker().getUrl(name, false);
-      var img = new Image();
-
-      var callback = function callback(ok) {
-        var image = img;
-        img = null;
-        image.onload = null;
-        image.οnerrοr = null;
-        onload(ok ? image : null);
-      };
-
-      img.onload = function () {
-        callback(true);
-      };
-
-      img.οnerrοr = function () {
-        callback(false);
-      };
-
-      img.src = src;
-      L$q.asyncCall(function () {
-        if (img) {
-          setTimeout(function () {
-            if (img) {
-              callback(false);
-            }
-          }, config.plugins.image.timeout);
-        }
-      });
-    },
-    dealPluginArgs: function dealPluginArgs(pluginArgs) {
-      return pluginArgs;
-    }
-  });
-
-  var L$r = U.global.xsloader;
-  L$r.define("default", {
-    isSingle: true,
-    pluginMain: function pluginMain(arg, onload, onerror, config) {
-      var dep = arg;
-
-      var handle = this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
-        if (L$r.isObject(mod)) {
-          mod = mod["default"];
-
-          if (mod === undefined) {
-            mod = null;
-          }
-        } else {
-          mod = null;
-        }
-
-        onload(mod);
-      }).error(function (err, invoker) {
-        onerror(err);
-      }).setTag("default!".concat(arg));
-    }
-  });
-
-  var L$s = U.global.xsloader;
-  L$s.define("xsloader4j-server-bridge", [], function () {
-    var base64 = new L$s.Base64();
+  var L$f = U.global.xsloader;
+  L$f.define("xsloader4j-server-bridge", [], function () {
+    var base64 = new L$f.Base64();
     var isDebug = false;
     var hasRegVnodex = false;
 
     function __renderJsx(vm) {
       return function (component, props) {
         if (!vm || !vm.$createElement) {
-          var Vue = L$s.require.get("vue");
+          var Vue = L$f.require.get("vue");
 
           vm = new Vue();
         }
@@ -7367,11 +6650,11 @@
     function regVnodex() {
       var requiredVue = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      if (hasRegVnodex || !requiredVue && !L$s.hasDefined("vue")) {
+      if (hasRegVnodex || !requiredVue && !L$f.hasDefined("vue")) {
         return;
       }
 
-      var Vue = L$s.require.get("vue");
+      var Vue = L$f.require.get("vue");
 
       Vue.component("jsx", {
         props: {
@@ -7389,21 +6672,21 @@
           };
           var Comp = this.x;
 
-          if (!L$s.isEmpty(Comp)) {
-            if (L$s.isFunction(Comp)) {
+          if (!L$f.isEmpty(Comp)) {
+            if (L$f.isFunction(Comp)) {
               Comp = Comp();
             }
 
-            if (L$s.isObject(Comp)) {
+            if (L$f.isObject(Comp)) {
               var data = Comp.data || (Comp.data = {});
 
               for (var k in wrapProps) {
-                data[k] = L$s.extend({}, data[k], wrapProps[k]);
+                data[k] = L$f.extend({}, data[k], wrapProps[k]);
               }
             }
 
-            if (!L$s.isObject(Comp)) {
-              var content = L$s.isString(Comp) ? Comp : JSON.stringify(Comp);
+            if (!L$f.isObject(Comp)) {
+              var content = L$f.isString(Comp) ? Comp : JSON.stringify(Comp);
               Comp = h("span", {
                 "class": "jsx-text",
                 "domProps": {
@@ -7449,7 +6732,7 @@
             throw e;
           }
 
-          var Vue = L$s.require.get("vue");
+          var Vue = L$f.require.get("vue");
 
           var _default = exports['default'] || exports;
 
@@ -7471,7 +6754,7 @@
                   var rurl = rs[group].trim();
                   result += str.substring(0, rs.index);
 
-                  if (L$s.startsWith(rurl, "url(")) {
+                  if (L$f.startsWith(rurl, "url(")) {
                     result += rs[0];
                   } else {
                     result += fun(rs, thiz.getUrl(rurl, appendArgs));
@@ -7536,7 +6819,7 @@
           var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "";
 
           if (cssContent) {
-            var id = L$s.randId() + "_" + name;
+            var id = L$f.randId() + "_" + name;
             var count = 0;
             var styleDom = document.createElement("style");
             styleDom.setAttribute("id", id);
@@ -7545,7 +6828,7 @@
             var obj = {
               init: function init() {
                 if (count <= 0) {
-                  L$s.appendHeadDom(styleDom);
+                  L$f.appendHeadDom(styleDom);
                 }
 
                 count++;
@@ -7575,7 +6858,7 @@
     return mod;
   });
 
-  var L$t = U.global.xsloader;
+  var L$g = U.global.xsloader;
   var CONNS_MAP = {};
   var DEBUG_OPTION = {
     logMessage: false
@@ -7638,9 +6921,9 @@
   }
 
   function doSendMessage(isserver, source, msg) {
-    msg = _objectSpread2({
+    msg = _objectSpread2(_objectSpread2({
       isserver: !!isserver
-    }, msg, {
+    }, msg), {}, {
       __ifmsg: true
     });
 
@@ -7664,7 +6947,7 @@
         source = event.source,
         origin = event.origin;
 
-    if (L$t.isObject(data) && data.__ifmsg === true) {
+    if (L$g.isObject(data) && data.__ifmsg === true) {
       var cmd = data.cmd,
           fromid = data.fromid,
           toid = data.toid,
@@ -7894,7 +7177,7 @@
       this._cmd = void 0;
       this._id = void 0;
       this._cmd = cmd;
-      this._id = L$t.randId();
+      this._id = L$g.randId();
     }
 
     _createClass(Base, [{
@@ -7964,7 +7247,7 @@
       _this._onMessage = void 0;
       _this._onConnected = void 0;
       _this._createTime = currentTimemillis();
-      _this._source = new L$t.InVar(source);
+      _this._source = new L$g.InVar(source);
       _this._origin = origin;
       _this._fromid = fromid;
       _this._isself = isself;
@@ -8279,12 +7562,16 @@
     return Client;
   }(Base);
 
+  var _singleMode = _classPrivateFieldLooseKey("singleMode");
+
+  var _singleClient = _classPrivateFieldLooseKey("singleClient");
+
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
     var _super2 = _createSuper(Server);
 
-    function Server(cmd) {
+    function Server(cmd, singleMode) {
       var _this5;
 
       _classCallCheck(this, Server);
@@ -8297,7 +7584,16 @@
       _this5._onConnected = void 0;
       _this5._conntimeout = void 0;
       _this5._sleeptimeout = void 0;
-      _this5._id = L$t.randId();
+      Object.defineProperty(_assertThisInitialized(_this5), _singleMode, {
+        writable: true,
+        value: void 0
+      });
+      Object.defineProperty(_assertThisInitialized(_this5), _singleClient, {
+        writable: true,
+        value: void 0
+      });
+      _classPrivateFieldLooseBase(_assertThisInitialized(_this5), _singleMode)[_singleMode] = singleMode;
+      _this5._id = L$g.randId();
 
       _this5.onConnectTimeout = function (client) {
         console.warn("client connect timeout:", client);
@@ -8330,7 +7626,17 @@
               toid: client.fromid
             });
 
+            if (_classPrivateFieldLooseBase(_this6, _singleMode)[_singleMode] && _classPrivateFieldLooseBase(_this6, _singleClient)[_singleClient]) {
+              _classPrivateFieldLooseBase(_this6, _singleClient)[_singleClient].close();
+
+              _classPrivateFieldLooseBase(_this6, _singleClient)[_singleClient] = null;
+            }
+
             var onConnected = _this6._onConnected || function () {
+              if (_classPrivateFieldLooseBase(_this6, _singleMode)[_singleMode]) {
+                _classPrivateFieldLooseBase(_this6, _singleClient)[_singleClient] = null;
+              }
+
               client.close(false);
               doSendMessage(true, client.source.get(), {
                 cmd: _this6.cmd,
@@ -8340,6 +7646,10 @@
                 toid: client.fromid
               });
             };
+
+            if (_classPrivateFieldLooseBase(_this6, _singleMode)[_singleMode]) {
+              _classPrivateFieldLooseBase(_this6, _singleClient)[_singleClient] = client;
+            }
 
             Callback.call(_this6, onConnected, client);
             client.checkClientConnected(_this6);
@@ -8382,6 +7692,7 @@
 
             obj.clients = {};
             obj.server = null;
+            _classPrivateFieldLooseBase(this, _singleClient)[_singleClient] = null;
             this.closeBase();
           }
         }
@@ -8409,93 +7720,135 @@
           this._start = true;
         }
       }
+    }, {
+      key: "isSingle",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _singleMode)[_singleMode];
+      }
+    }, {
+      key: "client",
+      get: function get() {
+        if (!_classPrivateFieldLooseBase(this, _singleMode)[_singleMode]) {
+          throw new Error("not single mode");
+        } else {
+          return _classPrivateFieldLooseBase(this, _singleClient)[_singleClient];
+        }
+      }
     }]);
 
     return Server;
   }(Base);
 
+  var _server = _classPrivateFieldLooseKey("server");
+
   var IfmsgServer = function () {
     function IfmsgServer(cmd, option) {
       _classCallCheck(this, IfmsgServer);
 
-      this._server = void 0;
-      var gconfig = L$t.config().plugins.ifmsg;
-      option = L$t.extend({
+      Object.defineProperty(this, _server, {
+        writable: true,
+        value: void 0
+      });
+      var gconfig = L$g.config().plugins.ifmsg;
+
+      if (option === true || option === false) {
+        option = {
+          singleMode: option
+        };
+      }
+
+      option = L$g.extend({
         connTimeout: gconfig.connTimeout,
-        sleepTimeout: gconfig.sleepTimeout
+        sleepTimeout: gconfig.sleepTimeout,
+        singleMode: false
       }, option);
-      this._server = new L$t.InVar(new Server(cmd));
-      this._server.get()._conntimeout = option.connTimeout;
-      this._server.get()._sleeptimeout = option.sleepTimeout;
+      _classPrivateFieldLooseBase(this, _server)[_server] = new Server(cmd, option.singleMode);
+      _classPrivateFieldLooseBase(this, _server)[_server]._conntimeout = option.connTimeout;
+      _classPrivateFieldLooseBase(this, _server)[_server]._sleeptimeout = option.sleepTimeout;
     }
 
     _createClass(IfmsgServer, [{
       key: "listen",
       value: function listen() {
-        this._server.get().listen();
+        _classPrivateFieldLooseBase(this, _server)[_server].listen();
       }
     }, {
       key: "close",
       value: function close() {
-        this._server.get().close();
+        _classPrivateFieldLooseBase(this, _server)[_server].close();
       }
     }, {
       key: "onConnect",
       set: function set(onConnect) {
-        this._server.get()._onConnect = onConnect ? new Callback(this, onConnect) : null;
+        _classPrivateFieldLooseBase(this, _server)[_server]._onConnect = onConnect ? new Callback(this, onConnect) : null;
       },
       get: function get() {
-        return this._server.get()._onConnect && this._server.get()._onConnect.callback;
+        return _classPrivateFieldLooseBase(this, _server)[_server]._onConnect && _classPrivateFieldLooseBase(this, _server)[_server]._onConnect.callback;
       }
     }, {
       key: "onConnectTimeout",
       set: function set(onConnectTimeout) {
-        this._server.get()._onConnectTimeout = onConnectTimeout ? new Callback(this, onConnectTimeout) : null;
+        _classPrivateFieldLooseBase(this, _server)[_server]._onConnectTimeout = onConnectTimeout ? new Callback(this, onConnectTimeout) : null;
       },
       get: function get() {
-        return this._server.get()._onConnectTimeout && this._server.get()._onConnectTimeout.callback;
+        return _classPrivateFieldLooseBase(this, _server)[_server]._onConnectTimeout && _classPrivateFieldLooseBase(this, _server)[_server]._onConnectTimeout.callback;
       }
     }, {
       key: "onConnected",
       set: function set(onConnected) {
-        this._server.get()._onConnected = onConnected ? new Callback(this, onConnected) : null;
+        _classPrivateFieldLooseBase(this, _server)[_server]._onConnected = onConnected ? new Callback(this, onConnected) : null;
       },
       get: function get() {
-        return this._server.get()._onConnected && this._server.get()._onConnected.callback;
+        return _classPrivateFieldLooseBase(this, _server)[_server]._onConnected && _classPrivateFieldLooseBase(this, _server)[_server]._onConnected.callback;
       }
     }, {
       key: "isStart",
       get: function get() {
-        return this._server.get()._start;
+        return _classPrivateFieldLooseBase(this, _server)[_server]._start;
       }
     }, {
       key: "isDestroyed",
       get: function get() {
-        return this._server.get()._destroyed;
+        return _classPrivateFieldLooseBase(this, _server)[_server]._destroyed;
       }
     }, {
       key: "cmd",
       get: function get() {
-        return this._server.get().cmd;
+        return _classPrivateFieldLooseBase(this, _server)[_server].cmd;
+      }
+    }, {
+      key: "isSingle",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _server)[_server].isSingle;
+      }
+    }, {
+      key: "client",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _server)[_server].client;
       }
     }]);
 
     return IfmsgServer;
   }();
 
+  var _client9 = _classPrivateFieldLooseKey("client");
+
   var IfmsgClient = function () {
     function IfmsgClient(cmd, option) {
       _classCallCheck(this, IfmsgClient);
 
-      this._client = void 0;
-      var gconfig = L$t.config().plugins.ifmsg;
-      option = L$t.extend({
+      Object.defineProperty(this, _client9, {
+        writable: true,
+        value: void 0
+      });
+      var gconfig = L$g.config().plugins.ifmsg;
+      option = L$g.extend({
         connTimeout: gconfig.connTimeout,
         sleepTimeout: gconfig.sleepTimeout
       }, option);
-      this._client = new L$t.InVar(new Client(cmd, null, null, null, true));
-      this._client.get()._conntimeout = option.connTimeout;
-      this._client.get()._sleeptimeout = option.sleepTimeout;
+      _classPrivateFieldLooseBase(this, _client9)[_client9] = new Client(cmd, null, null, null, true);
+      _classPrivateFieldLooseBase(this, _client9)[_client9]._conntimeout = option.connTimeout;
+      _classPrivateFieldLooseBase(this, _client9)[_client9]._sleeptimeout = option.sleepTimeout;
 
       this.onConnectFail = function (err) {
         console.warn(err);
@@ -8514,118 +7867,837 @@
             iframe.removeEventListener("load", fun);
             var source = iframe.contentWindow;
 
-            _this7._client.get().source.set(source);
+            _classPrivateFieldLooseBase(_this7, _client9)[_client9].source.set(source);
 
-            _this7._client.get().connect(conndata);
+            _classPrivateFieldLooseBase(_this7, _client9)[_client9].connect(conndata);
           };
 
           iframe.addEventListener("load", fun);
         } else {
           var source = iframe.contentWindow;
 
-          this._client.get().source.set(source);
+          _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(source);
 
-          this._client.get().connect(conndata);
+          _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
         }
       }
     }, {
       key: "connParent",
       value: function connParent(conndata) {
-        this._client.get().source.set(window.parent);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.parent);
 
-        this._client.get().connect(conndata);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
     }, {
       key: "connTop",
       value: function connTop(conndata) {
-        this._client.get().source.set(window.top);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.top);
 
-        this._client.get().connect(conndata);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
     }, {
       key: "connOpener",
       value: function connOpener(conndata) {
-        this._client.get().source.set(window.opener);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.opener);
 
-        this._client.get().connect(conndata);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
     }, {
       key: "sendMessage",
       value: function sendMessage(data) {
-        this._client.get().sendMessage(data);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].sendMessage(data);
       }
     }, {
       key: "close",
       value: function close() {
-        this._client.get().close();
+        _classPrivateFieldLooseBase(this, _client9)[_client9].close();
       }
     }, {
       key: "onConnect",
       set: function set(onConnect) {
-        this._client.get()._onConnect = onConnect ? new Callback(this, onConnect) : null;
+        _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnect = onConnect ? new Callback(this, onConnect) : null;
       },
       get: function get() {
-        return this._client.get()._onConnect && this._client.get()._onConnect.callback;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnect && _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnect.callback;
       }
     }, {
       key: "onConnected",
       set: function set(onConnected) {
-        this._client.get()._onConnected = onConnected ? new Callback(this, onConnected) : null;
+        _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnected = onConnected ? new Callback(this, onConnected) : null;
       },
       get: function get() {
-        return this._client.get()._onConnected && this._client.get()._onConnected.callback;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnected && _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnected.callback;
       }
     }, {
       key: "onHeartTimeout",
       set: function set(onHeartTimeout) {
-        this._client.get().onHeartTimeout = onHeartTimeout;
+        _classPrivateFieldLooseBase(this, _client9)[_client9].onHeartTimeout = onHeartTimeout;
       },
       get: function get() {
-        return this._client.get().onHeartTimeout;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].onHeartTimeout;
       }
     }, {
       key: "onClosed",
       set: function set(onClosed) {
-        this._client.get().onClosed = onClosed;
+        _classPrivateFieldLooseBase(this, _client9)[_client9].onClosed = onClosed;
       },
       get: function get() {
-        return this._client.get().onClosed;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].onClosed;
       }
     }, {
       key: "onMessage",
       set: function set(onMessage) {
-        this._client.get().onMessage = onMessage;
+        _classPrivateFieldLooseBase(this, _client9)[_client9].onMessage = onMessage;
       },
       get: function get() {
-        return this._client.get().onMessage;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].onMessage;
       }
     }, {
       key: "onConnectFail",
       set: function set(callback) {
-        this._client.get()._onConnectFail = callback ? new Callback(this, callback) : null;
+        _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnectFail = callback ? new Callback(this, callback) : null;
       },
       get: function get() {
-        return this._client.get()._onConnectFail && this._client.get()._onConnectFail.callback;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnectFail && _classPrivateFieldLooseBase(this, _client9)[_client9]._onConnectFail.callback;
       }
     }, {
       key: "connected",
       get: function get() {
-        return this._client.get().connected;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].connected;
       }
     }, {
       key: "destroyed",
       get: function get() {
-        return this._client.get().destroyed;
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].destroyed;
       }
     }]);
 
     return IfmsgClient;
   }();
 
-  L$t.define("ifmsg", {
+  L$g.define("ifmsg", {
     Server: IfmsgServer,
     Client: IfmsgClient,
     debug: new Debug()
+  });
+
+  var L$h = U.global.xsloader;
+  L$h.define(script.INNER_DEPS_PLUGIN, {
+    pluginMain: function pluginMain(depId, onload, onerror, config) {
+      var depsObj = script.innerDepsMap[depId];
+      var deps = depsObj.deps;
+      var newInvoker = this.invoker().withAbsUrl(depsObj.absUrl);
+
+      newInvoker.src = function () {
+        return depsObj.src;
+      };
+
+      newInvoker.require(deps, function () {
+        var args = [];
+
+        for (var k = 0; k < arguments.length; k++) {
+          args.push(arguments[k]);
+        }
+
+        onload(args);
+      }).then({
+        orderDep: depsObj.orderDep,
+        error: function error(err, invoker) {
+          onerror(new U.PluginError(err, invoker));
+        }
+      }).setTag("".concat(script.INNER_DEPS_PLUGIN, "![").concat(deps.join(','), "]"));
+    },
+    getCacheKey: function getCacheKey(depId) {
+      return depId;
+    }
+  });
+
+  var L$i = U.global.xsloader;
+  L$i.define("ready", {
+    pluginMain: function pluginMain(depId, onload, onerror, config) {
+      L$i.onReady(function () {
+        onload();
+      });
+    }
+  });
+
+  var L$j = U.global.xsloader;
+
+  var _state = _classPrivateFieldLooseKey("state");
+
+  var _mod = _classPrivateFieldLooseKey("mod");
+
+  var _err = _classPrivateFieldLooseKey("err");
+
+  var _successArray = _classPrivateFieldLooseKey("successArray");
+
+  var _failedArray = _classPrivateFieldLooseKey("failedArray");
+
+  var _finishArray = _classPrivateFieldLooseKey("finishArray");
+
+  var _invokeFuns = _classPrivateFieldLooseKey("invokeFuns");
+
+  var TryModule = function () {
+    function TryModule(promise) {
+      var _this = this;
+
+      _classCallCheck(this, TryModule);
+
+      Object.defineProperty(this, _invokeFuns, {
+        value: _invokeFuns2
+      });
+      Object.defineProperty(this, _state, {
+        writable: true,
+        value: "loading"
+      });
+      Object.defineProperty(this, _mod, {
+        writable: true,
+        value: undefined
+      });
+      Object.defineProperty(this, _err, {
+        writable: true,
+        value: undefined
+      });
+      Object.defineProperty(this, _successArray, {
+        writable: true,
+        value: []
+      });
+      Object.defineProperty(this, _failedArray, {
+        writable: true,
+        value: []
+      });
+      Object.defineProperty(this, _finishArray, {
+        writable: true,
+        value: []
+      });
+      promise.then(function (mod) {
+        _classPrivateFieldLooseBase(_this, _state)[_state] = "defined";
+        _classPrivateFieldLooseBase(_this, _mod)[_mod] = mod;
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _successArray)[_successArray], [mod]);
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [true, mod]);
+      }, function (err) {
+        _classPrivateFieldLooseBase(_this, _state)[_state] = "failed";
+        _classPrivateFieldLooseBase(_this, _mod)[_mod] = err;
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _failedArray)[_failedArray], [err]);
+
+        _classPrivateFieldLooseBase(_this, _invokeFuns)[_invokeFuns](_classPrivateFieldLooseBase(_this, _finishArray)[_finishArray], [false, err]);
+      });
+    }
+
+    _createClass(TryModule, [{
+      key: "state",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _state)[_state];
+      }
+    }, {
+      key: "module",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _mod)[_mod];
+      }
+    }, {
+      key: "err",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _err)[_err];
+      }
+    }, {
+      key: "isOk",
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
+      }
+    }, {
+      key: "success",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
+          callback(_classPrivateFieldLooseBase(this, _mod)[_mod]);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _successArray)[_successArray].push(callback);
+        }
+      }
+    }, {
+      key: "failed",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed") {
+          callback(_classPrivateFieldLooseBase(this, _err)[_err]);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _failedArray)[_failedArray].push(callback);
+        }
+      }
+    }, {
+      key: "finish",
+      set: function set(callback) {
+        if (_classPrivateFieldLooseBase(this, _state)[_state] == "failed" || _classPrivateFieldLooseBase(this, _state)[_state] == "defined") {
+          var isOk = _classPrivateFieldLooseBase(this, _state)[_state] == "defined";
+          var res = isOk ? _classPrivateFieldLooseBase(this, _mod)[_mod] : _classPrivateFieldLooseBase(this, _err)[_err];
+          callback(isOk, res);
+        } else if (_classPrivateFieldLooseBase(this, _state)[_state] == "loading") {
+          _classPrivateFieldLooseBase(this, _finishArray)[_finishArray].push(callback);
+        }
+      }
+    }]);
+
+    return TryModule;
+  }();
+
+  var _invokeFuns2 = function _invokeFuns2(funs, args) {
+    for (var i = 0; i < funs.length; i++) {
+      try {
+        funs[i].apply(this, args);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  L$j.TryModule = TryModule;
+  L$j.define("try", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var _this2 = this;
+
+      var dep = arg;
+      var tryModule = new TryModule(new Promise(function (resolve, reject) {
+        _this2.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
+          resolve(mod);
+        }).error(function (err, invoker) {
+          console.warn("try!:require '".concat(dep, "' failed"));
+          reject(err);
+        }).setTag("try!".concat(arg));
+      }));
+      onload(tryModule);
+    }
+  });
+
+  var L$k = U.global.xsloader;
+  L$k.define("nodeps", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      this.invoker().withAbsUrl().require([arg], function (mod, depModuleArgs) {
+        onload(mod);
+      }).then({
+        depBefore: function depBefore(index, dep, depDeps) {
+          depDeps.splice(0, depDeps.length);
+        }
+      }).error(function (e) {
+        onerror(e);
+      }).setTag("nodeps!".concat(arg));
+    }
+  });
+
+  var L$l = U.global.xsloader;
+  L$l.define("exists", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var vars = arg.split("|");
+
+      for (var i = 0; i < vars.length; i++) {
+        vars[i] = vars[i].trim();
+      }
+
+      if (vars.length == 0) {
+        onerror("args error for exists!");
+      } else {
+        var moduleNames = vars[0].replace(/\s/g, " ").split(" or ");
+        var moduleName;
+        var module;
+
+        for (var _i = 0; _i < moduleNames.length; _i++) {
+          moduleName = moduleNames[_i].trim();
+          module = moduleScript.getModule(moduleName);
+
+          if (module) {
+            break;
+          }
+        }
+
+        if (module) {
+          this.invoker().withAbsUrl().require([moduleName], function (mod, depModuleArgs) {
+            onload(mod);
+          }).error(function (e) {
+            onerror(e);
+          }).setTag("exists!".concat(arg));
+        } else {
+          var obj = undefined;
+
+          for (var _i2 = 1; _i2 < vars.length; _i2++) {
+            if (window[vars[_i2]]) {
+              obj = window[vars[_i2]];
+              break;
+            }
+          }
+
+          if (obj === undefined) {
+            onerror("not found:" + arg);
+          } else {
+            onload(obj);
+          }
+        }
+      }
+    }
+  });
+
+  var L$m = U.global.xsloader;
+  L$m.define("name", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var index = arg.indexOf("=>>");
+
+      if (index == -1) {
+        onerror("expected:=>>");
+        return;
+      }
+
+      var moduleName = arg.substring(0, index);
+      moduleName = moduleName.replace(/，/g, ',');
+      var names = moduleName.split(",");
+      var dep = arg.substring(index + 3);
+
+      this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
+        var existsMods = [];
+
+        for (var i = 0; i < names.length; i++) {
+          var newName = names[i];
+          var lastM = moduleScript.getModule(newName);
+
+          if (lastM && lastM.state != "init" && !lastM.preDependModule) {
+            var errinfo = "\tselfname=" + newName + ",state=" + lastM.state + ",src=" + lastM.src;
+
+            if (lastM.id === depModuleArgs[0].module.id) {
+              console.info("already define name by self:" + errinfo);
+            } else {
+              existsMods.push(errinfo);
+            }
+
+            continue;
+          }
+
+          var module = depModuleArgs[0].module;
+
+          if (lastM && !lastM.preDependModule) {
+            lastM.toOtherModule(module);
+          } else {
+            moduleScript.setModule(newName, module);
+          }
+        }
+
+        if (existsMods.length) {
+          onerror("already exists:" + existsMods.join('\n'));
+        } else {
+          onload(mod);
+        }
+      }).error(function (e) {
+        onerror(e);
+      }).setTag("name!".concat(arg));
+    }
+  });
+
+  var L$n = U.global.xsloader;
+  L$n.define("css", function () {
+    var lastDom;
+
+    var Node = function () {
+      function Node(src) {
+        _classCallCheck(this, Node);
+
+        this.parent = void 0;
+        this.children = {};
+        this._maxindex = -1;
+        this._minindex = void 0;
+        this.doms = {};
+        this.src = void 0;
+        this.src = src;
+      }
+
+      _createClass(Node, [{
+        key: "addChild",
+        value: function addChild(src, node) {
+          this.children[src] = node;
+          node.parent = this;
+        }
+      }, {
+        key: "getChild",
+        value: function getChild(src) {
+          return this.children[src];
+        }
+      }, {
+        key: "findAnchor",
+        value: function findAnchor(index, dom) {
+          if (dom) {
+            this.doms[index] = dom;
+          }
+
+          var anchorDom;
+
+          if (this._maxindex == -1) {
+            this._maxindex = index;
+            this._minindex = index;
+            var p = this.parent;
+
+            while (p) {
+              if (p._maxindex == -1) {
+                p = p.parent;
+              } else {
+                anchorDom = p.doms[p._minindex];
+                break;
+              }
+            }
+          } else {
+            if (index > this._maxindex) {
+              anchorDom = this.doms[this._maxindex].nextSibling;
+              this._maxindex = index;
+            } else {
+              if (this._minindex > index) {
+                this._minindex = index;
+              }
+
+              for (var i = index + 1; i < this._maxindex; i++) {
+                if (this.doms[i]) {
+                  anchorDom = this.doms[i];
+                  break;
+                }
+              }
+            }
+          }
+
+          if (!anchorDom) {
+            anchorDom = lastDom ? lastDom.nextSibling : L$n.script().nextSibling;
+          }
+
+          return anchorDom;
+        }
+      }]);
+
+      return Node;
+    }();
+
+    var engine = window.navigator.userAgent.match(/Trident\/([^ ;]*)|AppleWebKit\/([^ ;]*)|Opera\/([^ ;]*)|rv\:([^ ;]*)(.*?)Gecko\/([^ ;]*)|MSIE\s([^ ;]*)|AndroidWebKit\/([^ ;]*)/) || 0;
+    var useImportLoad = false;
+    var useOnload = true;
+    if (engine[1] || engine[7]) useImportLoad = parseInt(engine[1]) < 6 || parseInt(engine[7]) <= 9;else if (engine[2] || engine[8] || 'WebkitAppearance' in document.documentElement.style) useOnload = false;else if (engine[4]) useImportLoad = parseInt(engine[4]) < 18;
+    var cssAPI = {};
+    var cssIndex = 0;
+    var rootNodes = {};
+
+    function domIndex(dom) {
+      var index = 0;
+
+      while (dom = dom.previousSibling) {
+        index++;
+      }
+
+      return index;
+    }
+
+    function buildAndGetNode(mthiz) {
+      var src = mthiz.src();
+      var p = mthiz.invoker();
+
+      while (p && p.src() == src) {
+        p = p.invoker();
+      }
+
+      if (p) {
+        var pnode = buildAndGetNode(p);
+        var node = pnode.getChild(src);
+
+        if (!node) {
+          node = new Node(src);
+          pnode.addChild(src, node);
+        }
+
+        return node;
+      } else {
+        if (!rootNodes[src]) {
+          rootNodes[src] = new Node(src);
+        }
+
+        return rootNodes[src];
+      }
+    }
+
+    function appendCssDom(dom, cssThis, inverse) {
+      if (cssThis && inverse) {
+        var mthis = cssThis.invoker();
+        var node = buildAndGetNode(mthis);
+        dom.setAttribute("data-insert-index", cssIndex++);
+        var index = cssThis.getIndex();
+        var nextDom = node.findAnchor(index, dom);
+        script.head().insertBefore(dom, nextDom);
+
+        if (!lastDom || domIndex(dom) > domIndex(lastDom)) {
+          lastDom = dom;
+        }
+      } else {
+        L$n.appendHeadDom(dom);
+      }
+    }
+
+    var curStyle, curSheet;
+
+    var createStyle = function createStyle(mthis, inverse) {
+      curStyle = document.createElement('style');
+      appendCssDom(curStyle, mthis, inverse);
+      curSheet = curStyle.styleSheet || curStyle.sheet;
+    };
+
+    var ieCnt = 0;
+    var ieLoads = [];
+    var ieCurCallback;
+
+    var createIeLoad = function createIeLoad(url, mthis, inverse) {
+      curSheet.addImport(url);
+
+      curStyle.onload = function () {
+        processIeLoad(mthis, inverse);
+      };
+
+      ieCnt++;
+
+      if (ieCnt == 31) {
+        createStyle(mthis, inverse);
+        ieCnt = 0;
+      }
+    };
+
+    var processIeLoad = function processIeLoad(mthis, inverse) {
+      ieCurCallback();
+      var nextLoad = ieLoads.shift();
+
+      if (!nextLoad) {
+        ieCurCallback = null;
+        return;
+      }
+
+      ieCurCallback = nextLoad[1];
+      createIeLoad(nextLoad[0], mthis, inverse);
+    };
+
+    var importLoad = function importLoad(url, callback, mthis, inverse) {
+      callback = callback || function () {};
+
+      if (!curSheet || !curSheet.addImport) createStyle(mthis, inverse);
+
+      if (curSheet && curSheet.addImport) {
+        if (ieCurCallback) {
+          ieLoads.push([url, callback]);
+        } else {
+          createIeLoad(url, mthis, inverse);
+          ieCurCallback = callback;
+        }
+      } else {
+        curStyle.textContent = '@import "' + url + '";';
+        var loadInterval = setInterval(function () {
+          try {
+            curStyle.sheet.cssRules;
+            clearInterval(loadInterval);
+            callback();
+          } catch (e) {
+            console.warn(e);
+          }
+        }, 10);
+      }
+    };
+
+    var linkLoad = function linkLoad(url, callback, mthis, inverse) {
+      callback = callback || function () {};
+
+      var link = document.createElement('link');
+      link.type = 'text/css';
+      link.rel = 'stylesheet';
+      if (useOnload) link.onload = function () {
+        link.onload = function () {};
+
+        setTimeout(callback, 7);
+      };else {
+        var loadInterval = setInterval(function () {
+          for (var i = 0; i < document.styleSheets.length; i++) {
+            var sheet = document.styleSheets[i];
+
+            if (sheet.href == link.href) {
+              clearInterval(loadInterval);
+              return callback();
+            }
+          }
+        }, 10);
+      }
+      link.href = url;
+      appendCssDom(link, mthis, inverse);
+    };
+
+    cssAPI.pluginMain = function (cssId, onload, onerror, config) {
+      var inverse = !(config.plugins.css && config.plugins.css.inverse === false);
+      (useImportLoad ? importLoad : linkLoad)(this.invoker().getUrl(cssId, true), onload, this, inverse);
+    };
+
+    cssAPI.getCacheKey = function (cssId) {
+      var invoker = this.invoker();
+      return invoker ? invoker.getUrl(cssId, true) : cssId;
+    };
+
+    cssAPI.loadCss = function (cssPath, callback) {
+      (useImportLoad ? importLoad : linkLoad)(L$n.getUrl(cssPath), callback);
+    };
+
+    cssAPI.loadCsses = function () {
+      var args = arguments;
+
+      for (var i = 0; i < args.length; i++) {
+        (useImportLoad ? importLoad : linkLoad)(L$n.getUrl(args[i]), null);
+      }
+    };
+
+    return cssAPI;
+  });
+
+  var L$o = U.global.xsloader;
+  L$o.define("text", ["xshttp"], {
+    isSingle: true,
+    pluginMain: function pluginMain(name, onload, onerror, config, http) {
+      var url = this.invoker().getUrl(name, true);
+      http().url(url).handleAs("text").ok(function (text) {
+        onload(text);
+      }).fail(function (err) {
+        onerror(err);
+      }).done();
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
+    }
+  });
+
+  var L$p = U.global.xsloader;
+  L$p.define("window", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config, http) {
+      var index = arg.indexOf("=>>");
+
+      if (index == -1) {
+        onerror("expected:=>>");
+        return;
+      }
+
+      var moduleName = arg.substring(0, index);
+      var dep = arg.substring(index + 3);
+
+      this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
+        window[moduleName] = mod;
+        onload(mod);
+      }).setTag("window!".concat(arg));
+    }
+  });
+
+  var L$q = U.global.xsloader;
+  L$q.define("withdeps", {
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var index = arg.indexOf("=>>");
+
+      if (index == -1) {
+        onerror("expected:=>>");
+        return;
+      }
+
+      var moduleName = arg.substring(0, index);
+      var depsStr = arg.substring(index + 3);
+      var deps;
+
+      try {
+        deps = L$q.xsParseJson(depsStr);
+
+        if (!L$q.isArray(deps)) {
+          onerror("deps is not Array:" + depsStr);
+          return;
+        }
+      } catch (e) {
+        onerror("deps error:" + depsStr);
+        return;
+      }
+
+      this.invoker().withAbsUrl().require([[false].concat(deps), moduleName], function (_deps, mod, depModuleArgs) {
+        onload(mod);
+      }).then({
+        orderDep: true
+      }).setTag("withdeps!".concat(arg));
+    }
+  });
+
+  var L$r = U.global.xsloader;
+  L$r.define("json", ["xshttp"], {
+    isSingle: true,
+    pluginMain: function pluginMain(name, onload, onerror, config, http) {
+      var url = this.invoker().getUrl(name, true);
+      http().url(url).handleAs("json").ok(function (json) {
+        onload(json);
+      }).fail(function (err) {
+        onerror(err);
+      }).done();
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
+    }
+  });
+
+  var L$s = U.global.xsloader;
+  L$s.define("image", {
+    pluginMain: function pluginMain(name, onload, onerror, config) {
+      var src = this.invoker().getUrl(name, false);
+      var img = new Image();
+
+      var callback = function callback(ok) {
+        var image = img;
+        img = null;
+        image.onload = null;
+        image.οnerrοr = null;
+        onload(ok ? image : null);
+      };
+
+      img.onload = function () {
+        callback(true);
+      };
+
+      img.οnerrοr = function () {
+        callback(false);
+      };
+
+      img.src = src;
+      L$s.asyncCall(function () {
+        if (img) {
+          setTimeout(function () {
+            if (img) {
+              callback(false);
+            }
+          }, config.plugins.image.timeout);
+        }
+      });
+    },
+    dealPluginArgs: function dealPluginArgs(pluginArgs) {
+      return pluginArgs;
+    }
+  });
+
+  var L$t = U.global.xsloader;
+  L$t.define("default", {
+    isSingle: true,
+    pluginMain: function pluginMain(arg, onload, onerror, config) {
+      var dep = arg;
+
+      var handle = this.invoker().withAbsUrl().require([dep], function (mod, depModuleArgs) {
+        if (L$t.isObject(mod)) {
+          mod = mod["default"];
+
+          if (mod === undefined) {
+            mod = null;
+          }
+        } else {
+          mod = null;
+        }
+
+        onload(mod);
+      }).error(function (err, invoker) {
+        onerror(err);
+      }).setTag("default!".concat(arg));
+    }
   });
 
   var G$8 = U.global;

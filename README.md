@@ -568,6 +568,7 @@ cnpm install --save @babel/polyfill
 6. 修复`xsloader.js`的`try!`插件加载模块失败之无法继续执行的bug；
 7. 修复`xsloader.js`的`dealPathMayAbsolute`协议处理bug；
 8. `xsloader.js`的配置中加入`aliasPaths`属性，可配置模块别名，别名格式不以"."开头，可出现"/"字符；
+9. `xsloader.js`的`ifmsg`的`Server`增加单例模式；
 
 ### v1.2.6 2020/11/06
 1. 完善`ScriptEnv`；
