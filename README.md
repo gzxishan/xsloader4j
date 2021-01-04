@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.2.6**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.2.19**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.2.6-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.2.19-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -30,7 +30,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-spring-boot-embed-starter</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.19</version>
 </dependency>
 ```
 - 普通servlet版（项目以war包形式运行在tomcat、jetty等容器下）
@@ -38,7 +38,7 @@
 <dependency>
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j-core</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.19</version>
 </dependency>
 ```
 ## 五、配置
@@ -560,6 +560,8 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+
+### v1.2.19 2021/01/04
 1. 加入`IConfigFileCheck`；
 2. 修复xshttp在multiPart为true下，参数为对象时未能进行转换的bug；
 3. 完善xsloader.es6.extensions配置，默认为`.js,.vue,.jsx,/index.js,/index.vue,/index.jsx`；
