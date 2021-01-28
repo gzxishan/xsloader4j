@@ -560,6 +560,7 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+1. `staticInclude`支持移除特殊标记；
 
 ### v1.2.19 2021/01/04
 1. 加入`IConfigFileCheck`；

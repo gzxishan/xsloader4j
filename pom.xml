@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.19</version>
+    <version>1.2.20</version>
 
     <modules>
         <module>xsloader4j-core</module>
@@ -53,8 +53,9 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <project.OftenPorter.version>1.2.186</project.OftenPorter.version>
+        <project.OftenPorter.version>1.2.208</project.OftenPorter.version>
         <project.log4j12.version>1.7.30</project.log4j12.version>
+        <project.junit.version>4.13.1</project.junit.version>
 
         <project.spring-boot.version>1.5.22.RELEASE</project.spring-boot.version>
         <project.spring.version>4.3.25.RELEASE</project.spring.version>
@@ -80,7 +81,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>${project.junit.version}</version>
             <scope>test</scope>
         </dependency>
 

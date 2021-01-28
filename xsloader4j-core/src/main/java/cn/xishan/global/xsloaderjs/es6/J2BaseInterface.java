@@ -294,6 +294,12 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
             stringBuilder.append(fileContent, lastIndex, fileContent.length());
             fileContent = stringBuilder.toString();
         }
+
+        if (fileContent != null)
+        {
+            fileContent = Es6Wrapper.removeSChars(fileContent);
+        }
+
         return fileContent;
     }
 

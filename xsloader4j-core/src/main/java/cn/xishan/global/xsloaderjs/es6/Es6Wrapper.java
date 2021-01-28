@@ -106,7 +106,7 @@ public class Es6Wrapper
         LOGGER.info("parse es6 script code:name={}", name);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null))
         {
-            es6Content=removeSChars(es6Content);
+            es6Content = removeSChars(es6Content);
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -121,7 +121,7 @@ public class Es6Wrapper
         }
     }
 
-    private static String removeSChars(String content)
+    public static String removeSChars(String content)
     {
         if (content != null)
         {
@@ -153,7 +153,7 @@ public class Es6Wrapper
             V8Object option = j2BaseInterface.newV8Object();
             option.add("replaceType", replaceType);
 
-            es6Content=removeSChars(es6Content);
+            es6Content = removeSChars(es6Content);
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -204,7 +204,7 @@ public class Es6Wrapper
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
         {
-            vueContent=removeSChars(vueContent);
+            vueContent = removeSChars(vueContent);
 
             Result<String> result = new Result<>();
             j2BaseInterface.threadLocal.set(result);
