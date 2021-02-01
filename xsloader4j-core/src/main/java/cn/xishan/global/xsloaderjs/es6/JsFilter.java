@@ -299,6 +299,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                             Paths.get(file.getParentFile().getAbsolutePath())
                                     .register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
                             listenDirToPath.put(file.getAbsolutePath(), path);
+
+                            //初始时，也设置版本号，防止会跳到最初的版本
+                            XsloaderConfigFilter.setVersion(path,
+                                    "_t=" + String.valueOf(System.currentTimeMillis()));
                         } catch (Exception e)
                         {
                             LOGGER.warn(e.getMessage(), e);
