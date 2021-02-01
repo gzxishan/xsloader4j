@@ -30,9 +30,7 @@ public class DefaultConfigFilter extends XsloaderConfigFilter implements Wrapper
 
     public DefaultConfigFilter(ServletContext servletContext,
             IConfigDealt configDealt, IConfigFileCheck configFileCheck,
-            String requestPath,
-            String resourcePath,
-            Map<String, Object> props)
+            String requestPath, String resourcePath, Map<String, Object> props)
     {
         super(false, configFileCheck);
         this.servletContext = servletContext;

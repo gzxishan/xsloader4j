@@ -1,9 +1,11 @@
 package cn.xishan.global.xsloaderjs;
 
+import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
+import cn.xishan.oftenporter.porter.core.util.config.ChangeableProperty;
 import cn.xishan.oftenporter.servlet.ContentType;
 import cn.xishan.oftenporter.servlet.HttpCacheUtil;
 import com.alibaba.fastjson.JSONArray;
@@ -15,6 +17,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Created by chenyg on 2017-04-10.
@@ -28,7 +33,7 @@ public abstract class XsloaderConfigFilter implements Filter
     /**
      * 缓存时间，默认30秒
      */
-    protected int forceCacheSecond = 30;
+    protected ChangeableProperty<Integer> confForceCacheSeconds = new ChangeableProperty<>(30);
 
     protected String resourcePath;
 
@@ -38,6 +43,9 @@ public abstract class XsloaderConfigFilter implements Filter
     private FilterConfig filterConfig;
     private boolean isRequired;
     private IConfigFileCheck configFileCheck;
+
+    static final Map<String, String> PATH_TO_VERSION = new HashMap<>();
+    static String versionAppendTag;
 
     public XsloaderConfigFilter(boolean isRequired, IConfigFileCheck configFileCheck)
     {
@@ -56,6 +64,14 @@ public abstract class XsloaderConfigFilter implements Filter
     public XsloaderConfigFilter()
     {
         this(true);
+    }
+
+    public static void setVersion(String requestPath, String version)
+    {
+        synchronized (PATH_TO_VERSION)
+        {
+            PATH_TO_VERSION.put(requestPath, version);
+        }
     }
 
     private void init(String resourcePath)
@@ -140,7 +156,8 @@ public abstract class XsloaderConfigFilter implements Filter
         OutputStream os = null;
         try
         {
-            if (resourceFile != null && configFileCheck.needReload(resourceFile, lastEditTimeOfResourceFile))
+            if (resourceFile != null && (configFileCheck
+                    .needReload(resourceFile, lastEditTimeOfResourceFile) || !PATH_TO_VERSION.isEmpty()))
             {
                 loadConf();
                 lastEditTimeOfResourceFile = resourceFile.lastModified();
@@ -162,13 +179,13 @@ public abstract class XsloaderConfigFilter implements Filter
                 resp.setCharacterEncoding(encoding);
                 if (HttpCacheUtil.isCacheIneffectiveWithEtag(etag, request, resp))
                 {
-                    HttpCacheUtil.setCacheWithEtag(forceCacheSecond, etag, resp);
+                    HttpCacheUtil.setCacheWithEtag(confForceCacheSeconds.getValue(), etag, resp);
                     os = resp.getOutputStream();
                     os.write(conf);
                     os.flush();
                 } else
                 {
-                    HttpCacheUtil.setCacheWithEtag(forceCacheSecond, etag, resp);
+                    HttpCacheUtil.setCacheWithEtag(confForceCacheSeconds.getValue(), etag, resp);
                 }
                 return true;
             } else
@@ -213,6 +230,35 @@ public abstract class XsloaderConfigFilter implements Filter
 
             if (conf != null)
             {
+                synchronized (PATH_TO_VERSION)
+                {
+                    String versionTag = versionAppendTag;
+                    if (OftenTool.notEmpty(versionTag))
+                    {
+                        for (Map.Entry<String, String> entry : PATH_TO_VERSION.entrySet())
+                        {
+                            String requestPath = entry.getKey();
+                            String version = entry.getValue();
+                            String key = "\n                    /*AUTO_VERSION*/\"" + requestPath + "\"";
+                            int fromIndex = 0;
+                            while (true)
+                            {
+                                int index = conf.indexOf(versionTag, fromIndex);
+                                if (index == -1)
+                                {
+                                    break;
+                                } else
+                                {
+                                    conf = conf.substring(0,
+                                            index + versionTag.length()) + key + ":\"" + version + "\"," +
+                                            conf.substring(index + versionTag.length());
+                                    fromIndex = index + versionTag.length();
+                                }
+                            }
+                        }
+                    }
+                }
+
                 this.conf = getConf(filterConfig, conf).getBytes(encoding);
                 this.etag = HashUtil.md5(this.conf);
             } else

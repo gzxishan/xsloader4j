@@ -1,23 +1,37 @@
 package cn.xishan.global.xsloaderjs.es6;
 
 import cn.xishan.global.xsloaderjs.Version;
+import cn.xishan.global.xsloaderjs.XsloaderConfigFilter;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
 import cn.xishan.oftenporter.porter.core.annotation.MayNull;
 import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.exception.InitException;
 import cn.xishan.oftenporter.porter.core.exception.OftenCallException;
-import cn.xishan.oftenporter.porter.core.util.*;
-import cn.xishan.oftenporter.servlet.*;
+import cn.xishan.oftenporter.porter.core.util.FileTool;
+import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
+import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
+import cn.xishan.oftenporter.servlet.ContentType;
+import cn.xishan.oftenporter.servlet.HttpCacheUtil;
+import cn.xishan.oftenporter.servlet.OftenServletRequest;
+import cn.xishan.oftenporter.servlet.WrapperFilterManager;
 import com.alibaba.fastjson.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.*;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,6 +78,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     @Property(name = "xsloader.es6.forceCacheSeconds", defaultVal = "-1")//
     private static Integer forceCacheSeconds;
 
+    @Property(name = "xsloader.es6.versionAppendTag")
+    private static String versionAppendTag;
+
     /**
      * require.get或require
      */
@@ -96,7 +113,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      *     </li>
      * </ol>
      */
-    @Property(name = "xsloader.es6.dealt.removeSChars",defaultVal = "true")
+    @Property(name = "xsloader.es6.dealt.removeSChars", defaultVal = "true")
     static Boolean removeSChars;
 
     @AutoSet
@@ -113,8 +130,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     /**
      * 文件路径:是否为es6代码
      */
-    private static Map<String, Es6Item> supportEs6Files = new ConcurrentHashMap<>();
+    private static final Map<String, Es6Item> supportEs6Files = new ConcurrentHashMap<>();
     private static final ThreadLocal<String> autoPathThreadLocal = new ThreadLocal<>();
+    private static Map<String, String> listenDirToPath;
+    private static WatchService watchService;
 
 
     public static void addContentGetter(IFileContentGetter contentGetter)
@@ -203,7 +222,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
         if (forceCacheSeconds == -1)
         {
-            if (isDebug)
+            if (isDebug && OftenTool.isEmpty(versionAppendTag))
             {
                 forceCacheSeconds = 60;
             } else
@@ -211,6 +230,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                 forceCacheSeconds = 24 * 3600;
             }
         }
+
         if (usePolyfill)
         {
             String script = ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js", "utf-8");
@@ -218,6 +238,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             polyfillData = script.getBytes("utf-8");
             J2BaseInterface.polyfillPath = servletContext.getContextPath() + "/polyfill.js";
         }
+
+        initVersionAppend();
     }
 
     public static boolean isSupport(String path)
@@ -242,6 +264,110 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
     }
 
+    private static void initVersionAppend()
+    {
+        if (isDebug && OftenTool.notEmpty(versionAppendTag))
+        {
+            listenDirToPath = new HashMap<>();
+        }
+    }
+
+    private static void registerListenForVersionAppend(String requestUrl, File directFile, List<File> fileList)
+    {
+        if (listenDirToPath != null && OftenTool.notEmpty(requestUrl))
+        {
+            String path = OftenServletRequest.getPathFromURL(requestUrl);
+            synchronized (listenDirToPath)
+            {
+                List<File> files = new ArrayList<>(fileList);
+                if (directFile != null)
+                {
+                    files.add(directFile);
+                }
+
+                for (File file : files)
+                {
+                    if (!listenDirToPath.containsKey(file.getAbsolutePath()))
+                    {
+                        try
+                        {
+                            if (watchService == null)
+                            {
+                                initWatchService();
+                            }
+
+                            Paths.get(file.getParentFile().getAbsolutePath())
+                                    .register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+                            listenDirToPath.put(file.getAbsolutePath(), path);
+                        } catch (Exception e)
+                        {
+                            LOGGER.warn(e.getMessage(), e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static void initWatchService()
+    {
+        try
+        {
+            watchService = FileSystems.getDefault().newWatchService();
+        } catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        Thread thread = new Thread(() -> {
+            try
+            {
+                while (true)
+                {
+                    try
+                    {
+                        WatchKey key = watchService.take();
+                        for (WatchEvent<?> event : key.pollEvents())
+                        {
+                            try
+                            {
+                                Path dir = (Path) key.watchable();
+
+                                Path path = (Path) event.context();
+                                String filePath = dir.toFile().getAbsolutePath() + File.separator + path.getFileName()
+                                        .toString();
+                                LOGGER.info("file-change:{}", filePath);
+
+                                String requestPath = listenDirToPath.get(filePath);
+                                if (requestPath != null)
+                                {
+                                    XsloaderConfigFilter
+                                            .setVersion(requestPath,
+                                                    "_t=" + String.valueOf(System.currentTimeMillis()));
+                                }
+                            } catch (Exception e)
+                            {
+                                LOGGER.warn(e.getMessage(), e);
+                            }
+                        }
+                        key.reset();
+                    } catch (Exception e)
+                    {
+                        LOGGER.warn(e.getMessage(), e);
+                    }
+                }
+            } catch (ClosedWatchServiceException e)
+            {
+                LOGGER.debug(e.getMessage(), e);
+            } catch (Exception e)
+            {
+                LOGGER.warn(e.getMessage(), e);
+            }
+        });
+        thread.setName("xsloader4j-files-watch-thread");
+        thread.setDaemon(true);
+        thread.start();
+    }
 
     /**
      * 例子：
@@ -280,6 +406,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
                     hasSourceMap, replaceType);
+            registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
+
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "application/javascript", result);
         } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue"))
@@ -287,6 +415,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper
                     .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
+            registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
+
             cachedResource = CachedResource
                     .save(realPath, isSourceMap, path, sourceMapName, file.lastModified(), encoding,
                             "application/javascript", result);
@@ -294,12 +424,16 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
+            registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
+
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName,
                     file.lastModified(), encoding, "text/css", result);
         } else if (suffix.equals("less"))
         {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
             Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
+            registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
+
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "text/css", result);
         } else
@@ -441,8 +575,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                 String sourceMapName;
                 if (autoExtension != null)
                 {
-                    int index=requestUrl.indexOf("://");
-                    index=requestUrl.indexOf("/",index+3);
+                    int index = requestUrl.indexOf("://");
+                    index = requestUrl.indexOf("/", index + 3);
                     sourceMapName = requestUrl.substring(index, requestUrl.length() - 2) + autoExtension;
                 } else
                 {
@@ -615,6 +749,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null);
         Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap, replaceType);
+        registerListenForVersionAppend(url, filepath == null ? null : new File(filepath), result.getRelatedFiles());
+
         CachedResource cachedResource = CachedResource
                 .save(filepath, isSourceMap, path, OftenStrUtil.getNameFormPath(path), System.currentTimeMillis(),
                         "utf-8", "application/javascript", result);

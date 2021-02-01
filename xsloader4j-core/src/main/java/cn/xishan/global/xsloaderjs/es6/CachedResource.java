@@ -3,7 +3,6 @@ package cn.xishan.global.xsloaderjs.es6;
 import cn.xishan.global.xsloaderjs.XsloaderFilter;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
-import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.servlet.HttpCacheUtil;
 import com.alibaba.fastjson.JSON;
@@ -16,6 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 缓存的转换资源对象
@@ -36,6 +37,9 @@ public class CachedResource
     private static String VERSION = XsloaderFilter.XSLOADER_VERSION;
     private static String tempId = "default";
     private boolean isSourceMap;
+    
+    //初次启动时，所有文件需要重新转换
+    private static Set<String> LOADED_PATHS = ConcurrentHashMap.newKeySet();
 
     private CachedResource(boolean isSourceMap)
     {
@@ -106,8 +110,9 @@ public class CachedResource
      * @return
      * @throws IOException
      */
-    public static CachedResource save(String topFile, boolean isSourceMap, String path,String sourceMapName, long lastModified,
-            String encoding,String contentType,Es6Wrapper.Result<String> result) throws IOException
+    public static CachedResource save(String topFile, boolean isSourceMap, String path, String sourceMapName,
+            long lastModified,
+            String encoding, String contentType, Es6Wrapper.Result<String> result) throws IOException
     {
         long updatetime = System.currentTimeMillis();
         CachedResource cachedResource = new CachedResource(isSourceMap);
@@ -155,6 +160,8 @@ public class CachedResource
         dataFile.setLastModified(lastModified);
         confFile.setLastModified(lastModified);
 
+        LOADED_PATHS.add(path);
+
         return cachedResource;
     }
 
@@ -178,37 +185,43 @@ public class CachedResource
      */
     public static CachedResource getByPath(boolean isSourceMap, String path) throws IOException
     {
-        File confFile = getConfFile(path);
-        File dataFile = getDataFile(path);
-        if (confFile.exists() && dataFile.exists())
-        {
-            JSONObject conf = JSON.parseObject(FileTool.getString(confFile, "utf-8"));
-            String topFile = conf.getString("topFile");
-            String contentType = conf.getString("type");
-            String encoding = conf.getString("encoding");
-            JSONArray files = conf.getJSONArray("files");
-            JSONArray filesLastModified = conf.getJSONArray("filesLastModified");
-
-            CachedResource cachedResource = new CachedResource(isSourceMap);
-            cachedResource.topFile = topFile;
-            cachedResource.contentType = contentType;
-            cachedResource.encoding = encoding;
-            cachedResource.lastModified = dataFile.lastModified();
-            cachedResource.path = path;
-            cachedResource.files = files;
-            cachedResource.filesLastModified = filesLastModified;
-
-            if (conf.containsKey("updatetime"))
-            {
-                cachedResource.updatetime = conf.getLongValue("updatetime");
-            } else
-            {
-                cachedResource.updatetime = 0;
-            }
-            return cachedResource;
-        } else
+        if (!LOADED_PATHS.contains(path))
         {
             return null;
+        } else
+        {
+            File confFile = getConfFile(path);
+            File dataFile = getDataFile(path);
+            if (!confFile.exists() || !dataFile.exists())
+            {
+                return null;
+            } else
+            {
+                JSONObject conf = JSON.parseObject(FileTool.getString(confFile, "utf-8"));
+                String topFile = conf.getString("topFile");
+                String contentType = conf.getString("type");
+                String encoding = conf.getString("encoding");
+                JSONArray files = conf.getJSONArray("files");
+                JSONArray filesLastModified = conf.getJSONArray("filesLastModified");
+
+                CachedResource cachedResource = new CachedResource(isSourceMap);
+                cachedResource.topFile = topFile;
+                cachedResource.contentType = contentType;
+                cachedResource.encoding = encoding;
+                cachedResource.lastModified = dataFile.lastModified();
+                cachedResource.path = path;
+                cachedResource.files = files;
+                cachedResource.filesLastModified = filesLastModified;
+
+                if (conf.containsKey("updatetime"))
+                {
+                    cachedResource.updatetime = conf.getLongValue("updatetime");
+                } else
+                {
+                    cachedResource.updatetime = 0;
+                }
+                return cachedResource;
+            }
         }
     }
 

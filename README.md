@@ -73,6 +73,8 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 - xsloader.htmv.enable：是否启用htmv，默认为false
 - xsloader.htmv.paths：配置默认的html模板（可选）
+- xsloader.conf.forceCacheSeconds：配置被浏览器强制缓存的时间
+- xsloader.es6.versionAppendTag：如果设置了该标记，当文件变化后，会在该标记后添加文件版本（支持的文件为所有需要转换的文件）
 ### 2、xsloader配置
 在资源目录（如src/main/resources）下新建xsloader-conf.js,参考内容如下：
 - 该配置文件的访问路径为：/contextPath/xsloader.conf
@@ -561,6 +563,8 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 ### v进行中
 1. `staticInclude`支持移除特殊标记；
+2. 增加配置`xsloader.conf.forceCacheSeconds`,用于设置配置文件被浏览器强制缓存的时间；
+3. 增加配置`xsloader.es6.versionAppendTag`，用于自动加版本号；
 
 ### v1.2.19 2021/01/04
 1. 加入`IConfigFileCheck`；

@@ -10,6 +10,7 @@ import cn.xishan.oftenporter.porter.core.sysset.IAutoSetter;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenStrUtil;
+import cn.xishan.oftenporter.porter.core.util.config.ChangeableProperty;
 import cn.xishan.oftenporter.servlet.Filterer;
 import cn.xishan.oftenporter.servlet.HttpCacheUtil;
 import cn.xishan.oftenporter.servlet.WrapperFilterManager;
@@ -78,10 +79,16 @@ public class XsloaderFilter implements Filterer
     private Boolean hasMap;
 
     /**
-     * 浏览器强制缓存的时间，默认3600秒。
+     * xsloader.js脚本被浏览器强制缓存的时间，默认3600秒。
      */
     @Property(name = "xsloader.forceCacheSeconds", defaultVal = "3600")//3600
     private Integer forceCacheSeconds;
+
+    /**
+     * 配置文件被浏览器强制缓存的时间，默认3600秒。
+     */
+    @Property(name = "xsloader.conf.forceCacheSeconds", defaultVal = "30")
+    private ChangeableProperty<Integer> confForceCacheSeconds;
 
     @Property(name = "xsloader.conf.resourcePath", defaultVal = "/xsloader-conf.js")
     private String resourcePath;
@@ -97,6 +104,9 @@ public class XsloaderFilter implements Filterer
 
     @Property(name = "xsloader.conf.propertiesPrefix", defaultVal = "xsloader.conf.properties.")
     private String propertiesPrefix;
+
+    @Property(name = "xsloader.es6.versionAppendTag")
+    private static String versionAppendTag;
 
 
     @AutoSet
@@ -123,9 +133,12 @@ public class XsloaderFilter implements Filterer
 
         try
         {
+            XsloaderConfigFilter.versionAppendTag = versionAppendTag;
+
             Map<String, Object> props = configData.getJSONByKeyPrefix(propertiesPrefix);
             DefaultConfigFilter defaultConfigFilter = new DefaultConfigFilter(servletContext, configDealt,
-                    configFileCheck,requestPath, resourcePath, props);
+                    configFileCheck, requestPath, resourcePath, props);
+            defaultConfigFilter.confForceCacheSeconds = confForceCacheSeconds;
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(defaultConfigFilter);
             defaultConfigFilter.init(null);
 
