@@ -201,7 +201,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     }
 
     @AutoSet.SetOk
-    public void setOk() throws IOException
+    public void setOk(ServletContext servletContext) throws IOException
     {
         CachedResource.init(name);
         JsScriptUtil.init(v8flags);
@@ -239,7 +239,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             J2BaseInterface.polyfillPath = servletContext.getContextPath() + "/polyfill.js";
         }
 
-        initVersionAppend();
+        initVersionAppend(servletContext);
     }
 
     public static boolean isSupport(String path)
@@ -264,11 +264,14 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
     }
 
-    private static void initVersionAppend()
+    private static void initVersionAppend(ServletContext servletContext)
     {
         if (isDebug && OftenTool.notEmpty(versionAppendTag))
         {
             listenDirToPath = new HashMap<>();
+            //每次启动设置全局的版本号
+            XsloaderConfigFilter
+                    .setVersion("*[" + servletContext.getContextPath() + "/", "_t=" + System.currentTimeMillis());
         }
     }
 
@@ -301,8 +304,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                             listenDirToPath.put(file.getAbsolutePath(), path);
 
                             //初始时，也设置版本号，防止会跳到最初的版本
-                            XsloaderConfigFilter.setVersion(path,
-                                    "_t=" + String.valueOf(System.currentTimeMillis()));
+//                            XsloaderConfigFilter.setVersion(path, "_t=" + System.currentTimeMillis());
                         } catch (Exception e)
                         {
                             LOGGER.warn(e.getMessage(), e);
