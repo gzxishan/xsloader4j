@@ -1,6 +1,5 @@
 package cn.xishan.global.xsloaderjs;
 
-import cn.xishan.oftenporter.porter.core.annotation.Property;
 import cn.xishan.oftenporter.porter.core.util.FileTool;
 import cn.xishan.oftenporter.porter.core.util.HashUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -44,7 +42,8 @@ public abstract class XsloaderConfigFilter implements Filter
     private boolean isRequired;
     private IConfigFileCheck configFileCheck;
 
-    static final Map<String, String> PATH_TO_VERSION = new HashMap<>();
+    private static final Map<String, String> PATH_TO_VERSION = new HashMap<>();
+    private static boolean hasVersionChanged = false;
     static String versionAppendTag;
 
     public XsloaderConfigFilter(boolean isRequired, IConfigFileCheck configFileCheck)
@@ -71,6 +70,7 @@ public abstract class XsloaderConfigFilter implements Filter
         synchronized (PATH_TO_VERSION)
         {
             PATH_TO_VERSION.put(requestPath, version);
+            hasVersionChanged = true;
         }
     }
 
@@ -157,7 +157,7 @@ public abstract class XsloaderConfigFilter implements Filter
         try
         {
             if (resourceFile != null && (configFileCheck
-                    .needReload(resourceFile, lastEditTimeOfResourceFile) || !PATH_TO_VERSION.isEmpty()))
+                    .needReload(resourceFile, lastEditTimeOfResourceFile) || hasVersionChanged))
             {
                 loadConf();
                 lastEditTimeOfResourceFile = resourceFile.lastModified();
@@ -232,6 +232,7 @@ public abstract class XsloaderConfigFilter implements Filter
             {
                 synchronized (PATH_TO_VERSION)
                 {
+                    hasVersionChanged = false;
                     String versionTag = versionAppendTag;
                     if (OftenTool.notEmpty(versionTag))
                     {
