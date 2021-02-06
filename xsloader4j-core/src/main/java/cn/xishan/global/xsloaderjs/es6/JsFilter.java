@@ -347,9 +347,34 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                                 String requestPath = listenDirToPath.get(filePath);
                                 if (requestPath != null)
                                 {
-                                    XsloaderConfigFilter
-                                            .setVersion(requestPath,
-                                                    "_t=" + String.valueOf(System.currentTimeMillis()));
+                                    String version = "_t=" + System.currentTimeMillis();
+
+                                    XsloaderConfigFilter.setVersion(requestPath, version);
+                                    int index = -1;
+                                    if (requestPath.endsWith("/index.js"))
+                                    {
+                                        index = requestPath.length() - 6 - 3;
+
+                                    } else if (requestPath.endsWith("/index.vue") || requestPath
+                                            .endsWith("/index.jsx"))
+                                    {
+                                        index = requestPath.length() - 6 - 4;
+                                    } else if (requestPath.endsWith(".js"))
+                                    {
+                                        index = requestPath.length() - 3;
+
+                                    } else if (requestPath
+                                            .endsWith(".vue") || requestPath
+                                            .endsWith(".jsx"))
+                                    {
+                                        index = requestPath.length() - 4;
+                                    }
+
+                                    if (index != -1)
+                                    {//支持自动后缀文件的自动版本
+                                        String starPath = requestPath.substring(0, index) + ".*";
+                                        XsloaderConfigFilter.setVersion(starPath, version);
+                                    }
                                 }
                             } catch (Exception e)
                             {
