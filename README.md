@@ -566,6 +566,7 @@ cnpm install --save @babel/polyfill
 2. 增加配置`xsloader.conf.forceCacheSeconds`,用于设置配置文件被浏览器强制缓存的时间；
 3. 增加配置`xsloader.es6.versionAppendTag`，用于自动加版本号；
 4. 完善自动版本号，自动后缀名的文件也支持自动版本号；
+5. 完善`ScriptEnv`；
 
 ### v1.2.19 2021/01/04
 1. 加入`IConfigFileCheck`；

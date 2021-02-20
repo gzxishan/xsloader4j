@@ -6,6 +6,8 @@ import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.eclipsesource.v8.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Consumer;
 
@@ -14,6 +16,8 @@ import java.util.function.Consumer;
  */
 public class ScriptEnv
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEnv.class);
+
     private J2Object root;
     private String flags;
     private String varName;
@@ -74,31 +78,42 @@ public class ScriptEnv
 
     public void voidFun(String funName, Object[] args)
     {
-        root.getV8().executeVoidFunction(funName, toParameters(args));
+        try (JsParameters parameters = toParameters(args))
+        {
+            root.getV8().executeVoidFunction(funName, parameters.getParams());
+        }
     }
 
 
     public JSONObject jsonFun(String funName, Object[] args)
     {
-        V8Object v8Object = root.getV8().executeObjectFunction(funName, toParameters(args));
-        try
+        V8Object v8Object = null;
+        try (JsParameters parameters = toParameters(args))
         {
+            v8Object = root.getV8().executeObjectFunction(funName, parameters.getParams());
             return toJSON(v8Object);
         } finally
         {
-            v8Object.release();
+            if (v8Object != null)
+            {
+                v8Object.release();
+            }
         }
     }
 
     public JSONArray arrayFun(String funName, Object[] args)
     {
-        V8Array v8Array = root.getV8().executeArrayFunction(funName, toParameters(args));
-        try
+        V8Array v8Array = null;
+        try (JsParameters parameters = toParameters(args))
         {
+            v8Array = root.getV8().executeArrayFunction(funName, parameters.getParams());
             return toArray(v8Array);
         } finally
         {
-            v8Array.release();
+            if (v8Array != null)
+            {
+                v8Array.release();
+            }
         }
     }
 
@@ -200,57 +215,12 @@ public class ScriptEnv
 
     public static JSONObject toJSON(V8Object v8Object)
     {
-        if (v8Object instanceof V8Function || v8Object == null || v8Object.isUndefined())
-        {
-            if (v8Object != null)
-            {
-                v8Object.release();
-            }
-            return null;
-        } else
-        {
-            JSONObject jsonObject = new JSONObject();
-
-            for (String key : v8Object.getKeys())
-            {
-                Object item = J2Object.getObjectItem(v8Object, key);
-                if (item instanceof V8Array)
-                {
-                    item = toArray((V8Array) item);
-                } else if (item instanceof V8Object)
-                {
-                    item = toJSON((V8Object) item);
-                }
-                jsonObject.put(key, item);
-            }
-            v8Object.release();
-            return jsonObject;
-        }
+        return J2Object.toJSON(v8Object);
     }
 
     public static JSONArray toArray(V8Array v8Array)
     {
-        if (v8Array == null || v8Array.isUndefined())
-        {
-            return null;
-        } else
-        {
-            JSONArray jsonArray = new JSONArray(v8Array.length());
-            for (int i = 0; i < v8Array.length(); i++)
-            {
-                Object item = J2Object.getArrayItem(v8Array, i);
-                if (item instanceof V8Array)
-                {
-                    item = toArray((V8Array) item);
-                } else if (item instanceof V8Object)
-                {
-                    item = toJSON((V8Object) item);
-                }
-                jsonArray.add(item);
-            }
-            v8Array.release();
-            return jsonArray;
-        }
+        return J2Object.toArray(v8Array);
     }
 
     public J2Object getDevV8Object()
@@ -258,19 +228,34 @@ public class ScriptEnv
         return root;
     }
 
-    public V8Array toParameters(Object[] args)
+    public JsParameters toParameters(Object[] args)
     {
         if (OftenTool.isEmptyOf(args))
         {
             return null;
         }
 
-        V8Array parameters = root.newV8Array();
-        for (Object obj : args)
+        JsParameters jsParameters = new JsParameters(new V8Array(root.getV8()));
+        try
         {
-            J2Object.add(parameters, obj, root);
+            for (Object obj : args)
+            {
+                J2Object.add(jsParameters.getParams(), obj, jsParameters);
+            }
+        } catch (Exception e)
+        {
+            try
+            {
+                jsParameters.release();
+            } catch (Exception e2)
+            {
+                LOGGER.warn(e2.getMessage(), e2);
+            }
+            throw e;
         }
-        return parameters;
+
+        return jsParameters;
+
     }
 
     private Object dealReturnAndArgs(Object result)
@@ -278,7 +263,13 @@ public class ScriptEnv
         if (result instanceof Releasable)
         {
             ((Releasable) result).release();
-            throw new RuntimeException("illegal return type,not allowed Releasable result:" + result);
+            if (result instanceof V8Value && ((V8Value) result).isUndefined())
+            {
+                return null;
+            } else
+            {
+                throw new RuntimeException("illegal return type,not allowed Releasable result:" + result);
+            }
         } else
         {
             return result;
@@ -294,8 +285,11 @@ public class ScriptEnv
      */
     public Object exeVarFun(String fun, Object... args)
     {
-        Object result = root.getV8Object().executeJSFunction(fun, args);
-        return dealReturnAndArgs(result);
+        try (JsParameters parameters = toParameters(args))
+        {
+            Object result = root.getV8Object().executeJSFunction(fun, parameters.getParamArgs());
+            return dealReturnAndArgs(result);
+        }
     }
 
     /**
@@ -307,7 +301,10 @@ public class ScriptEnv
      */
     public Object exeFun(String fun, Object... args)
     {
-        Object result = root.getV8().executeJSFunction(fun, args);
-        return dealReturnAndArgs(result);
+        try (JsParameters parameters = toParameters(args))
+        {
+            Object result = root.getV8().executeJSFunction(fun, parameters.getParamArgs());
+            return dealReturnAndArgs(result);
+        }
     }
 }

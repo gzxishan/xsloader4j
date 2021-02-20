@@ -2,15 +2,15 @@ package cn.xishan.global.xsloaderjs.es6.jbrowser;
 
 import cn.xishan.oftenporter.porter.core.annotation.deal.AnnoUtil;
 import cn.xishan.oftenporter.porter.core.util.OftenTool;
+import cn.xishan.oftenporter.porter.core.util.proxy.ProxyUtil;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.eclipsesource.v8.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/29.
@@ -159,6 +159,8 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
         }
         method.setAccessible(true);
         boolean releaseParameters = jsMethod.releaseParameters();
+        Class[] methodParamTypes = AnnoUtil.Advance
+                .getParameterRealTypes(ProxyUtil.unwrapProxyForGeneric(target), method);
         v8Object.registerJavaMethod((receiver, parameters) -> {
             int length = parameters.length();
             try
@@ -166,7 +168,51 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
                 Object[] args = new Object[length];
                 for (int i = 0; i < length; i++)
                 {
-                    args[i] = getArrayItem(parameters, i);
+                    Object value = getArrayItem(parameters, i);
+                    Class type = methodParamTypes[i];
+                    if (value instanceof V8Array && OftenTool.isAssignable(type, Collection.class))
+                    {
+                        JSONArray jsonArray = toArray((V8Array) value);
+                        if (type.equals(List.class) || type.equals(Collection.class) || type.equals(JSONArray.class))
+                        {
+                            value = jsonArray;
+                        } else if (type.equals(ArrayList.class))
+                        {
+                            ArrayList arrayList = new ArrayList();
+                            for (int j = 0; j < jsonArray.size(); j++)
+                            {
+                                arrayList.add(jsonArray.get(i));
+                            }
+                            value = arrayList;
+                        } else if (type.equals(Set.class) || type.equals(HashSet.class))
+                        {
+                            Set set = new HashSet();
+                            for (int j = 0; j < jsonArray.size(); j++)
+                            {
+                                set.add(jsonArray.get(i));
+                            }
+                            value = set;
+                        } else
+                        {
+                            throw new IllegalArgumentException("expected type:" + type + ",but is:" + value.getClass());
+                        }
+                    } else if (value instanceof V8Object && OftenTool.isAssignable(type, Map.class))
+                    {
+                        JSONObject jsonObject = toJSON((V8Object) value);
+                        if (type.equals(Map.class) || type.equals(JSONObject.class))
+                        {
+                            value = jsonObject;
+                        } else if (type.equals(HashMap.class))
+                        {
+                            HashMap hashMap = new HashMap();
+                            hashMap.putAll(jsonObject);
+                            value = hashMap;
+                        } else
+                        {
+                            throw new IllegalArgumentException("expected type:" + type + ",but is:" + value.getClass());
+                        }
+                    }
+                    args[i] = value;
                 }
                 return method.invoke(target, args);
             } catch (Throwable e)
@@ -410,6 +456,63 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
     }
 
 
+    public static JSONObject toJSON(V8Object v8Object)
+    {
+        if (v8Object instanceof V8Function || v8Object == null || v8Object.isUndefined())
+        {
+            if (v8Object != null)
+            {
+                v8Object.release();
+            }
+            return null;
+        } else
+        {
+            JSONObject jsonObject = new JSONObject();
+
+            for (String key : v8Object.getKeys())
+            {
+                Object item = getObjectItem(v8Object, key);
+                if (item instanceof V8Array)
+                {
+                    item = toArray((V8Array) item);
+                } else if (item instanceof V8Object)
+                {
+                    item = toJSON((V8Object) item);
+                }
+                jsonObject.put(key, item);
+            }
+            v8Object.release();
+            return jsonObject;
+        }
+    }
+
+    public static JSONArray toArray(V8Array v8Array)
+    {
+        if (v8Array == null || v8Array.isUndefined())
+        {
+            return null;
+        } else
+        {
+            JSONArray jsonArray = new JSONArray(v8Array.length());
+            for (int i = 0; i < v8Array.length(); i++)
+            {
+                Object item = getArrayItem(v8Array, i);
+                if (item instanceof V8Array)
+                {
+                    item = toArray((V8Array) item);
+                } else if (item instanceof V8Object)
+                {
+                    item = toJSON((V8Object) item);
+                }
+                jsonArray.add(item);
+            }
+            v8Array.release();
+            return jsonArray;
+        }
+    }
+
+
+    @Override
     public void addReleasable(Releasable releasable)
     {
         if (releasableList != null)
