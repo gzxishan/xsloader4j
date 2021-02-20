@@ -321,6 +321,9 @@ public abstract class J2Object implements AutoCloseable, IReleasableRegister
         } else if (javaValue instanceof V8Value)
         {
             v8Object.add(name, (V8Value) javaValue);
+        } else if (javaValue instanceof Date)
+        {
+            v8Object.add(name, ((Date) javaValue).getTime());
         } else if (javaValue instanceof Map)
         {
             V8Object object = new V8Object(v8Object.getRuntime());
