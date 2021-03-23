@@ -3,7 +3,7 @@
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Mar 23 2021 19:05:08 GMT+0800 (GMT+08:00)
+ * build time:Tue Mar 23 2021 23:50:11 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -153,25 +140,6 @@
     }
 
     return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct();
-
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
   }
 
   var id = 0;
@@ -1217,9 +1185,9 @@
     };
   }
 
-  var U = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, urls), {}, {
+  var U = _objectSpread2({}, urls, {
     global: global$1
-  }, base), loading), {}, {
+  }, base, {}, loading, {
     base64: Base64
   });
 
@@ -2511,14 +2479,14 @@
     version: "1.1.42"
   };
 
-  var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
+  var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
 
   for (var k in toGlobal) {
     L$6[k] = toGlobal[k];
     G$5[k] = toGlobal[k];
   }
 
-  var justLoader = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, is), funs), browser), {}, {
+  var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
     ignoreAspect_: {},
     each: U.each,
     Base64: U.base64,
@@ -3770,7 +3738,7 @@
     }, defineObject.handle.orderDep);
   }
 
-  var moduleScript = _objectSpread2(_objectSpread2({}, moduleDef), {}, {
+  var moduleScript = _objectSpread2({}, moduleDef, {
     newModule: newModule,
     everyRequired: everyRequired,
     newModuleInstance: newModuleInstance,
@@ -6931,9 +6899,9 @@
   }
 
   function doSendMessage(isserver, source, msg) {
-    msg = _objectSpread2(_objectSpread2({
+    msg = _objectSpread2({
       isserver: !!isserver
-    }, msg), {}, {
+    }, msg, {
       __ifmsg: true
     });
 
@@ -6946,8 +6914,8 @@
   }
 
   function checkSource(client, source) {
-    if (client && client.source.get() != source) {
-      console.error("source error:", client.source.get(), source);
+    if (client && client.source != source) {
+      console.error("source error:", client.source, source);
       throw new Error("source error:not match");
     }
   }
@@ -7179,22 +7147,43 @@
   };
 
   var autoClosablesOnWindowClose = {};
-  window.addEventListener('unload', function (event) {
-    for (var id in autoClosablesOnWindowClose) {
+  window.addEventListener('beforeunload', function (event) {
+    var as = autoClosablesOnWindowClose;
+    autoClosablesOnWindowClose = {};
+    var evt = {
+      type: "beforeunload"
+    };
+
+    for (var id in as) {
       try {
-        var closable = autoClosablesOnWindowClose[id];
-        var data = closable.getUnloadData();
-        closable.close(true, {
-          type: "unload",
-          href: location.href,
+        var closable = as[id];
+        var data = closable.getUnloadData(_objectSpread2({}, evt));
+        closable.close(true, _objectSpread2({}, evt, {
           data: data
-        });
+        }));
       } catch (e) {
         console.warn(e);
       }
     }
-
+  });
+  window.addEventListener('unload', function (event) {
+    var as = autoClosablesOnWindowClose;
     autoClosablesOnWindowClose = {};
+    var evt = {
+      type: "unload"
+    };
+
+    for (var id in as) {
+      try {
+        var closable = as[id];
+        var data = closable.getUnloadData(_objectSpread2({}, evt));
+        closable.close(true, _objectSpread2({}, evt, {
+          data: data
+        }));
+      } catch (e) {
+        console.warn(e);
+      }
+    }
   });
 
   function autoCloseOnWindowClose(closable) {
@@ -7261,10 +7250,12 @@
     return Base;
   }();
 
+  var _source = _classPrivateFieldLooseKey("source");
+
+  var _isself = _classPrivateFieldLooseKey("isself");
+
   var Client = function (_Base) {
     _inherits(Client, _Base);
-
-    var _super = _createSuper(Client);
 
     function Client(cmd, source, origin, fromid) {
       var _this;
@@ -7273,8 +7264,11 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
-      _this._source = void 0;
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      Object.defineProperty(_assertThisInitialized(_this), _source, {
+        writable: true,
+        value: void 0
+      });
       _this._origin = void 0;
       _this._fromid = void 0;
       _this._connect = void 0;
@@ -7282,7 +7276,10 @@
       _this._destroyed = false;
       _this._onConnect = void 0;
       _this._onConnectFail = void 0;
-      _this._isself = void 0;
+      Object.defineProperty(_assertThisInitialized(_this), _isself, {
+        writable: true,
+        value: void 0
+      });
       _this._conntimeout = void 0;
       _this._sleeptimeout = void 0;
       _this._rtimer = void 0;
@@ -7298,10 +7295,10 @@
       _this._onMessage = void 0;
       _this._onConnected = void 0;
       _this._createTime = currentTimemillis();
-      _this._source = new L$g.InVar(source);
+      _classPrivateFieldLooseBase(_assertThisInitialized(_this), _source)[_source] = source;
       _this._origin = origin;
       _this._fromid = fromid;
-      _this._isself = isself;
+      _classPrivateFieldLooseBase(_assertThisInitialized(_this), _isself)[_isself] = isself;
       return _this;
     }
 
@@ -7321,7 +7318,7 @@
           throw new Error("not allowed for server client!");
         } else if (this.connected) ; else if (this.destroyed) {
           throw new Error("destroyed!");
-        } else if (!this.source.get()) {
+        } else if (!this.source) {
           throw new Error("no source!");
         } else {
           if (!this._starttime || this._failed) {
@@ -7353,7 +7350,7 @@
           }
 
           CONNS_MAP[this.cmd].selfclients[this.id] = this;
-          doSendMessage(false, this.source.get(), msg);
+          doSendMessage(false, this.source, msg);
           this._rtimer = runAfter(this._sleeptimeout, function () {
             if (_this2.connected || _this2._failed || _this2._connect || _this2._destroyed) {
               return;
@@ -7385,7 +7382,7 @@
             }
           } else if (time - this._lastSendHeartTime > this._heartTime) {
             this._lastSendHeartTime = time;
-            doSendMessage(!this.isself, this.source.get(), {
+            doSendMessage(!this.isself, this.source, {
               cmd: this.cmd,
               type: "heart",
               fromid: this.id,
@@ -7452,7 +7449,7 @@
             if (isAccept) {
               _this4.gotConnected();
 
-              doSendMessage(false, _this4.source.get(), {
+              doSendMessage(false, _this4.source, {
                 cmd: _this4.cmd,
                 type: "connected",
                 fromid: _this4.id,
@@ -7461,7 +7458,7 @@
               var onConnected = _this4._onConnected;
               Callback.call(_this4, onConnected);
             } else {
-              doSendMessage(false, _this4.source.get(), {
+              doSendMessage(false, _this4.source, {
                 cmd: _this4.cmd,
                 type: "connected-fail",
                 err: errOrConndata,
@@ -7491,9 +7488,9 @@
       }
     }, {
       key: "getUnloadData",
-      value: function getUnloadData() {
+      value: function getUnloadData(e) {
         if (this.connected) {
-          return Callback.call(this, this._onUnload);
+          return Callback.call(this, this._onUnload, e);
         }
       }
     }, {
@@ -7528,8 +7525,8 @@
             this._destroyed = true;
             this.closeBase();
 
-            if (sendClosed && this.source.get()) {
-              doSendMessage(!this.isself, this.source.get(), {
+            if (sendClosed && this.source) {
+              doSendMessage(!this.isself, this.source, {
                 cmd: this.cmd,
                 type: "closed",
                 mdata: closeMessage,
@@ -7548,7 +7545,7 @@
         if (this.destroyed) {
           throw new Error("destroyed!");
         } else if (this.connected) {
-          doSendMessage(!this.isself, this.source.get(), {
+          doSendMessage(!this.isself, this.source, {
             cmd: this.cmd,
             type: "message",
             mdata: data,
@@ -7562,19 +7559,19 @@
     }, {
       key: "source",
       get: function get() {
-        return this._source;
+        return _classPrivateFieldLooseBase(this, _source)[_source];
       },
       set: function set(source) {
-        if (this._source.get()) {
+        if (_classPrivateFieldLooseBase(this, _source)[_source]) {
           throw new Error("already exists source:id=".concat(this.id));
         }
 
-        this._source.set(source);
+        _classPrivateFieldLooseBase(this, _source)[_source] = source;
       }
     }, {
       key: "isself",
       get: function get() {
-        return this._isself;
+        return _classPrivateFieldLooseBase(this, _isself)[_isself];
       }
     }, {
       key: "origin",
@@ -7640,14 +7637,12 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd, singleMode) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
       _this5._start = void 0;
       _this5._destroyed = false;
       _this5._onConnect = void 0;
@@ -7689,7 +7684,7 @@
         var callback = function callback(isAccept, errOrConndata) {
           if (isAccept) {
             client.gotConnected();
-            doSendMessage(true, client.source.get(), {
+            doSendMessage(true, client.source, {
               cmd: _this6.cmd,
               type: "connected",
               mdata: errOrConndata,
@@ -7709,7 +7704,7 @@
               }
 
               client.close(false);
-              doSendMessage(true, client.source.get(), {
+              doSendMessage(true, client.source, {
                 cmd: _this6.cmd,
                 type: "close",
                 mdata: "not exists connected handle",
@@ -7726,7 +7721,7 @@
             client.checkClientConnected(_this6);
           } else {
             client.close(false);
-            doSendMessage(true, client.source.get(), {
+            doSendMessage(true, client.source, {
               cmd: _this6.cmd,
               type: "connected-fail",
               err: errOrConndata,
@@ -7940,8 +7935,7 @@
           var fun = function fun() {
             iframe.removeEventListener("load", fun);
             var source = iframe.contentWindow;
-
-            _classPrivateFieldLooseBase(_this7, _client9)[_client9].source.set(source);
+            _classPrivateFieldLooseBase(_this7, _client9)[_client9].source = source;
 
             _classPrivateFieldLooseBase(_this7, _client9)[_client9].connect(conndata);
           };
@@ -7949,8 +7943,7 @@
           iframe.addEventListener("load", fun);
         } else {
           var source = iframe.contentWindow;
-
-          _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(source);
+          _classPrivateFieldLooseBase(this, _client9)[_client9].source = source;
 
           _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
         }
@@ -7958,21 +7951,21 @@
     }, {
       key: "connParent",
       value: function connParent(conndata) {
-        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.parent);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source = window.parent;
 
         _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
     }, {
       key: "connTop",
       value: function connTop(conndata) {
-        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.top);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source = window.top;
 
         _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
     }, {
       key: "connOpener",
       value: function connOpener(conndata) {
-        _classPrivateFieldLooseBase(this, _client9)[_client9].source.set(window.opener);
+        _classPrivateFieldLooseBase(this, _client9)[_client9].source = window.opener;
 
         _classPrivateFieldLooseBase(this, _client9)[_client9].connect(conndata);
       }
