@@ -568,6 +568,7 @@ cnpm install --save @babel/polyfill
 4. 完善自动版本号，自动后缀名的文件也支持自动版本号；
 5. 完善`ScriptEnv`；
 6. 修复`xsloader.queryParam`获取参数为空字符串时没有使用默认值的问题；
+7. 完善`ifmsg`，页面关闭时会主动调用close；
 
 ### v1.2.19 2021/01/04
 1. 加入`IConfigFileCheck`；

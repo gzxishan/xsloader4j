@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.41
+ * xsloader.js v1.1.42
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu Feb 25 2021 09:04:49 GMT+0800 (GMT+08:00)
+ * build time:Tue Mar 23 2021 19:05:08 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2508,7 +2508,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.41"
+    version: "1.1.42"
   };
 
   var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
@@ -7097,10 +7097,10 @@
             _client6 = obj.clients[fromid];
           }
 
-          checkSource(_client6, source);
+          source && checkSource(_client6, source);
 
           if (_client6) {
-            _client6.close(false);
+            _client6.close(false, undefined, mdata);
           }
         } else if (type == "heart") {
           var _client7;
@@ -7155,7 +7155,7 @@
     _createClass(Callback, [{
       key: "invoke",
       value: function invoke(args) {
-        this.callback.apply(this.thiz, args);
+        return this.callback.apply(this.thiz, args);
       }
     }]);
 
@@ -7171,12 +7171,41 @@
       }
 
       if (callback instanceof Callback) {
-        callback.invoke(args);
+        return callback.invoke(args);
       } else {
-        callback.apply(self, args);
+        return callback.apply(self, args);
       }
     }
   };
+
+  var autoClosablesOnWindowClose = {};
+  window.addEventListener('unload', function (event) {
+    for (var id in autoClosablesOnWindowClose) {
+      try {
+        var closable = autoClosablesOnWindowClose[id];
+        var data = closable.getUnloadData();
+        closable.close(true, {
+          type: "unload",
+          href: location.href,
+          data: data
+        });
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    autoClosablesOnWindowClose = {};
+  });
+
+  function autoCloseOnWindowClose(closable) {
+    var id = L$g.randId();
+    autoClosablesOnWindowClose[id] = closable;
+    return function () {
+      delete autoClosablesOnWindowClose[id];
+    };
+  }
+
+  var _onclose = _classPrivateFieldLooseKey("onclose");
 
   var Base = function () {
     function Base() {
@@ -7186,8 +7215,13 @@
 
       this._cmd = void 0;
       this._id = void 0;
+      Object.defineProperty(this, _onclose, {
+        writable: true,
+        value: void 0
+      });
       this._cmd = cmd;
       this._id = L$g.randId();
+      _classPrivateFieldLooseBase(this, _onclose)[_onclose] = autoCloseOnWindowClose(this);
     }
 
     _createClass(Base, [{
@@ -7204,6 +7238,12 @@
               destroyTimer();
             }
           }
+        }
+
+        if (_classPrivateFieldLooseBase(this, _onclose)[_onclose]) {
+          _classPrivateFieldLooseBase(this, _onclose)[_onclose]();
+
+          _classPrivateFieldLooseBase(this, _onclose)[_onclose] = null;
         }
       }
     }, {
@@ -7253,6 +7293,7 @@
       _this._lastSendHeartTime = 0;
       _this._lastReceiveHeartTime = 0;
       _this._onHeartTimeout = void 0;
+      _this._onUnload = void 0;
       _this._onClosed = void 0;
       _this._onMessage = void 0;
       _this._onConnected = void 0;
@@ -7449,44 +7490,56 @@
         Callback.call(this, this._onMessage, mdata);
       }
     }, {
+      key: "getUnloadData",
+      value: function getUnloadData() {
+        if (this.connected) {
+          return Callback.call(this, this._onUnload);
+        }
+      }
+    }, {
       key: "close",
       value: function close() {
         var sendClosed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+        var closeMessage = arguments.length > 1 ? arguments[1] : undefined;
+        var recvMessage = arguments.length > 2 ? arguments[2] : undefined;
 
-        try {
-          var obj = CONNS_MAP[this.cmd];
+        if (this.connected) {
+          try {
+            var obj = CONNS_MAP[this.cmd];
 
-          if (obj) {
-            if (this.isself) {
-              if (obj.selfclients) {
-                delete obj.selfclients[this.id];
-              }
-            } else {
-              if (obj.clients) {
-                delete obj.clients[this.fromid];
+            if (obj) {
+              if (this.isself) {
+                if (obj.selfclients) {
+                  delete obj.selfclients[this.id];
+                }
+              } else {
+                if (obj.clients) {
+                  delete obj.clients[this.fromid];
+                }
               }
             }
-          }
 
-          if (this._rtimer) {
-            clearRunAfter(this._rtimer);
-            this._rtimer = null;
-          }
+            if (this._rtimer) {
+              clearRunAfter(this._rtimer);
+              this._rtimer = null;
+            }
 
-          this._connected = false;
-          this._destroyed = true;
-          this.closeBase();
+            this._connected = false;
+            this._destroyed = true;
+            this.closeBase();
 
-          if (sendClosed && this.source.get()) {
-            doSendMessage(!this.isself, this.source.get(), {
-              cmd: this.cmd,
-              type: "closed",
-              fromid: this.id,
-              toid: this.fromid
-            });
+            if (sendClosed && this.source.get()) {
+              doSendMessage(!this.isself, this.source.get(), {
+                cmd: this.cmd,
+                type: "closed",
+                mdata: closeMessage,
+                fromid: this.id,
+                toid: this.fromid
+              });
+            }
+          } finally {
+            Callback.call(this, this._onClosed, recvMessage);
           }
-        } finally {
-          Callback.call(this, this._onClosed);
         }
       }
     }, {
@@ -7550,6 +7603,14 @@
       },
       get: function get() {
         return this._onHeartTimeout && this._onHeartTimeout.callback;
+      }
+    }, {
+      key: "onUnload",
+      set: function set(onUnload) {
+        this._onUnload = onUnload ? new Callback(this, onUnload) : null;
+      },
+      get: function get() {
+        return this._onUnload && this._onUnload.callback;
       }
     }, {
       key: "onClosed",
@@ -7679,7 +7740,7 @@
       }
     }, {
       key: "close",
-      value: function close() {
+      value: function close(sendClosed, closeMessage) {
         if (this._destroyed) {
           throw new Error("already destroyed!");
         } else {
@@ -7694,7 +7755,10 @@
             for (var k in obj.clients) {
               try {
                 var client = obj.clients[k];
-                client.close();
+
+                if (client.connected) {
+                  client.close(sendClosed, closeMessage);
+                }
               } catch (e) {
                 console.error(e);
               }
@@ -7784,8 +7848,8 @@
       }
     }, {
       key: "close",
-      value: function close() {
-        _classPrivateFieldLooseBase(this, _server)[_server].close();
+      value: function close(data) {
+        _classPrivateFieldLooseBase(this, _server)[_server].close(true, data);
       }
     }, {
       key: "onConnect",
@@ -7919,8 +7983,8 @@
       }
     }, {
       key: "close",
-      value: function close() {
-        _classPrivateFieldLooseBase(this, _client9)[_client9].close();
+      value: function close(data) {
+        _classPrivateFieldLooseBase(this, _client9)[_client9].close(true, data);
       }
     }, {
       key: "onConnect",
@@ -7945,6 +8009,14 @@
       },
       get: function get() {
         return _classPrivateFieldLooseBase(this, _client9)[_client9].onHeartTimeout;
+      }
+    }, {
+      key: "onUnload",
+      set: function set(onUnload) {
+        _classPrivateFieldLooseBase(this, _client9)[_client9].onUnload = onUnload;
+      },
+      get: function get() {
+        return _classPrivateFieldLooseBase(this, _client9)[_client9].onUnload;
       }
     }, {
       key: "onClosed",
