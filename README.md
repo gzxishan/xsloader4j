@@ -1,9 +1,9 @@
 ## 一、项目介绍
 让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
 ## 二、版本
-当前最新版本为  [**1.2.19**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.2.36**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.2.19-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.2.36-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -562,6 +562,8 @@ cnpm install --save @babel/polyfill
 
 ## 八、发布记录
 ### v进行中
+
+### v1.2.36 2021/03/26
 1. `staticInclude`支持移除特殊标记；
 2. 增加配置`xsloader.conf.forceCacheSeconds`,用于设置配置文件被浏览器强制缓存的时间；
 3. 增加配置`xsloader.es6.versionAppendTag`，用于自动加版本号；

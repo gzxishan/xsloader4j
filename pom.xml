@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.35</version>
+    <version>1.2.36</version>
 
     <modules>
         <module>xsloader4j-core</module>
@@ -53,7 +53,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
-        <project.OftenPorter.version>1.2.209</project.OftenPorter.version>
+        <project.OftenPorter.version>1.2.217</project.OftenPorter.version>
         <project.log4j12.version>1.7.30</project.log4j12.version>
         <project.junit.version>4.13.1</project.junit.version>
 
