@@ -33,24 +33,24 @@
 				// 	browsers: ["chrome 85"]
 				// },
 				presets: [
-					//"es2015",
+					// "es2015",
+					// "es2016",
+					// "es2017"
 					['env', {
 						"targets": {
-							"browsers": ["ie 11"]
+							"browsers": ["chrome 85"]
 						}
 					}]
 				],
 				plugins: [
-					["transform-modules-commonjs"],
+					//["transform-modules-commonjs"],
 					{
 						visitor: {
 							ImportDeclaration: function(path) {
-								let id=path.scope.generateUid("mod");
-								console.log("id:",id)
-								console.log(path);
-								console.log(path.getSource());
+								path.node.source.value += "/**/";
 							},
-							"CallExpression": function(path) {
+							CallExpression: function(path) {
+								console.log(path.getSource());
 								if (path.node.callee.type == "Import") {
 									var source = path.getSource();
 									source = "__ImporT__" + source.substring(6);
@@ -59,6 +59,7 @@
 							}
 						}
 					},
+					//['proposal-dynamic-import'],
 				],
 			}).code;
 			console.log(output);

@@ -70,6 +70,7 @@ xsloader.sourcemap=true
 xsloader.es6.dealt.ignores=
 xsloader.es6.dealt.static=
 xsloader.es6.extensions=
+xsloader.es6.detectBrowser=true
 xsloader.es6.v8flags=
 xsloader.conf.properties.staticUrlPrefix=https://xxxxx.cn/xxx
 xsloader.conf.properties.prop1=xxx
@@ -86,6 +87,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
 - xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,/index.js,/index.vue,/index.jsx"
   ，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+]中的值
+- xsloader.es6.detectBrowser：是否根据浏览器版本，进行不同级别的js转换
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 - xsloader.htmv.enable：是否启用htmv，默认为false

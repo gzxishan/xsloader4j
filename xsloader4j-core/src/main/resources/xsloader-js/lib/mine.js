@@ -200,10 +200,10 @@
 				"es2017"
 			],
 			plugins: [
-				["transform-modules-commonjs"], //需要转换import "...";
+				//["transform-modules-commonjs"], //需要转换import "...";
 				{
 					visitor: {
-						ImportDeclaration: function(path) {
+						ImportDeclaration: function(path) {//需要转换import "...";
 							if (requireModules) {
 								let id = "_import_" + $jsBridge$.shortId() + "_mod";
 								let varname = path.scope.generateUid("mod");
@@ -216,7 +216,7 @@
 							}
 						},
 						CallExpression: function(path) {
-							if (path.node.callee.type == "Import") { //将替换成__ImporT__("...")
+							if (path.node.callee.type == "Import") { //将import(...)替换成__ImporT__("...")
 								let source = path.getSource();
 								source = "__ImporT__" + source.substring(6);
 								path.replaceWithSourceString(source);
