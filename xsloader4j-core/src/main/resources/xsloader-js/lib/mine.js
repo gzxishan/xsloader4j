@@ -333,7 +333,7 @@
 			let varname = item.varname;
 
 			innerDeps.push(`"${name}"`);
-			parsedCode = parsedCode.replaceAll(`require("${id}")`, `require("${name}")`);
+			parsedCode = parsedCode.replaceAll(`require("${id}")`, `require.get("${name}")`);
 			parsedCode = parsedCode.replaceAll(id, varname);
 		});
 
@@ -359,6 +359,7 @@
 
 		let scriptPrefix =
 			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
+			xsloader.__ignoreCurrentRequireDep=true;
 			xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge']
 				.concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}])
 				.concat([${innerDeps.join(',')}]),function(exports,__serverBridge__){

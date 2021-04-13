@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.42
+ * xsloader.js v1.1.43
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Tue Mar 23 2021 23:50:11 GMT+0800 (GMT+08:00)
+ * build time:Wed Apr 14 2021 05:19:39 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2476,7 +2476,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.42"
+    version: "1.1.43"
   };
 
   var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
@@ -4103,6 +4103,7 @@
     function DefineObject(scriptSrc, src, thiz) {
       var args = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
       var isRequire = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      var ignoreCurrentRequireDep = arguments.length > 5 ? arguments[5] : undefined;
 
       _classCallCheck(this, DefineObject);
 
@@ -4168,7 +4169,10 @@
         deps = L$9.clone(deps);
       }
 
-      U.appendInnerDeps(deps, callback);
+      if (!ignoreCurrentRequireDep) {
+        U.appendInnerDeps(deps, callback);
+      }
+
       this.selfname = selfname;
       this.deps = deps;
       this.pushName(selfname);
@@ -4540,10 +4544,12 @@
   }
 
   function doDefine(thiz, args, isRequire) {
+    var ignoreCurrentRequireDep = L$9.__ignoreCurrentRequireDep;
+    L$9.__ignoreCurrentRequireDep = false;
     var rs = getCurrentScript();
     var src = rs.src;
     var scriptSrc = rs.scriptSrc;
-    var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire);
+    var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire, ignoreCurrentRequireDep);
     defineObject.srcBeforeCurrentPath = rs.srcBeforeCurrentPath;
 
     if (!isSrcFromScriptLoad) {
