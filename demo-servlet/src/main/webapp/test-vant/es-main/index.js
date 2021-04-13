@@ -7,6 +7,13 @@ import { router } from './router';
 
 Vue.use(Vant);
 
+let x=1;
+let _mod;
+
+function _mod2(){
+	let _mod3;
+}
+
 new Vue({
   router,
   el: '#app',

@@ -36,98 +36,101 @@ import java.util.List;
 /**
  * @author Created by https://github.com/CLovinr on 2019/5/26.
  */
-public class Es6Wrapper
-{
+public class Es6Wrapper {
     private static final Logger LOGGER = LoggerFactory.getLogger(Es6Wrapper.class);
 
-    public class Result<T>
-    {
+    public class Result<T> {
         private T content;
         private List<File> relatedFiles;
         private String sourceMap;
         private boolean needAddSourceMappingURL = true;
+        private BrowserInfo browserInfo;
 
-        public boolean isNeedAddSourceMappingURL()
-        {
-            return needAddSourceMappingURL;
-        }
-
-        public void setNeedAddSourceMappingURL(boolean needAddSourceMappingURL)
-        {
-            this.needAddSourceMappingURL = needAddSourceMappingURL;
-        }
-
-        public String getSourceMap()
-        {
-            return sourceMap;
-        }
-
-        public void setSourceMap(String sourceMap)
-        {
-            this.sourceMap = sourceMap;
-        }
-
-        public Result()
-        {
+        public Result(BrowserInfo browserInfo) {
+            this.browserInfo = browserInfo;
             this.relatedFiles = new ArrayList<>(1);
         }
 
-        public void setContent(T content)
-        {
+        public BrowserInfo getBrowserInfo() {
+            return browserInfo;
+        }
+
+        public boolean isNeedAddSourceMappingURL() {
+            return needAddSourceMappingURL;
+        }
+
+        public void setNeedAddSourceMappingURL(boolean needAddSourceMappingURL) {
+            this.needAddSourceMappingURL = needAddSourceMappingURL;
+        }
+
+        public String getSourceMap() {
+            return sourceMap;
+        }
+
+        public void setSourceMap(String sourceMap) {
+            this.sourceMap = sourceMap;
+        }
+
+        public void setContent(T content) {
             this.content = content;
         }
 
-        public T getContent()
-        {
+        public T getContent() {
             return content;
         }
 
-        public List<File> getRelatedFiles()
-        {
+        public List<File> getRelatedFiles() {
             return relatedFiles;
         }
     }
 
     private IFileContentGetter fileContentGetter;
+    private BrowserInfo browserInfo;
 
-    public Es6Wrapper(IFileContentGetter fileContentGetter)
-    {
+    public Es6Wrapper(IFileContentGetter fileContentGetter, BrowserInfo browserInfo) {
         this.fileContentGetter = fileContentGetter;
+        this.browserInfo = browserInfo;
     }
 
+    public BrowserInfo getBrowserInfo() {
+        return browserInfo;
+    }
 
-//    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap)
-//    {
-//        return parseEs6(url, filepath, es6Content, hasSourceMap, true);
-//    }
+    public void setBrowserInfo(BrowserInfo browserInfo) {
+        this.browserInfo = browserInfo;
+    }
 
-    public static String parseEs6Script(String name, String es6Content)
-    {
+    //    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap)
+    //    {
+    //        return parseEs6(url, filepath, es6Content, hasSourceMap, true);
+    //    }
+
+    public static String parseEs6Script(String name, String es6Content) {
         LOGGER.info("parse es6 script code:name={}", name);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null))
-        {
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(null)) {
             es6Content = removeSChars(es6Content);
+
+            V8Object option = j2BaseInterface.newV8Object();
+            option.add("browserType", "chrome");
+            option.add("browserMajorVersion", "45");
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
                     .push(name)
-                    .push(es6Content);
+                    .push(es6Content)
+                    .push(option);
             String parsedCode = xsloaderServer.executeStringFunction("parseEs6Script", parameters);
             return parsedCode;
-        } catch (Throwable e)
-        {
+        } catch (Throwable e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public static String removeSChars(String content)
-    {
-        if (content != null)
-        {
+    public static String removeSChars(String content) {
+        if (content != null) {
             boolean remove = JsFilter.removeSChars == null || JsFilter.removeSChars;
-            if (remove)
-            {
+            if (remove) {
                 //移除`\jsx与\jsx`：临时解决HBuilderX显示jsx语法的问题
                 content = content.replace("`\\jsx", "");
                 content = content.replace("\\jsx`", "");
@@ -140,18 +143,16 @@ public class Es6Wrapper
         return content;
     }
 
-    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
-            String replaceType)
-    {
+    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap) {
         LOGGER.info("parse es6 code:url={},file={}", url, filepath);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
-        {
-            Result<String> result = new Result<>();
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url)) {
+            Result<String> result = new Result<>(getBrowserInfo());
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
             V8Object option = j2BaseInterface.newV8Object();
-            option.add("replaceType", replaceType);
+            option.add("browserType", browserInfo == null ? null : browserInfo.getBrowserType());
+            option.add("browserMajorVersion", browserInfo == null ? null : browserInfo.getBrowserMajorVersion());
 
             es6Content = removeSChars(es6Content);
 
@@ -167,14 +168,11 @@ public class Es6Wrapper
             String sourceMap = rs.getString("sourceMap");
 
             JSONObject sourceMapJson = JSON.parseObject(sourceMap);
-            if (sourceMapJson != null)
-            {
+            if (sourceMapJson != null) {
                 JSONArray sources = sourceMapJson.getJSONArray("sources");
-                for (int i = 0; i < sources.size(); i++)
-                {
+                for (int i = 0; i < sources.size(); i++) {
                     String source = sources.getString(i);
-                    if (source.endsWith("+"))
-                    {
+                    if (source.endsWith("+")) {
                         sources.set(i, source.substring(0, source.length() - 1));
                     }
                 }
@@ -185,34 +183,25 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
-        } catch (Throwable e)
-        {
+        } catch (Throwable e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-
-//    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap)
-//    {
-//        return parseVue(url, filepath, vueContent, hasSourceMap, true);
-//    }
-
-    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap,
-            String replaceType)
-    {
+    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap) {
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
-        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url))
-        {
+        try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url)) {
             vueContent = removeSChars(vueContent);
 
-            Result<String> result = new Result<>();
+            Result<String> result = new Result<>(getBrowserInfo());
             j2BaseInterface.threadLocal.set(result);
             j2BaseInterface.setFileListener(file -> result.relatedFiles.add(file));
             j2BaseInterface.setFileContentGetter(fileContentGetter);
 
             V8Object option = j2BaseInterface.newV8Object();
-            option.add("replaceType", replaceType);
+            option.add("browserType", browserInfo == null ? null : browserInfo.getBrowserType());
+            option.add("browserMajorVersion", browserInfo == null ? null : browserInfo.getBrowserMajorVersion());
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()
@@ -230,24 +219,19 @@ public class Es6Wrapper
             String vueName = OftenStrUtil.getNameFormPath(url);
             JSONObject sourceMapJson = JSON.parseObject(sourceMap);
             JSONArray sources = sourceMapJson.getJSONArray("sources");
-            for (int i = 0; i < sources.size(); i++)
-            {
+            for (int i = 0; i < sources.size(); i++) {
                 String source = sources.getString(i);
-                if (source.endsWith("+"))
-                {
+                if (source.endsWith("+")) {
                     sources.set(i, source.substring(0, source.length() - 1));
-                } else if (markedComments.size() > 0 && source.equals(vueName) || source.equals(filepath))
-                {
+                } else if (markedComments.size() > 0 && source.equals(vueName) || source.equals(filepath)) {
                     JSONArray sourcesContent = sourceMapJson.getJSONArray("sourcesContent");
                     String sourceContent = sourcesContent.getString(i);
                     String[] strs = OftenStrUtil.split(sourceContent, "\n", true);
-                    for (int k = 0; k < markedComments.size(); k++)
-                    {//去除源码前面的://
+                    for (int k = 0; k < markedComments.size(); k++) {//去除源码前面的://
                         JSONObject item = markedComments.getJSONObject(k);
                         int offset = item.getIntValue("offset");
                         int length = item.getIntValue("length");
-                        for (int m = 0; m < length; m++)
-                        {
+                        for (int m = 0; m < length; m++) {
                             strs[m + offset] = strs[m + offset].substring(2);
                         }
                     }
@@ -260,21 +244,19 @@ public class Es6Wrapper
             result.setContent(parsedCode);
             result.setSourceMap(sourceMap);
             return result;
-        } catch (Throwable e)
-        {
+        } catch (Throwable e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    public Result<String> parseSass(String requestUrl, @NotNull File realFile, String fileContent, boolean hasSourceMap)
-    {
-        try
-        {
+    public Result<String> parseSass(String requestUrl, @NotNull File realFile, String fileContent,
+            boolean hasSourceMap) {
+        try {
             realFile = realFile.getAbsoluteFile();
             LOGGER.debug("requestUrl={},realFile={}", requestUrl, realFile);
 
-            Result<String> result = new Result<>();
+            Result<String> result = new Result<>(getBrowserInfo());
             String host = OftenServletRequest.getHostFromURL(requestUrl);
             String path = requestUrl.substring(host.length());
 
@@ -291,8 +273,7 @@ public class Es6Wrapper
 
             LOGGER.debug("path={},mapUri={}", path, mapUri);
 
-            if (hasSourceMap)
-            {
+            if (hasSourceMap) {
                 options.setSourceMapFile(new URI(mapUri));
             }
             options.setSourceMapRoot(new URI("/"));
@@ -300,8 +281,7 @@ public class Es6Wrapper
             URI inputPath = realFile.toURI();
             URI outputPath = new URI(requestUrl);
 
-            if (LOGGER.isDebugEnabled())
-            {
+            if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("uri to file:uri={},file={}", inputPath, new File(inputPath));
             }
 
@@ -312,8 +292,7 @@ public class Es6Wrapper
                     options
             );
 
-            if (output.getSourceMap() != null)
-            {
+            if (output.getSourceMap() != null) {
                 result.setContent(output.getCss() + String.format("\n/*# sourceMappingURL=%s.map*/", name));
 
                 JSONObject sourceMapJson = JSON.parseObject(output.getSourceMap());
@@ -322,22 +301,19 @@ public class Es6Wrapper
                 JSONArray sources = sourceMapJson.getJSONArray("sources");
 
                 //修复sources路径错误的bug
-                for (int i = 0; i < sources.size(); i++)
-                {
+                for (int i = 0; i < sources.size(); i++) {
                     String filePath = sources.getString(i);
                     filePath = filePath.replaceFirst("^(\\.\\./)+/?", "/");
                     sources.set(i, filePath);
                 }
 
-                for (int i = 0; i < sources.size(); i++)
-                {
+                for (int i = 0; i < sources.size(); i++) {
                     String filePath = sources.getString(i);
                     sourcesContent.add(FileTool.getString(new File(filePath), "utf-8"));
                 }
                 adjustSourceMap(requestUrl, realFile, sourceMapJson);
 
-                if (LOGGER.isDebugEnabled())
-                {
+                if (LOGGER.isDebugEnabled()) {
                     JSONObject data = (JSONObject) sourceMapJson.clone();
                     data.remove("sourcesContent");
                     LOGGER.debug("sourceMap:\n{}",
@@ -346,35 +322,28 @@ public class Es6Wrapper
 
                 result.setSourceMap(sourceMapJson.toJSONString());
                 result.setNeedAddSourceMappingURL(false);
-            } else
-            {
+            } else {
                 result.setContent(output.getCss());
             }
 
             return result;
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
 
-    public Result<String> parseLess(String requestUrl, File realFile, String fileContent, boolean hasSourceMap)
-    {
-        try
-        {
+    public Result<String> parseLess(String requestUrl, File realFile, String fileContent, boolean hasSourceMap) {
+        try {
             realFile = realFile.getAbsoluteFile();
-            Result<String> result = new Result<>();
+            Result<String> result = new Result<>(getBrowserInfo());
             String host = OftenServletRequest.getHostFromURL(requestUrl);
             String path = requestUrl.substring(host.length());
 
-            String css = Less.compile(realFile.toURI().toURL(), fileContent, false, new ReaderFactory()
-            {
+            String css = Less.compile(realFile.toURI().toURL(), fileContent, false, new ReaderFactory() {
                 @Override
-                public InputStream openStream(URL url) throws IOException
-                {
-                    if (url.getProtocol().equals("file"))
-                    {
+                public InputStream openStream(URL url) throws IOException {
+                    if (url.getProtocol().equals("file")) {
                         result.getRelatedFiles().add(new File(url.getFile()));
                     }
                     return super.openStream(url);
@@ -382,15 +351,13 @@ public class Es6Wrapper
             });
             result.setContent(css);
             return result;
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
 
-    public static void _initForTest()
-    {
+    public static void _initForTest() {
         JsScriptUtil.init(null);
     }
 
@@ -401,8 +368,7 @@ public class Es6Wrapper
      * @param currentFile 当前文件地址
      * @param sourceMap
      */
-    private static void adjustSourceMap(String currentUrl, @MayNull File currentFile, JSONObject sourceMap)
-    {
+    private static void adjustSourceMap(String currentUrl, @MayNull File currentFile, JSONObject sourceMap) {
         String currentHost = "";//OftenServletRequest.getHostFromURL(currentUrl);
         String currentPath = OftenServletRequest.getPathFromURL(currentUrl);
         String sourceRoot = currentHost + "/$$xs-sources$$" + PackageUtil
@@ -411,16 +377,14 @@ public class Es6Wrapper
         sourceMap.put("file", OftenStrUtil.getNameFormPath(currentUrl));
         JSONArray sources = sourceMap.getJSONArray("sources");
         Path current = currentFile == null ? Paths.get(currentPath).getParent() : currentFile.toPath().getParent();
-        for (int i = 0; i < sources.size(); i++)
-        {
+        for (int i = 0; i < sources.size(); i++) {
             String source = sources.getString(i);
             File sourceFile = new File(source);
-            if (sourceFile.isAbsolute())
-            {
+            if (sourceFile.isAbsolute()) {
                 source = current.relativize(sourceFile.toPath()).toString().replace(File.separatorChar, '/');
             }
-//            source = PackageUtil.getPathWithRelative(File.separatorChar, source, false,
-//                    "./$$sources$$/" + OftenStrUtil.getNameFormPath(source), '/');
+            //            source = PackageUtil.getPathWithRelative(File.separatorChar, source, false,
+            //                    "./$$sources$$/" + OftenStrUtil.getNameFormPath(source), '/');
             sources.set(i, source);
         }
     }

@@ -16,6 +16,9 @@ import cn.xishan.oftenporter.servlet.HttpCacheUtil;
 import cn.xishan.oftenporter.servlet.OftenServletRequest;
 import cn.xishan.oftenporter.servlet.WrapperFilterManager;
 import com.alibaba.fastjson.JSONObject;
+import eu.bitwalker.useragentutils.Browser;
+import eu.bitwalker.useragentutils.OperatingSystem;
+import eu.bitwalker.useragentutils.UserAgent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,13 +49,15 @@ import java.util.concurrent.ConcurrentHashMap;
 //                "、jsx、sass、scss、less等",
 //        dispatcherTypes = {DispatcherType.REQUEST, DispatcherType.FORWARD})
 //要在WebSocket的Filter前处理
-public class JsFilter implements WrapperFilterManager.WrapperFilter
-{
+public class JsFilter implements WrapperFilterManager.WrapperFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(JsFilter.class);
 
 
     @Property(name = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
+
+    @Property(name = "xsloader.es6.detectBrowser", defaultVal = "false")
+    private static Boolean detectBrowser;
 
     @Property(name = "xsloader.es6.name", defaultVal = "default")
     private static String name;
@@ -80,12 +85,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
 
     @Property(name = "xsloader.es6.versionAppendTag")
     private static String versionAppendTag;
-
-    /**
-     * require.get或require
-     */
-    @Property(name = "xsloader.es6.replaceType", defaultVal = "require")//
-    private static String replaceType;
 
     @Property(name = "xsloader.es6.dealt")//
     private static String dealt;
@@ -131,108 +130,88 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * 文件路径:是否为es6代码
      */
     private static final Map<String, Es6Item> supportEs6Files = new ConcurrentHashMap<>();
+    private static final Map<String, BrowserInfo> cachedBrowserInfo = new ConcurrentHashMap<>();
     private static final ThreadLocal<String> autoPathThreadLocal = new ThreadLocal<>();
     private static Map<String, String> listenDirToPath;
     private static WatchService watchService;
 
 
-    public static void addContentGetter(IFileContentGetter contentGetter)
-    {
+    public static void addContentGetter(IFileContentGetter contentGetter) {
         contentGetterList.add(contentGetter);
     }
 
-    public static void removeContentGetter(IFileContentGetter contentGetter)
-    {
+    public static void removeContentGetter(IFileContentGetter contentGetter) {
         contentGetterList.remove(contentGetter);
     }
 
 
-    public JsFilter()
-    {
+    public JsFilter() {
     }
 
     @Override
     public WrapperFilterManager.Wrapper doFilter(HttpServletRequest request,
-            HttpServletResponse response) throws IOException, ServletException
-    {
-        try
-        {
+            HttpServletResponse response) throws IOException, ServletException {
+        try {
             autoPathThreadLocal.remove();
-            if ("GET".equals(request.getMethod()) && filter(request, response))
-            {
+            if ("GET".equals(request.getMethod()) && filter(request, response)) {
                 WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
                 wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
                 return wrapper;
-            } else
-            {
+            } else {
                 String path = autoPathThreadLocal.get();
-                if (path != null)
-                {//用于支持非es6代js脚本的自动后缀名
+                if (path != null) {//用于支持非es6代js脚本的自动后缀名
                     request.getRequestDispatcher(path).forward(request, response);
                 }
 
                 return null;
             }
-        } catch (OftenCallException e)
-        {
+        } catch (OftenCallException e) {
             LOGGER.error(e.getMessage(), e);
             JSONObject json = e.toJSON();
             response.setContentType(ContentType.APP_JSON.getType());
             response.setCharacterEncoding("utf-8");
-            try (PrintWriter writer = response.getWriter())
-            {
+            try (PrintWriter writer = response.getWriter()) {
                 writer.write(json.toJSONString());
                 writer.flush();
             }
             WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
             wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
             return wrapper;
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             LOGGER.warn(e.getMessage(), e);
             response.sendError(500, "js-fileter-error");
             WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
             wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
             return wrapper;
-        } finally
-        {
+        } finally {
             autoPathThreadLocal.remove();
         }
     }
 
     @AutoSet.SetOk
-    public void setOk(ServletContext servletContext) throws IOException
-    {
+    public void setOk(ServletContext servletContext) throws IOException {
         CachedResource.init(name);
         JsScriptUtil.init(v8flags);
 
-        if (OftenTool.isEmpty(dealt))
-        {
+        if (OftenTool.isEmpty(dealt)) {
             pathDealt = new DefaultPathDealt(servletContext, staticPath, ignores);
-        } else
-        {
-            try
-            {
+        } else {
+            try {
                 pathDealt = OftenTool.newObject(dealt);
-            } catch (Exception e)
-            {
+            } catch (Exception e) {
                 throw new InitException(e);
             }
         }
 
-        if (forceCacheSeconds == -1)
-        {
-            if (isDebug && OftenTool.isEmpty(versionAppendTag))
-            {
+        if (forceCacheSeconds == -1) {
+            if (isDebug && OftenTool.isEmpty(versionAppendTag)) {
                 forceCacheSeconds = 60;
-            } else
-            {
+            } else {
                 forceCacheSeconds = 24 * 3600;
             }
         }
 
-        if (usePolyfill)
-        {
+        if (usePolyfill) {
             String script = ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js", "utf-8");
             script = "if(!window.__hasPolyfill){window.__hasPolyfill=true;" + script + "}";
             polyfillData = script.getBytes("utf-8");
@@ -242,11 +221,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         initVersionAppend(servletContext);
     }
 
-    public static boolean isSupport(String path)
-    {
+    public static boolean isSupport(String path) {
         String suffix = OftenStrUtil.getSuffix(path);
-        switch (suffix)
-        {
+        switch (suffix) {
             case "js+":
             case "jsx":
             case "js":
@@ -264,10 +241,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
     }
 
-    private static void initVersionAppend(ServletContext servletContext)
-    {
-        if (isDebug && OftenTool.notEmpty(versionAppendTag))
-        {
+    private static void initVersionAppend(ServletContext servletContext) {
+        if (isDebug && OftenTool.notEmpty(versionAppendTag)) {
             listenDirToPath = new HashMap<>();
             //每次启动设置全局的版本号
             XsloaderConfigFilter
@@ -275,27 +250,19 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
     }
 
-    private static void registerListenForVersionAppend(String requestUrl, File directFile, List<File> fileList)
-    {
-        if (listenDirToPath != null && OftenTool.notEmpty(requestUrl))
-        {
+    private static void registerListenForVersionAppend(String requestUrl, File directFile, List<File> fileList) {
+        if (listenDirToPath != null && OftenTool.notEmpty(requestUrl)) {
             String path = OftenServletRequest.getPathFromURL(requestUrl);
-            synchronized (listenDirToPath)
-            {
+            synchronized (listenDirToPath) {
                 List<File> files = new ArrayList<>(fileList);
-                if (directFile != null)
-                {
+                if (directFile != null) {
                     files.add(directFile);
                 }
 
-                for (File file : files)
-                {
-                    if (!listenDirToPath.containsKey(file.getAbsolutePath()))
-                    {
-                        try
-                        {
-                            if (watchService == null)
-                            {
+                for (File file : files) {
+                    if (!listenDirToPath.containsKey(file.getAbsolutePath())) {
+                        try {
+                            if (watchService == null) {
                                 initWatchService();
                             }
 
@@ -304,9 +271,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                             listenDirToPath.put(file.getAbsolutePath(), path);
 
                             //初始时，也设置版本号，防止会跳到最初的版本
-//                            XsloaderConfigFilter.setVersion(path, "_t=" + System.currentTimeMillis());
-                        } catch (Exception e)
-                        {
+                            //                            XsloaderConfigFilter.setVersion(path, "_t=" + System
+                            //                            .currentTimeMillis());
+                        } catch (Exception e) {
                             LOGGER.warn(e.getMessage(), e);
                         }
                     }
@@ -315,28 +282,20 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
         }
     }
 
-    private static void initWatchService()
-    {
-        try
-        {
+    private static void initWatchService() {
+        try {
             watchService = FileSystems.getDefault().newWatchService();
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         Thread thread = new Thread(() -> {
-            try
-            {
-                while (true)
-                {
-                    try
-                    {
+            try {
+                while (true) {
+                    try {
                         WatchKey key = watchService.take();
-                        for (WatchEvent<?> event : key.pollEvents())
-                        {
-                            try
-                            {
+                        for (WatchEvent<?> event : key.pollEvents()) {
+                            try {
                                 Path dir = (Path) key.watchable();
 
                                 Path path = (Path) event.context();
@@ -345,53 +304,43 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                                 LOGGER.info("file-change:{}", filePath);
 
                                 String requestPath = listenDirToPath.get(filePath);
-                                if (requestPath != null)
-                                {
+                                if (requestPath != null) {
                                     String version = "_t=" + System.currentTimeMillis();
 
                                     XsloaderConfigFilter.setVersion(requestPath, version);
                                     int index = -1;
-                                    if (requestPath.endsWith("/index.js"))
-                                    {
+                                    if (requestPath.endsWith("/index.js")) {
                                         index = requestPath.length() - 6 - 3;
 
                                     } else if (requestPath.endsWith("/index.vue") || requestPath
-                                            .endsWith("/index.jsx"))
-                                    {
+                                            .endsWith("/index.jsx")) {
                                         index = requestPath.length() - 6 - 4;
-                                    } else if (requestPath.endsWith(".js"))
-                                    {
+                                    } else if (requestPath.endsWith(".js")) {
                                         index = requestPath.length() - 3;
 
                                     } else if (requestPath
                                             .endsWith(".vue") || requestPath
-                                            .endsWith(".jsx"))
-                                    {
+                                            .endsWith(".jsx")) {
                                         index = requestPath.length() - 4;
                                     }
 
-                                    if (index != -1)
-                                    {//支持自动后缀文件的自动版本
+                                    if (index != -1) {//支持自动后缀文件的自动版本
                                         String starPath = requestPath.substring(0, index) + ".*";
                                         XsloaderConfigFilter.setVersion(starPath, version);
                                     }
                                 }
-                            } catch (Exception e)
-                            {
+                            } catch (Exception e) {
                                 LOGGER.warn(e.getMessage(), e);
                             }
                         }
                         key.reset();
-                    } catch (Exception e)
-                    {
+                    } catch (Exception e) {
                         LOGGER.warn(e.getMessage(), e);
                     }
                 }
-            } catch (ClosedWatchServiceException e)
-            {
+            } catch (ClosedWatchServiceException e) {
                 LOGGER.debug(e.getMessage(), e);
-            } catch (Exception e)
-            {
+            } catch (Exception e) {
                 LOGGER.warn(e.getMessage(), e);
             }
         });
@@ -416,59 +365,51 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      */
     private static CachedResource parse(CachedResource cachedResource, boolean isSourceMap, String requestUrl,
             String path, String sourceMapName, File file, IFileContentGetter fileContentGetter,
-            String encoding, String replaceType) throws IOException
-    {
-        if (cachedResource != null)
-        {
+            String encoding, BrowserInfo browserInfo) throws IOException {
+        if (cachedResource != null) {
             cachedResource.clearCache();
         }
         IFileContentGetter.Result cresult = fileContentGetter.getResult(file, encoding);
 
-        if (cresult == null)
-        {
+        if (cresult == null) {
             throw new IOException("not found:" + path);
         }
         String fileContent = cresult.getContent();
 
         String suffix = OftenStrUtil.getSuffix(path);
         String realPath = file.getAbsolutePath();
-        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx"))
-        {
-            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx")) {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
-                    hasSourceMap, replaceType);
+                    hasSourceMap);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "application/javascript", result);
-        } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue"))
-        {
-            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+        } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue")) {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper
-                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap, replaceType);
+                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource
                     .save(realPath, isSourceMap, path, sourceMapName, file.lastModified(), encoding,
                             "application/javascript", result);
-        } else if (suffix.equals("scss") || suffix.equals("sass"))
-        {
-            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+        } else if (suffix.equals("scss") || suffix.equals("sass")) {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseSass(requestUrl, file, fileContent, hasSourceMap);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName,
                     file.lastModified(), encoding, "text/css", result);
-        } else if (suffix.equals("less"))
-        {
-            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter);
+        } else if (suffix.equals("less")) {
+            Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseLess(requestUrl, file, fileContent, hasSourceMap);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "text/css", result);
-        } else
-        {
+        } else {
             throw new IOException("unknown suffix:" + suffix);
         }
 
@@ -476,9 +417,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
     }
 
     public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
-            String path, String encoding) throws IOException
-    {
-        return tryGetResource(servletContext, pathDealt, requestUrl, path, encoding, "require");
+            String path, String encoding) throws IOException {
+        return tryGetResource(servletContext, pathDealt, requestUrl, path, encoding, null);
     }
 
     /**
@@ -491,75 +431,59 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @throws IOException
      */
     public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
-            String path, String encoding, String replaceType) throws IOException
-    {
+            String path, String encoding, HttpServletRequest request) throws IOException {
         CachedResource result = null;
         path = pathDealt.dealPath(servletContext, path);
         boolean isAuto = false;
         String autoExtension = null;
         end:
-        do
-        {
-            if (!isSupport(path))
-            {
+        do {
+            if (!isSupport(path)) {
                 break end;
-            } else if (path.endsWith(".*"))
-            {//自动后缀
+            } else if (path.endsWith(".*")) {//自动后缀
                 String autoPath = null;
                 String _path = path.substring(0, path.length() - 2);
-                for (String ext : extensions)
-                {
+                for (String ext : extensions) {
                     String rpath = _path + ext;
                     File file = pathDealt.getRealFile(servletContext, rpath);
-                    if (file != null && file.exists())
-                    {
+                    if (file != null && file.exists()) {
                         autoPath = rpath;
                         autoExtension = ext;
                         break;
                     }
                 }
 
-                if (autoPath != null)
-                {
+                if (autoPath != null) {
                     path = autoPath;
                     isAuto = true;
-                } else
-                {
+                } else {
                     break end;
                 }
             }
 
-            if (path.endsWith(".js") || path.endsWith(".js.map"))
-            {//对js文件进行单独判断，是否为es6语法
+            if (path.endsWith(".js") || path.endsWith(".js.map")) {//对js文件进行单独判断，是否为es6语法
                 String rpath = path.endsWith(".js") ? path : path.substring(0, path.length() - 4);
-                if (!pathDealt.detectESCode(rpath))
-                {
+                if (!pathDealt.detectESCode(rpath)) {
                     break end;
-                } else
-                {
+                } else {
                     File file = pathDealt.getRealFile(servletContext, rpath);
 
-                    if (file == null || !file.exists())
-                    {
+                    if (file == null || !file.exists()) {
                         break end;
-                    } else
-                    {
+                    } else {
                         Es6Item item = supportEs6Files.get(file.getAbsolutePath());
-                        if (item == null)
-                        {
+                        if (item == null) {
                             String script = FileTool.getString(file, encoding);
                             boolean isEs6 = pathDealt.isESCode(path, script);
                             item = new Es6Item(file.lastModified(), isEs6);
                             supportEs6Files.put(file.getAbsolutePath(), item);
-                        } else if (file.lastModified() != item.getLastModified())
-                        {
+                        } else if (file.lastModified() != item.getLastModified()) {
                             String script = FileTool.getString(file, encoding);
                             boolean isEs6 = pathDealt.isESCode(path, script);
                             item.setEs6(isEs6);
                             item.setLastModified(file.lastModified());
                         }
-                        if (!item.isEs6())
-                        {
+                        if (!item.isEs6()) {
                             break end;
                         }
                     }
@@ -567,76 +491,63 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
             }
 
             boolean isSourceMap = path.endsWith(".map");
-            if (isSourceMap)
-            {
+            if (isSourceMap) {
                 File file = pathDealt.getRealFile(servletContext, path);
-                if (file != null && file.exists())
-                {//存在实际的map文件
+                if (file != null && file.exists()) {//存在实际的map文件
                     break end;
                 }
                 path = path.substring(0, path.length() - 4);
             }
 
             File realFile;
-            if (path.endsWith(".js+"))
-            {
+            if (path.endsWith(".js+")) {
                 realFile = pathDealt.getRealFile(servletContext, path.substring(0, path.length() - 1));
-            } else
-            {
+            } else {
                 File file = pathDealt.getRealFile(servletContext, path);
-                if (file != null && file.getName().endsWith(".htmv_vue"))
-                {
+                if (file != null && file.getName().endsWith(".htmv_vue")) {
                     String filepath = file.getAbsolutePath();
                     file = new File(filepath.substring(0, filepath.length() - 4));
                 }
                 realFile = file;
             }
 
-            if (realFile == null || !realFile.exists())
-            {
+            if (realFile == null || !realFile.exists()) {
                 break end;
-            } else
-            {
-                if (requestUrl.endsWith(".map"))
-                {
+            } else {
+                if (requestUrl.endsWith(".map")) {
                     isSourceMap = true;
                     requestUrl = requestUrl.substring(0, requestUrl.length() - 4);//.map
                 }
 
                 String sourceMapName;
-                if (autoExtension != null)
-                {
+                if (autoExtension != null) {
                     int index = requestUrl.indexOf("://");
                     index = requestUrl.indexOf("/", index + 3);
                     sourceMapName = requestUrl.substring(index, requestUrl.length() - 2) + autoExtension;
-                } else
-                {
+                } else {
                     sourceMapName = OftenStrUtil.getNameFormPath(path);
                 }
 
-                if (autoExtension != null)
-                {
+                if (autoExtension != null) {
                     requestUrl = requestUrl.substring(0, requestUrl.length() - 2) + autoExtension;
                 }
 
                 String finalPath = path;
 
-                CachedResource cachedResource = !useCache ? null : CachedResource.getByPath(isSourceMap, path);
-                if (cachedResource == null || cachedResource.needReload(realFile, isDebug))
-                {
+                BrowserInfo browserInfo = getBrowserInfo(request);
+
+                CachedResource cachedResource =
+                        !useCache ? null : CachedResource.getByPath(isSourceMap, path, browserInfo);
+                if (cachedResource == null || cachedResource.needReload(realFile, isDebug)) {
                     cachedResource = parse(cachedResource, isSourceMap, requestUrl, path, sourceMapName, realFile,
-                            new IFileContentGetter()
-                            {
+                            new IFileContentGetter() {
 
                                 @Override
-                                public Result getResult(File file, String encoding) throws IOException
-                                {
+                                public Result getResult(File file, String encoding) throws IOException {
                                     Result result = null;
-                                    for (IFileContentGetter contentGetter : contentGetterList)
-                                    {
+                                    for (IFileContentGetter contentGetter : contentGetterList) {
                                         result = contentGetter.getResult(file, encoding);
-                                        if (result != null)
-                                        {
+                                        if (result != null) {
                                             String content = pathDealt
                                                     .preDealContent(servletContext, finalPath, realFile,
                                                             result.getContent());
@@ -644,8 +555,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                                             break;
                                         }
                                     }
-                                    if (result == null)
-                                    {
+                                    if (result == null) {
                                         result = new Result(getContent(file, encoding));
                                         String content = pathDealt
                                                 .preDealContent(servletContext, finalPath, realFile,
@@ -654,59 +564,160 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
                                     }
                                     return result;
                                 }
-                            }, encoding, replaceType);
+                            }, encoding, browserInfo);
                 }
 
                 result = cachedResource;
             }
         } while (false);
 
-        if (result == null && isAuto && path != null)
-        {
+        if (result == null && isAuto && path != null) {
             autoPathThreadLocal.set(path);
             return null;
-        } else
-        {
+        } else {
             return result;
         }
 
     }
 
+    private static BrowserInfo getBrowserInfo(HttpServletRequest request) {
+        BrowserInfo browserInfo = null;
+        if (detectBrowser && request != null) {
+            UserAgent userAgent = UserAgent.parseUserAgentString(getUserAgent(request));
+            if (userAgent.getBrowser() != Browser.UNKNOWN && userAgent.getBrowserVersion() != null) {
+                try {
+                    String type = "no";
+                    Browser browser = userAgent.getBrowser();
+                    Browser browserGroup = browser.getGroup();
+                    OperatingSystem os = userAgent.getOperatingSystem().getGroup();
+                    switch (browserGroup) {
+                        case FIREFOX:
+                            type = "firefox";
+                            break;
+                        case CHROME:
+                            type = "chrome";
+                            break;
+                        case OPERA:
+                            type = "opera";
+                            break;
+                        case IE:
+                            type = "ie";
+                            break;
+                        case EDGE:
+                            type = "edge";
+                            break;
+                        case SAFARI:
+                            if (os == OperatingSystem.IOS) {
+                                type = "ios";
+                            } else {
+                                type = "safari";
+                            }
+                            break;
+                        default:
+
+                            break;
+                    }
+
+                    String versionText = "no";
+                    if (!"no".equals(type)) {
+                        int version =
+                                Math.abs(Integer.parseInt(userAgent.getBrowserVersion().getMajorVersion()));
+                        if (version > 20) {
+                            version = (version / 5) * 5;
+                        }
+
+                        if (version > 200) {//防止恶意传递版本
+                            version = 200;
+                        }
+
+                        versionText = String.valueOf(version);
+                    }
+
+                    String key = type + "@" + versionText;
+                    browserInfo = cachedBrowserInfo.get(key);
+                    if (browserInfo == null) {
+                        browserInfo = new BrowserInfo(type, versionText).toUnmodified();
+                        cachedBrowserInfo.put(key, browserInfo);
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn(e.getMessage(), e);
+                    browserInfo = BrowserInfo.DEFAULT;
+                }
+
+
+            } else {
+                browserInfo = BrowserInfo.DEFAULT;
+            }
+        } else {
+            browserInfo = BrowserInfo.DEFAULT;
+        }
+
+        return browserInfo;
+    }
+
     private boolean filter(ServletRequest servletRequest,
-            ServletResponse servletResponse) throws IOException, ServletException
-    {
+            ServletResponse servletResponse) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         String path = OftenServletRequest.getPath(request);
         boolean isSource = "true".equals(request.getParameter("__source"));
 
-        String replaceType = JsFilter.replaceType;
-
         CachedResource cachedResource = tryGetResource(request.getServletContext(), pathDealt,
-                request.getRequestURL().toString(), path, encoding, replaceType);
+                request.getRequestURL().toString(), path, encoding, request);
 
-        if (cachedResource == null)
-        {
-            if (pathDealt.handleElse(request, response, pathDealt.dealPath(servletContext, path)))
-            {
+        if (cachedResource == null) {
+            if (pathDealt.handleElse(request, response, pathDealt.dealPath(servletContext, path))) {
                 return true;
-            } else if (usePolyfill && path.endsWith("/polyfill.js"))
-            {
+            } else if (usePolyfill && path.endsWith("/polyfill.js")) {
                 response.setContentType("application/javascript");
                 response.setCharacterEncoding("utf-8");
                 response.setContentLength(polyfillData.length);
                 HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
                 FileTool.in2out(new ByteArrayInputStream(polyfillData), response.getOutputStream(), 2048);
                 return true;
-            } else
-            {
+            } else {
                 return false;
             }
-        } else
-        {
+        } else {
             cachedResource.writeResponse(isSource, request, response, isDebug, forceCacheSeconds);
             return true;
         }
+    }
+
+    public static String getUserAgent(HttpServletRequest request) {
+        String agent = request.getHeader("User-Agent");
+        if (agent == null) {
+            agent = "";
+        }
+        return agent;
+    }
+
+    private static final boolean containsAgentStr(HttpServletRequest request, String str) {
+        String agent = getUserAgent(request);
+        if (OftenTool.isEmpty(agent)) {
+            return false;
+        }
+        agent = agent.toLowerCase();
+        str = str.toLowerCase();
+        return agent.contains(str);
+    }
+
+    /**
+     * 判断是否是QQ浏览器。
+     *
+     * @param request
+     * @return
+     */
+    public static boolean isQQBrowser(HttpServletRequest request) {
+        return containsAgentStr(request, "QQBrowser");
+    }
+
+    public static boolean isUCBrowser(HttpServletRequest request) {
+        return containsAgentStr(request, "UCBrowser");
+    }
+
+    public static boolean isBaidu(HttpServletRequest request) {
+        return containsAgentStr(request, "baidu");
     }
 
     /**
@@ -714,15 +725,22 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @return
      * @throws IOException
      */
-    public static CachedResource getByPath(String path) throws IOException
-    {
+    public static CachedResource getByPath(String path) throws IOException {
+        return getByPath(path, BrowserInfo.DEFAULT);
+    }
+
+    /**
+     * @param path 若以.map结尾则表示获取sourceMap内容
+     * @return
+     * @throws IOException
+     */
+    public static CachedResource getByPath(String path, BrowserInfo browserInfo) throws IOException {
         boolean isSourceMap = false;
-        if (path.endsWith(".map"))
-        {
+        if (path.endsWith(".map")) {
             isSourceMap = true;
             path = path.substring(0, path.length() - 4);
         }
-        return CachedResource.getByPath(isSourceMap, path);
+        return CachedResource.getByPath(isSourceMap, path, browserInfo);
     }
 
 
@@ -733,10 +751,10 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @return
      * @throws IOException
      */
-    public static CachedResource parseVue(String url, String path, String vueContent) throws IOException
-    {
-        return parseVue(url, path, vueContent, replaceType == null ? "require" : replaceType);
+    public static CachedResource parseVue(String url, String path, String vueContent) throws IOException {
+        return parseVue(url, path, null, vueContent);
     }
+
 
     /**
      * @param url        请求地址(可以含.map后缀)
@@ -745,10 +763,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @return
      * @throws IOException
      */
-    public static CachedResource parseVue(String url, String path, String vueContent,
-            String replaceType) throws IOException
-    {
-        return parseVue(url, path, null, vueContent, replaceType);
+    public static CachedResource parseVue(String url, String path, @MayNull String filepath, String vueContent)
+            throws IOException {
+        return parseVue(url, path, filepath, vueContent, BrowserInfo.DEFAULT);
     }
 
     /**
@@ -759,27 +776,19 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter
      * @throws IOException
      */
     public static CachedResource parseVue(String url, String path, @MayNull String filepath, String vueContent,
-            String replaceType) throws IOException
-    {
-        if (replaceType == null)
-        {
-            replaceType = JsFilter.replaceType;
-        }
-
+            BrowserInfo browserInfo) throws IOException {
         boolean isSourceMap = false;
-        if (url.endsWith(".map"))
-        {
+        if (url.endsWith(".map")) {
             isSourceMap = true;
             url = url.substring(0, url.length() - 4);
         }
 
-        if (path.endsWith(".map"))
-        {
+        if (path.endsWith(".map")) {
             isSourceMap = true;
             path = path.substring(0, path.length() - 4);
         }
-        Es6Wrapper es6Wrapper = new Es6Wrapper(null);
-        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap, replaceType);
+        Es6Wrapper es6Wrapper = new Es6Wrapper(null, browserInfo);
+        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap);
         registerListenForVersionAppend(url, filepath == null ? null : new File(filepath), result.getRelatedFiles());
 
         CachedResource cachedResource = CachedResource

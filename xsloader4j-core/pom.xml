@@ -7,40 +7,55 @@
     <parent>
         <groupId>com.xishankeji</groupId>
         <artifactId>xsloader4j</artifactId>
-        <version>1.2.36</version>
+        <version>1.2.37</version>
     </parent>
 
     <artifactId>xsloader4j-core</artifactId>
 
     <name>xsloader4j-core</name>
-    <description>让java web项目支持JavaScript ES6+(ES2015,ES2016,ES2017,ES2018)、*.scss、*.less（暂不支持sourceMap）、*.vue、*.htmv（格式同vue，但可以直接访问）、*.jsx。</description>
+    <description>让java web项目支持JavaScript
+        ES6+(ES2015,ES2016,ES2017,ES2018)、*.scss、*.less（暂不支持sourceMap）、*.vue、*.htmv（格式同vue，但可以直接访问）、*.jsx。
+    </description>
     <url>https://github.com/gzxishan/xsloader4j</url>
 
     <properties>
-
+        <project.UserAgentUtils.version>1.21</project.UserAgentUtils.version>
+        <project.j2v8.version>4.6.0</project.j2v8.version>
+        <project.jsass.version>5.10.3</project.jsass.version>
+        <project.jlessc.version>1.10</project.jlessc.version>
     </properties>
 
 
     <dependencies>
 
+        <!--
+     https://mvnrepository.com/artifact/eu.bitwalker/UserAgentUtils
+     用于获取浏览器信息
+      -->
+        <dependency>
+            <groupId>eu.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
+            <version>${project.UserAgentUtils.version}</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_win32_x86_64 -->
         <dependency>
             <groupId>com.eclipsesource.j2v8</groupId>
             <artifactId>j2v8_win32_x86_64</artifactId>
-            <version>4.6.0</version>
+            <version>${project.j2v8.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_linux_x86_64 -->
         <dependency>
             <groupId>com.eclipsesource.j2v8</groupId>
             <artifactId>j2v8_linux_x86_64</artifactId>
-            <version>4.6.0</version>
+            <version>${project.j2v8.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.eclipsesource.j2v8/j2v8_win32_x86_64 -->
         <dependency>
             <groupId>com.eclipsesource.j2v8</groupId>
             <artifactId>j2v8_macosx_x86_64</artifactId>
-            <version>4.6.0</version>
+            <version>${project.j2v8.version}</version>
             <optional>true</optional>
         </dependency>
 
@@ -49,8 +64,8 @@
         <dependency>
             <groupId>io.bit3</groupId>
             <artifactId>jsass</artifactId>
-<!--            <version>5.9.2</version>-->
-            <version>5.10.3</version>
+            <!--            <version>5.9.2</version>-->
+            <version>${project.jsass.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/de.inetsoftware/jlessc -->
@@ -58,8 +73,8 @@
         <dependency>
             <groupId>de.inetsoftware</groupId>
             <artifactId>jlessc</artifactId>
-<!--            <version>1.8</version>-->
-            <version>1.9</version>
+            <!--            <version>1.8</version>-->
+            <version>${project.jlessc.version}</version>
         </dependency>
 
         <dependency>

@@ -63,16 +63,20 @@
 			return this;
 		} else {
 			let as = [];
-			let len = this.length - str.length;
-			for (let i = 0; i < this.length;) {
-				if (i < len && this.substring(i, i + str.length) == str) {
+
+			let index = 0;
+			while (true) {
+				let index2 = this.indexOf(str, index);
+				if (index2 != -1) {
+					as.push(this.substring(index, index2));
 					as.push(replace);
-					i += str.length;
+					index = index2 + str.length;
 				} else {
-					as.push(this.charAt(i));
-					i++;
+					as.push(this.substring(index));
+					break;
 				}
 			}
+
 			return as.join("");
 		}
 	};
@@ -166,74 +170,15 @@
 		return result;
 	}
 
-	//替换[^.]import(...)为replaceStr(...)
-	function replaceAsyncImport(script, replaceStr) {
-		let fromIndex = 0;
-		let importLength = "import".length;
-
-		while (fromIndex < script.length) {
-			let indexStart = script.indexOf("import", fromIndex);
-			if (indexStart == -1) {
-				break;
-			}
-
-			if (indexStart > 0 && script.charAt(indexStart - 1) == ".") {
-				fromIndex = indexStart + importLength;
-				continue;
-			}
-
-			let index1 = script.indexOf("(", indexStart + importLength); //(index
-			if (index1 == -1 || !/^[\s]*$/.test(script.substring(indexStart + importLength, index1))) {
-				fromIndex = indexStart + importLength;
-				continue
-			} else {
-				//找到了(
-				let bracketCount = 1;
-				let index2 = index1 + 1;
-				while (bracketCount > 0 && index2 < script.length) {
-					if (script.charAt(index2) == "(") {
-						bracketCount++;
-					} else if (script.charAt(index2) == ")") {
-						bracketCount--;
-					}
-					index2++;
-				}
-				if (bracketCount == 0) {
-					script = script.substring(0, indexStart) + replaceStr + script.substring(indexStart + importLength);
-					fromIndex = index2 + (replaceStr.length - importLength);
-				} else {
-					break;
-				}
-			}
-
-		}
-		return script;
-	}
-
-	const IMPORT_PREFIX = "__rplc_rqr__";
-	const IMPORT_REQUIRE_REG = new RegExp(`require\\("${IMPORT_PREFIX}([^"]*)"\\)`, "g");
-
-	function __replaceRequire(code) {
-		if (code) {
-			code = code.replace(IMPORT_REQUIRE_REG, 'require.get("$1")');
-		}
-		return code;
-	}
-
-	const ReplaceRequireVisitor = {
-		ImportDeclaration(path) {
-			path.node.source.value = IMPORT_PREFIX + path.node.source.value;
-		}
-	};
-
-	function transformScript(scriptContent, otherOption) {
+	function transformScript(scriptContent, otherOption, requireModules) {
 		otherOption = extend({
 			strictMode: true,
 			isInline: false,
-			replaceType: "require",
 			hasSourceMap: false,
 			currentUrl: undefined,
-			inlineSourceMap: false
+			inlineSourceMap: false,
+			browserType: null,
+			browserMajorVersion: null,
 		}, otherOption);
 
 		let option = {
@@ -245,36 +190,54 @@
 				strictMode: otherOption.strictMode,
 			},
 			sourceType: "module",
-			sourceMaps: otherOption.inlineSourceMap ? "inline" : (!otherOption.isInline && otherOption.hasSourceMap ? true :
+			sourceMaps: otherOption.inlineSourceMap ? "inline" : (!otherOption.isInline && otherOption
+				.hasSourceMap ? true :
 				false),
 			filename: otherOption.currentUrl,
-			//			presets: [['es2017',{
-			//				"targets": {
-			//                    "browsers": ["ie>=9"]
-			//                }
-			//			}]],
 			presets: [
 				"es2015",
 				"es2016",
 				"es2017"
 			],
 			plugins: [
-				//['syntax-dynamic-import'],//保留import("...")，会被替换成__ImporT__("...")
+				["transform-modules-commonjs"], //需要转换import "...";
 				{
-					visitor: otherOption.replaceType == "require.get" ? ReplaceRequireVisitor : undefined
+					visitor: {
+						ImportDeclaration: function(path) {
+							if (requireModules) {
+								let id = "_import_" + $jsBridge$.shortId() + "_mod";
+								let varname = path.scope.generateUid("mod");
+								requireModules.push({
+									name: path.node.source.value,
+									id,
+									varname
+								});
+								path.node.source.value = id;
+							}
+						},
+						CallExpression: function(path) {
+							if (path.node.callee.type == "Import") { //将替换成__ImporT__("...")
+								let source = path.getSource();
+								source = "__ImporT__" + source.substring(6);
+								path.replaceWithSourceString(source);
+							}
+						}
+					}
 				},
 				//['transform-async-to-generator'], //es2017
-				['proposal-object-rest-spread'],//es2018
-				['proposal-async-generator-functions'],//es2018
-				["transform-dotall-regex"],//es2018
-                ["transform-named-capturing-groups-regex"],//es2018
-                ["proposal-optional-catch-binding"],//es2018
-                ["proposal-unicode-property-regex", { "useUnicodeFlag": false }],//es2018
-                ['transform-react-jsx', {
-                    pragma: "__serverBridge__.renderJsx(this)",
-                    throwIfNamespace: false
-                }],
-                ["transform-regenerator"],
+				['proposal-object-rest-spread'], //es2018
+				['proposal-async-generator-functions'], //es2018
+				["transform-dotall-regex"], //es2018
+				["transform-named-capturing-groups-regex"], //es2018
+				["proposal-optional-catch-binding"], //es2018
+				["proposal-unicode-property-regex", {
+					"useUnicodeFlag": false
+				}], //es2018
+				['transform-react-jsx', {
+					pragma: "__serverBridge__.renderJsx(this)",
+					throwIfNamespace: false
+				}],
+				["transform-regenerator"],
 				["proposal-decorators", {
 					"legacy": true
 				}],
@@ -282,29 +245,43 @@
 					"loose": true
 				}],
 				["proposal-private-methods", {
-                    "loose": true
-                }],
+					"loose": true
+				}],
 				["proposal-private-property-in-object", {
-                    "loose": true
-                }],
+					"loose": true
+				}],
 				["proposal-nullish-coalescing-operator"],
 				["proposal-optional-chaining"],
 				["proposal-numeric-separator"],
 				["proposal-throw-expressions"],
 				["proposal-logical-assignment-operators"],
-				["proposal-do-expressions"]
+				["proposal-do-expressions"],
 			]
 		}; //!!!!!!!!!!!!!!先顺序执行插件，接着逆序执行预设
+
+		if (otherOption.browserType && otherOption.browserType != "no" &&
+			otherOption.browserMajorVersion && otherOption.browserMajorVersion != "no") {
+			option.presets = [
+				['env', {
+					"targets": {
+						"browsers": [otherOption.browserType.toLowerCase() + " " + otherOption
+							.browserMajorVersion.toLowerCase()
+						]
+					}
+				}]
+			];
+		}
 
 		let rs = Babel.transform(scriptContent, option);
 		return rs;
 	}
 
-	api.parseEs6Script = function(name, scriptContent) {
-		let rs = transformScript(scriptContent, {
+	api.parseEs6Script = function(name, scriptContent, otherOption) {
+		otherOption = extend({
 			hasSourceMap: false,
 			currentUrl: name
-		});
+		}, otherOption)
+		let rs = transformScript(scriptContent, otherOption);
 		return rs.code;
 	}
 
@@ -320,13 +297,13 @@
 	 * @param {Object} hasSourceMap
 	 * @param {Object} otherOption
 	 */
-	api.parseEs6 = function(currentUrl, filepath, scriptContent, customerScriptPart, hasSourceMap, otherOption) {
+	api.parseEs6 = function(currentUrl, filepath, scriptContent, customerScriptPart, hasSourceMap,
+		otherOption) {
 		otherOption = extend({
 			strictMode: true,
 			isInline: false,
 			doStaticInclude: true,
 			doStaticVueTemplate: true,
-			replaceType: "require"
 		}, otherOption);
 
 		let __unstrictFunMap = {};
@@ -334,40 +311,57 @@
 			scriptContent = $jsBridge$.staticInclude(filepath, scriptContent);
 		}
 		if (otherOption.doStaticVueTemplate) {
-			scriptContent = $jsBridge$.staticVueTemplate(currentUrl, filepath, scriptContent, hasSourceMap, "__unstrictFunMap",
+			scriptContent = $jsBridge$.staticVueTemplate(currentUrl, filepath, scriptContent, hasSourceMap,
+				"__unstrictFunMap",
 				__unstrictFunMap);
 		}
 
 		customerScriptPart = customerScriptPart || "";
+		let requireModules = [];
 
 		let rs = transformScript(scriptContent, extend({
 			hasSourceMap,
 			currentUrl
-		}, otherOption));
-		let parsedCode = otherOption.replaceType == "require.get" ? __replaceRequire(rs.code) : rs.code;
+		}, otherOption), requireModules);
+
+		let parsedCode = rs.code;
+		let innerDeps = [];
+
+		requireModules.forEach((item) => {
+			let name = item.name;
+			let id = item.id;
+			let varname = item.varname;
+
+			innerDeps.push(`"${name}"`);
+			parsedCode = parsedCode.replaceAll(`require("${id}")`, `require("${name}")`);
+			parsedCode = parsedCode.replaceAll(id, varname);
+		});
+
 		let sourceMap = rs.map ? JSON.stringify(rs.map) : null;
-		parsedCode = replaceAsyncImport(parsedCode, "__ImporT__");
+
 		if (otherOption.isInline) {
 			return {
 				code: parsedCode,
 				sourceMap
 			};
 		}
-		
+
 		let currentPath;
-		if(currentUrl){
-			let index=currentUrl.indexOf("://");
-			if(index>0){
-				index=currentUrl.indexOf("/",index+3);
-				if(index>0){
-					currentPath=currentUrl.substring(index);
+		if (currentUrl) {
+			let index = currentUrl.indexOf("://");
+			if (index > 0) {
+				index = currentUrl.indexOf("/", index + 3);
+				if (index > 0) {
+					currentPath = currentUrl.substring(index);
 				}
 			}
 		}
 
 		let scriptPrefix =
 			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
-			xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge'].concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}]),function(exports,__serverBridge__){
+			xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge']
+				.concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}])
+				.concat([${innerDeps.join(',')}]),function(exports,__serverBridge__){
 				var thiz=this;
 				var module={};
 				var __real_require=__serverBridge__.getRequire(thiz);
@@ -500,11 +494,13 @@
 				scriptContent += isR ? "\r\n" : "\n";
 			}
 
-			scriptContent += appendPrefixComment(content.substring(scriptResult.cend), markedComments, charCount(scriptContent,
-				'\n'));
+			scriptContent += appendPrefixComment(content.substring(scriptResult.cend), markedComments,
+				charCount(scriptContent,
+					'\n'));
 			scriptLang = scriptResult.lang;
 
-			content = content.substring(0, scriptResult.index) + content.substring(scriptResult.index + scriptResult.length);
+			content = content.substring(0, scriptResult.index) + content.substring(scriptResult.index +
+				scriptResult.length);
 		} else {
 			scriptLang = "default";
 			scriptContent = appendPrefixComment(content, markedComments);
@@ -533,7 +529,8 @@
 				break;
 			} else {
 				let finalCssContent;
-				content = content.substring(0, styleResult.index) + content.substring(styleResult.index + styleResult.length);
+				content = content.substring(0, styleResult.index) + content.substring(styleResult.index +
+					styleResult.length);
 				let lang = styleResult.lang || "scss";
 				let scoped = styleResult.attrs.scoped === undefined ||
 					styleResult.attrs.scoped === null ||
@@ -575,10 +572,7 @@
 
 		//获取template
 		let template = templateResult ? templateResult.content : "";
-		//		if(content.startsWith("<template>") && content.endsWith("</template>")) {
-		//			//模板内容
-		//			template = (content.substring(0, content.length - "</template>".length)).substring("<template>".length);
-		//		}
+		
 		let encodeBase64 = function(str) {
 			if (str) {
 				return new Base64().encode(str);
@@ -614,7 +608,9 @@
 			}
 
 			let names = path.split("/");
-			while(names.length>dirCount){names.shift();}
+			while (names.length > dirCount) {
+				names.shift();
+			}
 			filename = "__" + names.join("$").replace(/['\"\.:\*\s]/g, "_");
 		}
 
@@ -640,26 +636,31 @@
 							let regResult = tagExec(tagName, tag + "</" + tagName + ">");
 							if (regResult && regResult.attrs["class"]) {
 								let classObj = regResult.attrs["class"];
-								let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj.content + classObj.s2;
+								let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj
+									.content + classObj.s2;
 								template = template.substring(0, index) +
 									tag.substring(0, classObj.index) +
 									classStr +
 									tag.substring(classObj.index + classObj.fullContent.length) +
 									template.substring(index2 + 1);
 							} else {
-								template = template.substring(0, index2) + " class='" + scopedClass + "' " + template.substring(index2);
+								template = template.substring(0, index2) + " class='" + scopedClass +
+									"' " +
+									template.substring(index2);
 							}
 						}
 					}
 				}
 
-				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap, otherOption);
+				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap,
+					otherOption);
 				if (compiledTemplate.render) {
 					strs.push("exports.default.render=", compiledTemplate.render, ";\n");
 				}
 
 				if (compiledTemplate.staticRenderFns) {
-					strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns, ";\n");
+					strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns,
+						";\n");
 				}
 				return strs.join("");
 			})() +
@@ -722,7 +723,8 @@
 			doStaticVueTemplate: false
 		});
 
-		let result = this.parseEs6(url, filepath, scriptContent, customerScriptPart, hasSourceMap, otherOption);
+		let result = this.parseEs6(url, filepath, scriptContent, customerScriptPart, hasSourceMap,
+			otherOption);
 		result.markedComments = JSON.stringify(markedComments);
 
 		return result
