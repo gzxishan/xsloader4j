@@ -63,6 +63,129 @@
 				],
 			}).code;
 			console.log(output);
+			console.warn("----------------------------------------------------------------------");
+		</script>
+
+		<script id="testScript" type="text/template">
+			let module;
+			let a={};
+			function f(){}
+			exp=c;
+			let define;
+			
+			export default {
+			data() {
+				return {
+					exp
+				};
+			},
+			mounted() {
+
+			},
+			beforeCreate() {
+
+			},
+			created() {
+				let a={...b};
+			},
+			
+			methods: {
+				async importAndTpl() {
+					let url=`text!./code/${this.label}.js?__source=true`;
+					import(url);
+					importx(`text!./code/${this.label}.js?__source=true`);
+					import(`text!./code/${this.label}.js?__source=true`);
+					let codeText = this.code;
+					if (!codeText) {
+						codeText = await import(`text!./code/${this.label}.js?__source=true`);
+						this.outputText = await import(`text!./code/${this.label}.js`);
+					}
+					this.codeText = codeText;
+					let isSupport = this.ok;
+					if (isSupport === undefined) {
+						let obj = await require([`./code/${this.label}.js`]);
+						isSupport = obj['default'];
+					}
+					this.isSupport = true;
+				},
+				async getDevOpPage() {
+					let {
+						html,
+						instances,
+					} = await sdk.Request({
+						url: lconfig.fromPath("AppProject/getDevOpPage"),
+						method: "post",
+						loading: true,
+						params: {
+							id: this.devOpItem.id
+						}
+					});
+				},
+			},
+			render(){
+				return (<div style={{margin:"2em auto"}}><p>这是一个jsx语法的组件</p></div>)
+			},
+			components: {
+
+			}
+		}
+		</script>
+
+
+		<script type="text/javascript">
+			var input = document.getElementById("testScript").innerHTML;
+			var count = 0;
+			var hasSet = false;
+			var output = Babel.transform(input, {
+				// targets: {
+				// 	browsers: ["chrome 85"]
+				// },
+				presets: [
+					// "es2015",
+					// "es2016",
+					// "es2017"
+					['env', {
+						"targets": {
+							"browsers": ["ie 11"]
+						}
+					}]
+				],
+				plugins: [
+					function({
+						types: t
+					}) {
+						return {
+							visitor: {
+								ImportDeclaration: function(path) { //需要转换import "...";
+									let id = "_import_" + (count++) + "_mod";
+									path.node.source.value = id;
+								},
+								CallExpression: function(path) {
+									if (path.node.callee.type == "Import") { //将import(...)替换成__ImporT__("...")
+										let source = path.getSource();
+										source = "__ImporT__" + source.substring(6);
+										let newExp = t.callExpression(t.identifier("__ImporT__"),path.node.arguments);
+										path.replaceWith(newExp);
+										//path.replaceWithSourceString(source);
+										// console.log(path.source)
+										// path.scope.rename("__ImporT__");
+									}
+								}
+							}
+						}
+					},
+					//["proposal-dynamic-import"],
+					["transform-template-literals",{
+						loose:false,
+					}],
+					['transform-react-jsx', {
+						pragma: "__serverBridge__.renderJsx(this)",
+						throwIfNamespace: true
+					}],
+				]
+			}).code;
+			console.log(output);
+			console.warn("----------------------------------------------------------------------")
 		</script>
 		<!-- Your custom script here -->
 		<!-- <script type="text/babel" data-type="module" data-presets="es2015">

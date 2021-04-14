@@ -19,11 +19,25 @@ import java.util.function.Consumer;
  */
 public class JsScriptUtil {
 
+    static class ScriptItem {
+        String name;
+        String content;
+
+        public ScriptItem(String resourcePath) {
+            this(resourcePath, ResourceUtil.getAbsoluteResourceString(resourcePath, "utf-8"));
+        }
+
+        public ScriptItem(String name, String content) {
+            this.name = name;
+            this.content = content;
+        }
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(JsScriptUtil.class);
 
     private static String v8flags;
-    private static String[] scripts;
-    private static String[] scripts2;
+    private static ScriptItem[] scripts;
+    private static ScriptItem[] scripts2;
     private static J2BaseInterface cachedInterface = null;
     private static List<Consumer<Void>> readyList = new ArrayList<>(1);
 
@@ -88,18 +102,18 @@ public class JsScriptUtil {
                         J2BaseInterface j2BaseInterface = new J2BaseInterface(v8, true);
                         v8.add("$jsBridge$", j2BaseInterface.getV8Object());
 
+                        for (ScriptItem script : scripts) {
+                            v8.executeVoidScript(script.content, script.name, 0);
+                        }
+
                         J2Document j2Document = new J2Document(j2BaseInterface.getRoot());
                         v8.add("document", j2Document.getV8Object());
-
-                        for (String script : scripts) {
-                            v8.executeVoidScript(script);
-                        }
 
                         J2Window window = new J2Window(j2BaseInterface.getRoot());
                         v8.add("window", window.getV8Object());
 
-                        for (String script : scripts2) {
-                            v8.executeVoidScript(script);
+                        for (ScriptItem script : scripts2) {
+                            v8.executeVoidScript(script.content, script.name, 0);
                         }
                         cachedInterface = j2BaseInterface;
                         v8.getLocker().release();
@@ -115,26 +129,17 @@ public class JsScriptUtil {
 
     static void init(String v8flags) {
         JsScriptUtil.v8flags = v8flags;
-
-        String regexpStickyPolyfillScript =
-                ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-polyfills/regexp-sticky.js", "utf-8");
-        String babelScript =
-                ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/babel-7.13.15/babel.min.js", "utf-8");
-        String vueScript = ResourceUtil
-                .getAbsoluteResourceString("/xsloader-js/lib/vue-2.6.11-server-compiler.js", "utf-8");
-        JsScriptUtil.scripts = new String[]{
-                regexpStickyPolyfillScript,
-                babelScript,
-                vueScript
+        JsScriptUtil.scripts = new ScriptItem[]{
+                new ScriptItem("/xsloader-js/lib/babel-polyfills/init1.js"),
+                new ScriptItem("/xsloader-js/lib/babel-polyfills/polyfills.js"),
+                new ScriptItem("/xsloader-js/lib/babel-polyfills/regexp-sticky.js"),
+                new ScriptItem("/xsloader-js/lib/babel-7.13.15/babel.js"),
+                new ScriptItem("/xsloader-js/lib/vue-2.6.11-server-compiler.js")
         };
 
-        String mineScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/lib/mine.js", "utf-8");
-        String polyfillScript = ResourceUtil
-                .getAbsoluteResourceString("/xsloader-js/lib/babel-polyfills/polyfills.js", "utf-8");
-
-        JsScriptUtil.scripts2 = new String[]{
-                mineScript,
-                polyfillScript
+        JsScriptUtil.scripts2 = new ScriptItem[]{
+                new ScriptItem("/xsloader-js/lib/babel-polyfills/init2.js"),
+                new ScriptItem("/xsloader-js/lib/mine.js"),
         };
 
         try {

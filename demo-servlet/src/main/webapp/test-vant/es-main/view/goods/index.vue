@@ -103,6 +103,9 @@ export default {
 	onClickUserService(){
       this.$router.push('user');
 	},
+	async asyncFun(){
+		let {x1,x2}= await Request({});
+	},
     sorry() {
       Toast('暂无后续逻辑~');
     }

@@ -725,34 +725,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         return agent;
     }
 
-    private static final boolean containsAgentStr(HttpServletRequest request, String str) {
-        String agent = getUserAgent(request);
-        if (OftenTool.isEmpty(agent)) {
-            return false;
-        }
-        agent = agent.toLowerCase();
-        str = str.toLowerCase();
-        return agent.contains(str);
-    }
-
-    /**
-     * 判断是否是QQ浏览器。
-     *
-     * @param request
-     * @return
-     */
-    public static boolean isQQBrowser(HttpServletRequest request) {
-        return containsAgentStr(request, "QQBrowser");
-    }
-
-    public static boolean isUCBrowser(HttpServletRequest request) {
-        return containsAgentStr(request, "UCBrowser");
-    }
-
-    public static boolean isBaidu(HttpServletRequest request) {
-        return containsAgentStr(request, "baidu");
-    }
-
     /**
      * @param path 若以.map结尾则表示获取sourceMap内容
      * @return

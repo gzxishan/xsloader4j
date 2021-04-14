@@ -47,6 +47,7 @@
             "modulePrefix":"$[libReplace]",
              "urlArgs":{
                 "*[${contextPath}/":"v=20200130-02",
+                //AUTO_VERSION_TAG
                 "*[libxs/":"v=20200129-3",
                 "*[lib/":"v=190109-26",
                 "*[libui/":"v=190109-26"
@@ -63,6 +64,7 @@
             "modulePrefix":"$[libReplace]",
              "urlArgs":{
                 "*[${contextPath}/":"v=20200130-02",
+                //AUTO_VERSION_TAG
                 "*[libxs/":"v=20200129-3",
                 "*[lib/":"v=190109-26",
                 "*[libui/":"v=190109-26"
@@ -79,6 +81,7 @@
             "modulePrefix":"$[libReplace]",
              "urlArgs":{
                 "*[${contextPath}/":"v=20200130-02"
+                //AUTO_VERSION_TAG,
             },
             "paths":{
 				"vue":"static/vue/vue.min.js"
@@ -99,6 +102,7 @@
              },
               "urlArgs":{
                  "*[${contextPath}/":"v=20200130-02"
+                 //AUTO_VERSION_TAG,
              },
              "paths":{
                 "vue":"static/vue/vue.min.js",
@@ -119,6 +123,7 @@
 	           },
 	            "urlArgs":{
 	               "*[${contextPath}/":"v=20200130-02"
+	               //AUTO_VERSION_TAG,
 	           },
 	           "paths":{
 	              "vue":"static/vue/vue.min.js",

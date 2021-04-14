@@ -210,8 +210,7 @@ public class Es6Wrapper {
                     .push(vueContent)
                     .push(hasSourceMap)
                     .push(option);
-            V8Object
-                    rs = xsloaderServer.executeObjectFunction("transformVue", parameters);
+            V8Object rs = xsloaderServer.executeObjectFunction("transformVue", parameters);
             String parsedCode = rs.getString("code");
             String sourceMap = rs.getString("sourceMap");
             JSONArray markedComments = JSON.parseArray(rs.getString("markedComments"));

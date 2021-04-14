@@ -14,34 +14,28 @@ import java.util.function.Consumer;
 /**
  * @author Created by https://github.com/CLovinr on 2020-04-27.
  */
-public class ScriptEnv
-{
+public class ScriptEnv {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptEnv.class);
 
     private J2Object root;
     private String flags;
     private String varName;
 
-    public ScriptEnv(String varName)
-    {
+    public ScriptEnv(String varName) {
         this(varName, null);
     }
 
-    public ScriptEnv(String varName, String flags)
-    {
+    public ScriptEnv(String varName, String flags) {
         this.varName = varName;
         this.flags = flags;
     }
 
-    public String getVarName()
-    {
+    public String getVarName() {
         return varName;
     }
 
-    public void onReady(Consumer<Void> consumer)
-    {
-        if (consumer == null)
-        {
+    public void onReady(Consumer<Void> consumer) {
+        if (consumer == null) {
             throw new NullPointerException();
         }
         JsScriptUtil.onReady((n) -> {
@@ -56,140 +50,108 @@ public class ScriptEnv
      *
      * @param object
      */
-    public void addInterface(Object object)
-    {
+    public void addInterface(Object object) {
         root.autoRegisterMethod(object);
     }
 
-    public void voidScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public void voidScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        root.getV8().executeVoidScript(script);
+        root.getV8().executeVoidScript(script, scriptName, 0);
     }
 
-    public void voidFun(String funName)
-    {
+    public void voidFun(String funName) {
         this.voidFun(funName, null);
     }
 
 
-    public void voidFun(String funName, Object[] args)
-    {
-        try (JsParameters parameters = toParameters(args))
-        {
+    public void voidFun(String funName, Object[] args) {
+        try (JsParameters parameters = toParameters(args)) {
             root.getV8().executeVoidFunction(funName, parameters.getParams());
         }
     }
 
 
-    public JSONObject jsonFun(String funName, Object[] args)
-    {
+    public JSONObject jsonFun(String funName, Object[] args) {
         V8Object v8Object = null;
-        try (JsParameters parameters = toParameters(args))
-        {
+        try (JsParameters parameters = toParameters(args)) {
             v8Object = root.getV8().executeObjectFunction(funName, parameters.getParams());
             return toJSON(v8Object);
-        } finally
-        {
-            if (v8Object != null)
-            {
+        } finally {
+            if (v8Object != null) {
                 v8Object.release();
             }
         }
     }
 
-    public JSONArray arrayFun(String funName, Object[] args)
-    {
+    public JSONArray arrayFun(String funName, Object[] args) {
         V8Array v8Array = null;
-        try (JsParameters parameters = toParameters(args))
-        {
+        try (JsParameters parameters = toParameters(args)) {
             v8Array = root.getV8().executeArrayFunction(funName, parameters.getParams());
             return toArray(v8Array);
-        } finally
-        {
-            if (v8Array != null)
-            {
+        } finally {
+            if (v8Array != null) {
                 v8Array.release();
             }
         }
     }
 
-    public String stringScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public String stringScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        return root.getV8().executeStringScript(script);
+        return root.getV8().executeStringScript(script, scriptName, 0);
     }
 
-    public boolean boolScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public boolean boolScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        return root.getV8().executeBooleanScript(script);
+        return root.getV8().executeBooleanScript(script, scriptName, 0);
     }
 
-    public int intScript(String name, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public int intScript(String name, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(name, script);
         }
-        return root.getV8().executeIntegerScript(script);
+        return root.getV8().executeIntegerScript(script, name, 0);
     }
 
-    public double doubleScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public double doubleScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        return root.getV8().executeDoubleScript(script);
+        return root.getV8().executeDoubleScript(script, scriptName, 0);
     }
 
 
-    public JSONObject jsonScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public JSONObject jsonScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        V8Object v8Object = root.getV8().executeObjectScript(script);
+        V8Object v8Object = root.getV8().executeObjectScript(script, scriptName, 0);
         JSONObject rs = null;
-        if (v8Object != null)
-        {
-            try
-            {
+        if (v8Object != null) {
+            try {
                 rs = toJSON(v8Object);
-            } finally
-            {
+            } finally {
                 v8Object.release();
             }
         }
         return rs;
     }
 
-    public JSONArray arrayScript(String scriptName, String script, boolean parseEs6)
-    {
-        if (parseEs6)
-        {
+    public JSONArray arrayScript(String scriptName, String script, boolean parseEs6) {
+        if (parseEs6) {
             script = Es6Wrapper.parseEs6Script(scriptName, script);
         }
-        V8Array v8Array = root.getV8().executeArrayScript(script);
+        V8Array v8Array = root.getV8().executeArrayScript(script, scriptName, 0);
         JSONArray rs = null;
-        if (v8Array != null)
-        {
-            try
-            {
+        if (v8Array != null) {
+            try {
                 rs = toArray(v8Array);
-            } finally
-            {
+            } finally {
                 v8Array.release();
             }
         }
@@ -197,58 +159,45 @@ public class ScriptEnv
         return rs;
     }
 
-    public void release()
-    {
+    public void release() {
         J2Object.release(root);
         J2Object.release(root.getV8());
     }
 
-    public void acquire()
-    {
+    public void acquire() {
         root.getV8().getLocker().acquire();
     }
 
-    public void unacquire()
-    {
+    public void unacquire() {
         root.getV8().getLocker().release();
     }
 
-    public static JSONObject toJSON(V8Object v8Object)
-    {
+    public static JSONObject toJSON(V8Object v8Object) {
         return J2Object.toJSON(v8Object);
     }
 
-    public static JSONArray toArray(V8Array v8Array)
-    {
+    public static JSONArray toArray(V8Array v8Array) {
         return J2Object.toArray(v8Array);
     }
 
-    public J2Object getDevV8Object()
-    {
+    public J2Object getDevV8Object() {
         return root;
     }
 
-    public JsParameters toParameters(Object[] args)
-    {
-        if (OftenTool.isEmptyOf(args))
-        {
+    public JsParameters toParameters(Object[] args) {
+        if (OftenTool.isEmptyOf(args)) {
             return null;
         }
 
         JsParameters jsParameters = new JsParameters(new V8Array(root.getV8()));
-        try
-        {
-            for (Object obj : args)
-            {
+        try {
+            for (Object obj : args) {
                 J2Object.add(jsParameters.getParams(), obj, jsParameters);
             }
-        } catch (Exception e)
-        {
-            try
-            {
+        } catch (Exception e) {
+            try {
                 jsParameters.release();
-            } catch (Exception e2)
-            {
+            } catch (Exception e2) {
                 LOGGER.warn(e2.getMessage(), e2);
             }
             throw e;
@@ -258,20 +207,15 @@ public class ScriptEnv
 
     }
 
-    private Object dealReturnAndArgs(Object result)
-    {
-        if (result instanceof Releasable)
-        {
+    private Object dealReturnAndArgs(Object result) {
+        if (result instanceof Releasable) {
             ((Releasable) result).release();
-            if (result instanceof V8Value && ((V8Value) result).isUndefined())
-            {
+            if (result instanceof V8Value && ((V8Value) result).isUndefined()) {
                 return null;
-            } else
-            {
+            } else {
                 throw new RuntimeException("illegal return type,not allowed Releasable result:" + result);
             }
-        } else
-        {
+        } else {
             return result;
         }
     }
@@ -283,10 +227,8 @@ public class ScriptEnv
      * @param args
      * @return
      */
-    public Object exeVarFun(String fun, Object... args)
-    {
-        try (JsParameters parameters = toParameters(args))
-        {
+    public Object exeVarFun(String fun, Object... args) {
+        try (JsParameters parameters = toParameters(args)) {
             Object result = root.getV8Object().executeJSFunction(fun, parameters.getParamArgs());
             return dealReturnAndArgs(result);
         }
@@ -299,10 +241,8 @@ public class ScriptEnv
      * @param args
      * @return
      */
-    public Object exeFun(String fun, Object... args)
-    {
-        try (JsParameters parameters = toParameters(args))
-        {
+    public Object exeFun(String fun, Object... args) {
+        try (JsParameters parameters = toParameters(args)) {
             Object result = root.getV8().executeJSFunction(fun, parameters.getParamArgs());
             return dealReturnAndArgs(result);
         }

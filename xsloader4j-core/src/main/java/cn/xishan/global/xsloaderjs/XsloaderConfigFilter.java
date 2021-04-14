@@ -22,8 +22,7 @@ import java.util.Map;
 /**
  * Created by chenyg on 2017-04-10.
  */
-public abstract class XsloaderConfigFilter implements Filter
-{
+public abstract class XsloaderConfigFilter implements Filter {
     protected byte[] conf;
     protected String etag;
     protected String encoding = "utf-8";
@@ -46,8 +45,7 @@ public abstract class XsloaderConfigFilter implements Filter
     private static boolean hasVersionChanged = false;
     static String versionAppendTag;
 
-    public XsloaderConfigFilter(boolean isRequired, IConfigFileCheck configFileCheck)
-    {
+    public XsloaderConfigFilter(boolean isRequired, IConfigFileCheck configFileCheck) {
         this.isRequired = isRequired;
 
         //默认比较文件修改时间
@@ -55,62 +53,49 @@ public abstract class XsloaderConfigFilter implements Filter
                 .lastModified() != lastModified : configFileCheck;
     }
 
-    public XsloaderConfigFilter(boolean isRequired)
-    {
+    public XsloaderConfigFilter(boolean isRequired) {
         this(isRequired, null);
     }
 
-    public XsloaderConfigFilter()
-    {
+    public XsloaderConfigFilter() {
         this(true);
     }
 
-    public static void setVersion(String requestPath, String version)
-    {
-        synchronized (PATH_TO_VERSION)
-        {
+    public static void setVersion(String requestPath, String version) {
+        synchronized (PATH_TO_VERSION) {
             PATH_TO_VERSION.put(requestPath, version);
             hasVersionChanged = true;
         }
     }
 
-    private void init(String resourcePath)
-    {
+    private void init(String resourcePath) {
         this.resourcePath = resourcePath;
         JSONArray dirs = getResourceDir();
-        if (dirs == null)
-        {
+        if (dirs == null) {
             dirs = new JSONArray();
         }
         String javaDir = getJavaResourceDir();
-        if (OftenTool.notEmpty(javaDir))
-        {
+        if (OftenTool.notEmpty(javaDir)) {
             dirs.add(0, javaDir);
         }
 
 
-        for (int i = 0; i < dirs.size(); i++)
-        {
+        for (int i = 0; i < dirs.size(); i++) {
             String file = dirs.getString(i);
-            if (OftenTool.isEmpty(file))
-            {
+            if (OftenTool.isEmpty(file)) {
                 continue;
             }
             File f = new File(file);
-            if (f.exists() && f.isDirectory())
-            {
+            if (f.exists() && f.isDirectory()) {
                 String dirStr = f.getAbsolutePath();
-                if (!dirStr.endsWith(File.separator))
-                {
+                if (!dirStr.endsWith(File.separator)) {
                     dirStr += File.separator;
                 }
                 resourcePath = resourcePath.replace('/', File.separatorChar);
                 resourceFile = new File(dirStr + resourcePath);
-                if (resourceFile.exists() && resourceFile.isFile())
-                {
+                if (resourceFile.exists() && resourceFile.isFile()) {
                     lastEditTimeOfResourceFile = resourceFile.lastModified();
-                } else
-                {
+                } else {
                     resourceFile = null;
                 }
                 break;
@@ -131,13 +116,11 @@ public abstract class XsloaderConfigFilter implements Filter
      *
      * @return
      */
-    public JSONArray getResourceDir()
-    {
+    public JSONArray getResourceDir() {
         return null;
     }
 
-    public String getJavaResourceDir()
-    {
+    public String getJavaResourceDir() {
         return null;
     }
 
@@ -151,130 +134,119 @@ public abstract class XsloaderConfigFilter implements Filter
      * @return true表示已经做出了响应，false表示不存在配置
      * @throws IOException
      */
-    protected boolean doResponse(HttpServletRequest request, HttpServletResponse resp) throws IOException
-    {
+    protected boolean doResponse(HttpServletRequest request, HttpServletResponse resp) throws IOException {
         OutputStream os = null;
-        try
-        {
+        try {
             if (resourceFile != null && (configFileCheck
-                    .needReload(resourceFile, lastEditTimeOfResourceFile) || hasVersionChanged))
-            {
+                    .needReload(resourceFile, lastEditTimeOfResourceFile) || hasVersionChanged)) {
                 loadConf();
                 lastEditTimeOfResourceFile = resourceFile.lastModified();
             }
 
-            if (resourceFile == null && this.conf == null)
-            {
+            if (resourceFile == null && this.conf == null) {
                 init(this.resourcePath);
-                if (resourceFile != null)
-                {
+                if (resourceFile != null) {
                     loadConf();
                     lastEditTimeOfResourceFile = resourceFile.lastModified();
                 }
             }
 
-            if (this.conf != null)
-            {
+            if (this.conf != null) {
                 resp.setContentType(ContentType.APP_JSON.getType());
                 resp.setCharacterEncoding(encoding);
-                if (HttpCacheUtil.isCacheIneffectiveWithEtag(etag, request, resp))
-                {
+                if (HttpCacheUtil.isCacheIneffectiveWithEtag(etag, request, resp)) {
                     HttpCacheUtil.setCacheWithEtag(confForceCacheSeconds.getValue(), etag, resp);
                     os = resp.getOutputStream();
                     os.write(conf);
                     os.flush();
-                } else
-                {
+                } else {
                     HttpCacheUtil.setCacheWithEtag(confForceCacheSeconds.getValue(), etag, resp);
                 }
                 return true;
-            } else
-            {
+            } else {
                 return false;
             }
 
-        } finally
-        {
+        } finally {
             OftenTool.close(os);
         }
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException
-    {
+    public void init(FilterConfig filterConfig) throws ServletException {
         this.filterConfig = filterConfig;
         beforeInit(filterConfig);
         init(getResourcePath());
         loadConf();
     }
 
-    private void loadConf()
-    {
-        try
-        {
+    private void loadConf() {
+        try {
             String conf = null;
-            if (resourceFile != null)
-            {
-                if (resourceFile.exists())
-                {
+            if (resourceFile != null) {
+                if (resourceFile.exists()) {
                     conf = FileTool.getString(resourceFile, 1024, encoding);
                 }
-            } else
-            {
+            } else {
                 URL url = ResourceUtil.getAbsoluteResource(resourcePath);
-                if (url != null)
-                {
+                if (url != null) {
                     conf = FileTool.getString(url.openStream(), 1024, encoding);
                 }
             }
 
-            if (conf != null)
-            {
-                synchronized (PATH_TO_VERSION)
-                {
+            if (conf != null) {
+                synchronized (PATH_TO_VERSION) {
                     hasVersionChanged = false;
                     String versionTag = versionAppendTag;
-                    if (OftenTool.notEmpty(versionTag))
-                    {
-                        for (Map.Entry<String, String> entry : PATH_TO_VERSION.entrySet())
-                        {
+                    if (OftenTool.notEmpty(versionTag)) {
+                        for (Map.Entry<String, String> entry : PATH_TO_VERSION.entrySet()) {
                             String requestPath = entry.getKey();
                             String version = entry.getValue();
                             String key = "\n                    /*AUTO_VERSION*/\"" + requestPath + "\"";
                             int fromIndex = 0;
-                            while (true)
-                            {
+                            while (true) {
                                 int index = conf.indexOf(versionTag, fromIndex);
-                                if (index == -1)
-                                {
+                                if (index == -1) {
                                     break;
-                                } else
-                                {
-                                    conf = conf.substring(0,
-                                            index + versionTag.length()) + key + ":\"" + version + "\"," +
-                                            conf.substring(index + versionTag.length());
+                                } else {
+                                    boolean preComma = false;
+                                    boolean nextComma = true;
+                                    int index1 = index + versionTag.length();
+                                    int index2 = conf.indexOf("}", index1);
+
+                                    if (",".equals(conf.substring(index1, index1 + 1))) {//标记后面有个逗号，表示需要添加前置逗号
+                                        preComma = true;
+                                        index1++;
+                                    }
+
+                                    if (OftenTool.isEmpty(conf.substring(index1, index2).trim())) {
+                                        //标记后面没有元素了，表示末尾无需逗号
+                                        nextComma = false;
+                                    }
+
+                                    conf = conf.substring(0, index) + (preComma ? "," : "") +
+                                            conf.substring(index, index1) + key +
+                                            ":\"" + version + "\"" + (nextComma ? "," : "") +
+                                            conf.substring(index1);
                                     fromIndex = index + versionTag.length();
                                 }
                             }
+
                         }
                     }
                 }
 
                 this.conf = getConf(filterConfig, conf).getBytes(encoding);
                 this.etag = HashUtil.md5(this.conf);
-            } else
-            {
-                if (isRequired)
-                {
+            } else {
+                if (isRequired) {
                     throw new RuntimeException("expected xsloader config file:resource path=" + resourcePath);
-                } else
-                {
+                } else {
                     this.conf = null;
                     this.etag = null;
                 }
             }
-        } catch (IOException e)
-        {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -282,24 +254,19 @@ public abstract class XsloaderConfigFilter implements Filter
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-            FilterChain filterChain) throws IOException, ServletException
-    {
+            FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        if (scConfName == null || request.getRequestURI().endsWith(scConfName))
-        {
-            if (!doResponse(request, (HttpServletResponse) servletResponse))
-            {
+        if (scConfName == null || request.getRequestURI().endsWith(scConfName)) {
+            if (!doResponse(request, (HttpServletResponse) servletResponse)) {
                 filterChain.doFilter(servletRequest, servletResponse);
             }
-        } else
-        {
+        } else {
             filterChain.doFilter(servletRequest, servletResponse);
         }
     }
 
     @Override
-    public void destroy()
-    {
+    public void destroy() {
 
     }
 }

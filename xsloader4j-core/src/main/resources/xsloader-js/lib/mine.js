@@ -1,41 +1,8 @@
 (function(root) {
-
-	/////////////////////////////
-	///浏览器对象模拟:支持Vue.compile
-	root.__initElement = function(element) {
-		Object.defineProperty(element, "textContent", {
-			get() {
-				return this.$textContent();
-			}
-		});
-
-		Object.defineProperty(element, "innerHTML", {
-			get() {
-				return this.$getInnerHTML();
-			},
-			set(value) {
-				return this.$setInnerHTML(value);
-			}
-		});
-	};
-	root.location = {
-		port: 0
-	};
-	root.window.document = root.document;
-	root.window.location = root.location;
 	root.CustomerFunction = function(scriptStr) {
 		transformScript("function checkVueExpressionFun(){\n" + scriptStr + "\n}");
 	}
 
-	root.console = {
-		assert(condition, str) {
-			if (!condition) {
-				$jsBridge$.warn(str);
-			}
-		}
-	};
-
-	/////////////////////////////////
 	const POLYFILL_PATH = $jsBridge$.getPolyfillPath();
 
 	let api = {};
@@ -170,6 +137,30 @@
 		return result;
 	}
 
+	const KEEP_VAR_NAMES = [
+		"origin__beforeCreate",
+		"origin__created",
+		"origin__mounted",
+		"origin__destroyed",
+		"__serverBridge__",
+		"exports",
+		"thiz",
+		"module",
+		"__real_require",
+		"require",
+		"define",
+		"xsloader",
+		"vtemplate",
+		"invoker",
+		"__styleBuilder",
+		"__decodeBase64",
+		"__compileVue",
+		"__defineEsModuleProp",
+		"__defineEsModuleProp",
+		"__ImporT__"
+	];
+
+
 	function transformScript(scriptContent, otherOption, requireModules) {
 		otherOption = extend({
 			strictMode: true,
@@ -201,61 +192,36 @@
 			],
 			plugins: [
 				//["transform-modules-commonjs"], //需要转换import "...";
-				{
-					visitor: {
-						ImportDeclaration: function(path) {//需要转换import "...";
-							if (requireModules) {
-								let id = "_import_" + $jsBridge$.shortId() + "_mod";
-								let varname = path.scope.generateUid("mod");
-								requireModules.push({
-									name: path.node.source.value,
-									id,
-									varname
-								});
-								path.node.source.value = id;
-							}
-						},
-						CallExpression: function(path) {
-							if (path.node.callee.type == "Import") { //将import(...)替换成__ImporT__("...")
-								let source = path.getSource();
-								source = "__ImporT__" + source.substring(6);
-								path.replaceWithSourceString(source);
+				function(utils) {
+					const t = utils.types;
+					return {
+						visitor: {
+							ImportDeclaration: function(path) { //需要转换import "...";
+								if (requireModules) {
+									let id = "_import_" + $jsBridge$.shortId() + "_mod";
+									let varname = path.scope.generateUid("mod");
+									requireModules.push({
+										name: path.node.source.value,
+										id,
+										varname
+									});
+									path.node.source.value = id;
+								}
+							},
+							CallExpression: function(path) {
+								if (path.node.callee.type == "Import") {
+									//将import(...)替换成__ImporT__("...")
+									let newExp = t.callExpression(t.identifier("__ImporT__"), path.node
+										.arguments);
+									path.replaceWith(newExp);
+									// let source = path.getSource();
+									// source = "__ImporT__" + source.substring(6);
+									// path.replaceWithSourceString(source);
+								}
 							}
 						}
 					}
 				},
-				//['transform-async-to-generator'], //es2017
-				['proposal-object-rest-spread'], //es2018
-				['proposal-async-generator-functions'], //es2018
-				["transform-dotall-regex"], //es2018
-				["transform-named-capturing-groups-regex"], //es2018
-				["proposal-optional-catch-binding"], //es2018
-				["proposal-unicode-property-regex", {
-					"useUnicodeFlag": false
-				}], //es2018
-				['transform-react-jsx', {
-					pragma: "__serverBridge__.renderJsx(this)",
-					throwIfNamespace: false
-				}],
-				["transform-regenerator"],
-				["proposal-decorators", {
-					"legacy": true
-				}],
-				["proposal-class-properties", {
-					"loose": true
-				}],
-				["proposal-private-methods", {
-					"loose": true
-				}],
-				["proposal-private-property-in-object", {
-					"loose": true
-				}],
-				["proposal-nullish-coalescing-operator"],
-				["proposal-optional-chaining"],
-				["proposal-numeric-separator"],
-				["proposal-throw-expressions"],
-				["proposal-logical-assignment-operators"],
-				["proposal-do-expressions"],
 			]
 		}; //!!!!!!!!!!!!!!先顺序执行插件，接着逆序执行预设
 
@@ -270,7 +236,47 @@
 					}
 				}]
 			];
+			
 		}
+		
+		// if (otherOption.browserType == "ie") {
+		// 	option.plugins.push(
+		// 		['transform-async-to-generator'], //es2017
+		// 		['proposal-object-rest-spread'], //es2018
+		// 		["transform-destructuring"], //解构
+		// 		['proposal-async-generator-functions'], //es2018
+		// 		["transform-dotall-regex"], //es2018
+		// 		["transform-named-capturing-groups-regex"], //es2018
+		// 		["proposal-optional-catch-binding"], //es2018
+		// 		["proposal-unicode-property-regex", {
+		// 			"useUnicodeFlag": false
+		// 		}] //es2018
+		// 	);
+		// }
+
+		option.plugins.push(['transform-react-jsx', {
+				pragma: "__serverBridge__.renderJsx(this)",
+				throwIfNamespace: true
+			}],
+			//["transform-regenerator"],
+			["proposal-decorators", {
+				"legacy": true
+			}],
+			["proposal-class-properties", {
+				"loose": true
+			}],
+			["proposal-private-methods", {
+				"loose": true
+			}],
+			["proposal-private-property-in-object", {
+				"loose": true
+			}],
+			["proposal-nullish-coalescing-operator"],
+			["proposal-optional-chaining"],
+			["proposal-numeric-separator"],
+			["proposal-throw-expressions"],
+			["proposal-logical-assignment-operators"],
+			["proposal-do-expressions"]);
 
 		let rs = Babel.transform(scriptContent, option);
 		return rs;
@@ -573,7 +579,7 @@
 
 		//获取template
 		let template = templateResult ? templateResult.content : "";
-		
+
 		let encodeBase64 = function(str) {
 			if (str) {
 				return new Base64().encode(str);

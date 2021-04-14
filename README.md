@@ -93,7 +93,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.htmv.enable：是否启用htmv，默认为false
 - xsloader.htmv.paths：配置默认的html模板（可选）
 - xsloader.conf.forceCacheSeconds：配置被浏览器强制缓存的时间
-- xsloader.es6.versionAppendTag：如果设置了该标记，当文件变化后，会在该标记后添加文件版本（支持的文件为所有需要转换的文件）
+- xsloader.es6.versionAppendTag：如果设置了该标记，当文件变化后，会在该标记后添加文件版本（支持的文件为所有需要转换的文件）；该标记右边加`,`表示需要前置逗号；
 
 ### 2、xsloader配置
 
