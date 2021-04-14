@@ -40,7 +40,7 @@ public class XsloaderFilter implements Filterer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
 
-    public static final String XSLOADER_VERSION = "1.1.43";
+    public static final String XSLOADER_VERSION = "1.1.44";
 
     private byte[] content;
     private byte[] map;

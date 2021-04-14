@@ -644,9 +644,10 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 
 ### v进行中
-- 升级`babel`为`v7.13.15`;
-- 增加配置`xsloader.es6.detectBrowser`，默认为false，用于开启浏览器版本判断，对js进行不同级别的转换；
-- 升级`polyfill`为`7.12.1`；
+1. 升级`babel`为`v7.13.15`;
+2. 增加配置`xsloader.es6.detectBrowser`，默认为false，用于开启浏览器版本判断，对js进行不同级别的转换；
+3. 升级`polyfill`为`7.12.1`；
+4. 加入`xsloader.__ignoreCurrentRequireDep`属性，配合`xsloader4j`，优化处理速度；
 
 ### v1.2.36 2021/03/26
 

@@ -28,10 +28,8 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,6 +132,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     private static final ThreadLocal<String> autoPathThreadLocal = new ThreadLocal<>();
     private static Map<String, String> listenDirToPath;
     private static WatchService watchService;
+    private IPathDealt.JsIgnoreCurrentRequireDepHandle handle;
 
 
     public static void addContentGetter(IFileContentGetter contentGetter) {
@@ -146,6 +145,12 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
 
     public JsFilter() {
+        handle = (path, script) -> {
+            if (OftenTool.notEmpty(script) && pathDealt.ignoreCurrentRequireDep(path, script)) {
+                script = "if(typeof xsloader!='undefined'){xsloader.__ignoreCurrentRequireDep=true;}" + script;
+            }
+            return script;
+        };
     }
 
     @Override
@@ -432,9 +437,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
      */
     public static CachedResource tryGetResource(ServletContext servletContext, IPathDealt pathDealt, String requestUrl,
             String path, String encoding, HttpServletRequest request) throws IOException {
-        CachedResource result = null;
+        CachedResource resultResource = null;
         path = pathDealt.dealPath(servletContext, path);
-        boolean isAuto = false;
+        boolean isAuto = false;//是否为自动判断路径
         String autoExtension = null;
         end:
         do {
@@ -483,6 +488,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                             item.setEs6(isEs6);
                             item.setLastModified(file.lastModified());
                         }
+
                         if (!item.isEs6()) {
                             break end;
                         }
@@ -567,15 +573,15 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                             }, encoding, browserInfo);
                 }
 
-                result = cachedResource;
+                resultResource = cachedResource;
             }
         } while (false);
 
-        if (result == null && isAuto && path != null) {
+        if (resultResource == null && isAuto) {
             autoPathThreadLocal.set(path);
             return null;
         } else {
-            return result;
+            return resultResource;
         }
 
     }
@@ -665,23 +671,50 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         CachedResource cachedResource = tryGetResource(request.getServletContext(), pathDealt,
                 request.getRequestURL().toString(), path, encoding, request);
 
+        boolean hasDealt = false;
         if (cachedResource == null) {
-            if (pathDealt.handleElse(request, response, pathDealt.dealPath(servletContext, path))) {
-                return true;
+            if (pathDealt.handleElse(request, response, pathDealt.dealPath(servletContext, path), handle)) {
+                hasDealt = true;
             } else if (usePolyfill && path.endsWith("/polyfill.js")) {
                 response.setContentType("application/javascript");
-                response.setCharacterEncoding("utf-8");
+                response.setCharacterEncoding(encoding);
                 response.setContentLength(polyfillData.length);
                 HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
                 FileTool.in2out(new ByteArrayInputStream(polyfillData), response.getOutputStream(), 2048);
-                return true;
+                hasDealt = true;
             } else {
-                return false;
+                String realPath = autoPathThreadLocal.get();
+                if (realPath == null) {
+                    realPath = path;
+                }
+
+                if (realPath.endsWith(".js")) {
+                    File file = pathDealt.getRealFile(servletContext, realPath);
+                    if (file != null && file.exists()) {
+                        String script = FileTool.getString(file, encoding);
+                        String newScript = handle.handle(path, script);
+                        if (newScript == null) {
+                            newScript = "";
+                        }
+
+                        response.setContentType("application/javascript");
+                        response.setCharacterEncoding(encoding);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        bos.write(newScript.getBytes(encoding));
+                        byte[] data = bos.toByteArray();
+                        response.setContentLength(data.length);
+                        HttpCacheUtil
+                                .setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
+                        FileTool.in2out(new ByteArrayInputStream(data), response.getOutputStream(), 2048);
+                        hasDealt = true;
+                    }
+                }
             }
         } else {
             cachedResource.writeResponse(isSource, request, response, isDebug, forceCacheSeconds);
-            return true;
+            hasDealt = true;
         }
+        return hasDealt;
     }
 
     public static String getUserAgent(HttpServletRequest request) {

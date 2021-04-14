@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.43
+ * xsloader.js v1.1.44
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed Apr 14 2021 05:19:39 GMT+0800 (GMT+08:00)
+ * build time:Wed Apr 14 2021 13:46:17 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,6 +126,19 @@
     return _setPrototypeOf(o, p);
   }
 
+  function _isNativeReflectConstruct() {
+    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+    if (Reflect.construct.sham) return false;
+    if (typeof Proxy === "function") return true;
+
+    try {
+      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -140,6 +153,25 @@
     }
 
     return _assertThisInitialized(self);
+  }
+
+  function _createSuper(Derived) {
+    var hasNativeReflectConstruct = _isNativeReflectConstruct();
+
+    return function _createSuperInternal() {
+      var Super = _getPrototypeOf(Derived),
+          result;
+
+      if (hasNativeReflectConstruct) {
+        var NewTarget = _getPrototypeOf(this).constructor;
+
+        result = Reflect.construct(Super, arguments, NewTarget);
+      } else {
+        result = Super.apply(this, arguments);
+      }
+
+      return _possibleConstructorReturn(this, result);
+    };
   }
 
   var id = 0;
@@ -1185,9 +1217,9 @@
     };
   }
 
-  var U = _objectSpread2({}, urls, {
+  var U = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, urls), {}, {
     global: global$1
-  }, base, {}, loading, {
+  }, base), loading), {}, {
     base64: Base64
   });
 
@@ -2476,17 +2508,17 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.43"
+    version: "1.1.44"
   };
 
-  var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
+  var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
 
   for (var k in toGlobal) {
     L$6[k] = toGlobal[k];
     G$5[k] = toGlobal[k];
   }
 
-  var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
+  var justLoader = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, is), funs), browser), {}, {
     ignoreAspect_: {},
     each: U.each,
     Base64: U.base64,
@@ -2978,9 +3010,10 @@
     return instanceModule;
   }
 
-  function _newModule(name, scriptSrc, thatInvoker, index) {
+  function _preNewModule(name, scriptSrc, thatInvoker, index) {
     var src = U.removeQueryHash(scriptSrc);
     var defineObject = new script.DefineObject(scriptSrc, src, null, [name, null, null]);
+    defineObject.ignoreCurrentRequireDep = false;
     defineObject.index = index;
     defineObject.thatInvoker = thatInvoker;
     defineObject.appendConfigDepsAndEmbedDeps();
@@ -3018,12 +3051,14 @@
       loopObject: undefined,
       invoker: defineObject.thatInvoker,
       instanceType: "single",
-      reinitByDefineObject: function reinitByDefineObject(defineObject) {
-        this.deps = defineObject.deps || [];
+      reinitByDefineObject: function reinitByDefineObject(newDefineObject) {
+        this.deps = newDefineObject.deps || [];
 
         this.getCallback = function () {
-          return defineObject.callback;
+          return newDefineObject.callback;
         };
+
+        defineObject.ignoreCurrentRequireDep = newDefineObject.ignoreCurrentRequireDep;
       },
       setInstanceType: function setInstanceType(instanceType) {
         this.instanceType = instanceType;
@@ -3047,6 +3082,9 @@
           }
         }
       },
+      ignoreCurrentRequireDep: function ignoreCurrentRequireDep() {
+        return defineObject.ignoreCurrentRequireDep;
+      },
       finish: function finish(args) {
         args = this._dealApplyArgs(args);
         this.args = args;
@@ -3056,6 +3094,7 @@
           try {
             script.currentDefineModuleQueue.push(this);
             obj = this.getCallback().apply(this.thiz, args);
+            defineObject.ignoreCurrentRequireDep = false;
             script.currentDefineModuleQueue.pop();
           } catch (e) {
             script.currentDefineModuleQueue.pop();
@@ -3689,7 +3728,7 @@
 
             var m2Name = isJsFile ? null : dep;
 
-            var module2 = _newModule(m2Name, urls[0], invoker_of_module, index);
+            var module2 = _preNewModule(m2Name, urls[0], invoker_of_module, index);
 
             moduleDef.setModule(null, module2);
             module2.setState("loading");
@@ -3738,7 +3777,7 @@
     }, defineObject.handle.orderDep);
   }
 
-  var moduleScript = _objectSpread2({}, moduleDef, {
+  var moduleScript = _objectSpread2(_objectSpread2({}, moduleDef), {}, {
     newModule: newModule,
     everyRequired: everyRequired,
     newModuleInstance: newModuleInstance,
@@ -4103,7 +4142,6 @@
     function DefineObject(scriptSrc, src, thiz) {
       var args = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : [];
       var isRequire = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-      var ignoreCurrentRequireDep = arguments.length > 5 ? arguments[5] : undefined;
 
       _classCallCheck(this, DefineObject);
 
@@ -4122,8 +4160,10 @@
       this.directDepLength = 0;
       this.names = [];
       this.index = void 0;
+      this.ignoreCurrentRequireDep = void 0;
       this.parentDefine = currentDefineModuleQueue.peek();
       this.thatInvoker = getInvoker(thiz);
+      this.ignoreCurrentRequireDep = !U.isLoaderEnd() || L$9.__ignoreCurrentRequireDep || this.parentDefine && this.parentDefine.ignoreCurrentRequireDep() || false;
       this.scriptSrc = scriptSrc;
       this.src = src;
       this.thiz = thiz;
@@ -4169,7 +4209,7 @@
         deps = L$9.clone(deps);
       }
 
-      if (!ignoreCurrentRequireDep) {
+      if (!this.ignoreCurrentRequireDep) {
         U.appendInnerDeps(deps, callback);
       }
 
@@ -4520,9 +4560,11 @@
           if (U.IE_VERSION > 0 || U.IE_VERSION == "edge") {
             L$9.asyncCall(function () {
               onload(scriptData);
+              L$9.__ignoreCurrentRequireDep = false;
             });
           } else {
             onload(scriptData);
+            L$9.__ignoreCurrentRequireDep = false;
           }
         }
       }
@@ -4544,12 +4586,10 @@
   }
 
   function doDefine(thiz, args, isRequire) {
-    var ignoreCurrentRequireDep = L$9.__ignoreCurrentRequireDep;
-    L$9.__ignoreCurrentRequireDep = false;
     var rs = getCurrentScript();
     var src = rs.src;
     var scriptSrc = rs.scriptSrc;
-    var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire, ignoreCurrentRequireDep);
+    var defineObject = new DefineObject(scriptSrc, src, thiz, args, isRequire);
     defineObject.srcBeforeCurrentPath = rs.srcBeforeCurrentPath;
 
     if (!isSrcFromScriptLoad) {
@@ -6905,9 +6945,9 @@
   }
 
   function doSendMessage(isserver, source, msg) {
-    msg = _objectSpread2({
+    msg = _objectSpread2(_objectSpread2({
       isserver: !!isserver
-    }, msg, {
+    }, msg), {}, {
       __ifmsg: true
     });
 
@@ -7164,7 +7204,7 @@
       try {
         var closable = as[id];
         var data = closable.getUnloadData(_objectSpread2({}, evt));
-        closable.close(true, _objectSpread2({}, evt, {
+        closable.close(true, _objectSpread2(_objectSpread2({}, evt), {}, {
           data: data
         }));
       } catch (e) {
@@ -7183,7 +7223,7 @@
       try {
         var closable = as[id];
         var data = closable.getUnloadData(_objectSpread2({}, evt));
-        closable.close(true, _objectSpread2({}, evt, {
+        closable.close(true, _objectSpread2(_objectSpread2({}, evt), {}, {
           data: data
         }));
       } catch (e) {
@@ -7263,6 +7303,8 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
+    var _super = _createSuper(Client);
+
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7270,7 +7312,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
+      _this = _super.call(this, cmd);
       Object.defineProperty(_assertThisInitialized(_this), _source, {
         writable: true,
         value: void 0
@@ -7643,12 +7685,14 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
+    var _super2 = _createSuper(Server);
+
     function Server(cmd, singleMode) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
+      _this5 = _super2.call(this, cmd);
       _this5._start = void 0;
       _this5._destroyed = false;
       _this5._onConnect = void 0;
