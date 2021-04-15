@@ -115,7 +115,7 @@
 
 		let res = Vue.compile(template, {
 			warn(str) {
-				$jsBridge$.warn(str);
+				console.warn(str);
 			},
 			createFunction(code, errors) {
 				let funName = "__" + $jsBridge$.shortId();

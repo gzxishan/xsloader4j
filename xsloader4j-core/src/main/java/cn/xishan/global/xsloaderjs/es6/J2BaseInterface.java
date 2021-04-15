@@ -28,15 +28,13 @@ import java.util.regex.Pattern;
 /**
  * @author Created by https://github.com/CLovinr on 2019-05-31.
  */
-public class J2BaseInterface extends J2Object implements AutoCloseable
-{
+public class J2BaseInterface extends J2Object implements AutoCloseable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(J2BaseInterface.class);
     static final ThreadLocal<Es6Wrapper.Result<String>> threadLocal = new ThreadLocal<>();
     private static final ThreadLocal<String> currentUrl = new ThreadLocal<>();
 
-    interface ILoadFileListener
-    {
+    interface ILoadFileListener {
         void onLoadFile(File file);
     }
 
@@ -46,47 +44,39 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     private J2BaseInterfaceImpl impl;
     static String polyfillPath;
 
-    public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod)
-    {
+    public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod) {
         super(newRootObject(v8));
         lock = new ConcurrentKeyLock();
-        if (isAutoRegisterMethod)
-        {
+        if (isAutoRegisterMethod) {
             autoRegisterMethod();
         }
     }
 
-    public ILoadFileListener getFileListener()
-    {
+    public ILoadFileListener getFileListener() {
         return fileListener;
     }
 
-    static class J2BaseInterfaceImpl extends J2BaseInterface
-    {
+    static class J2BaseInterfaceImpl extends J2BaseInterface {
         private J2BaseInterface superInterface;
 
-        public J2BaseInterfaceImpl(J2BaseInterface superInterface)
-        {
+        public J2BaseInterfaceImpl(J2BaseInterface superInterface) {
             super(superInterface.getV8(), false);
             this.superInterface = superInterface;
             superInterface.impl = this;
         }
 
         @Override
-        public void setFileContentGetter(IFileContentGetter fileContentGetter)
-        {
+        public void setFileContentGetter(IFileContentGetter fileContentGetter) {
             superInterface.fileContentGetter = fileContentGetter;
         }
 
         @Override
-        public void setFileListener(ILoadFileListener fileListener)
-        {
+        public void setFileListener(ILoadFileListener fileListener) {
             superInterface.fileListener = fileListener;
         }
 
         @Override
-        public void release()
-        {
+        public void release() {
             superInterface.fileListener = null;
             superInterface.fileContentGetter = null;
             superInterface.impl = null;
@@ -94,91 +84,74 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
         }
     }
 
-    public J2BaseInterface acquire(String url)
-    {
+    public J2BaseInterface acquire(String url) {
         lock.lock("v8");
         getV8().getLocker().acquire();
-        if (url != null)
-        {
+        if (url != null) {
             currentUrl.set(url);
         }
         return new J2BaseInterfaceImpl(this);
     }
 
     @Override
-    public V8Object newV8Object()
-    {
-        if (impl != null)
-        {
+    public V8Object newV8Object() {
+        if (impl != null) {
             return impl.newV8Object();
         }
         return super.newV8Object();
     }
 
     @Override
-    public V8Array newV8Array()
-    {
-        if (impl != null)
-        {
+    public V8Array newV8Array() {
+        if (impl != null) {
             return impl.newV8Array();
         }
         return super.newV8Array();
     }
 
     @Override
-    public void addReleasable(Releasable releasable)
-    {
-        if (impl != null)
-        {
+    public void addReleasable(Releasable releasable) {
+        if (impl != null) {
             impl.addReleasable(releasable);
-        } else
-        {
+        } else {
             super.addReleasable(releasable);
 
         }
     }
 
-    public void release()
-    {
-        try
-        {
+    public void release() {
+        try {
             this.fileListener = null;
             this.fileContentGetter = null;
             currentUrl.remove();
             threadLocal.remove();
             root.release();
             getV8().getLocker().release();
-        } finally
-        {
+        } finally {
             lock.unlock("v8");
         }
     }
 
 
-    public void setFileListener(ILoadFileListener fileListener)
-    {
+    public void setFileListener(ILoadFileListener fileListener) {
         this.fileListener = fileListener;
     }
 
-    public void setFileContentGetter(IFileContentGetter fileContentGetter)
-    {
+    public void setFileContentGetter(IFileContentGetter fileContentGetter) {
         this.fileContentGetter = fileContentGetter;
     }
 
     @JsBridgeMethod
-    public String shortId()
-    {
+    public String shortId() {
         return HashUtil.md5_16(OftenKeyUtil.randomUUID().getBytes());
     }
 
     @JsBridgeMethod
-    public String parseSass(String url, String filepath, String scssCode, boolean isDebug) throws Exception
-    {
+    public String parseSass(String url, String filepath, String scssCode, boolean isDebug) throws Exception {
         Compiler compiler = new Compiler();
         Options options = new Options();
         options.setSourceMapEmbed(false);
-        if (threadLocal.get() != null && OftenTool.notEmpty(filepath))
-        {
+        if (threadLocal.get() != null && OftenTool.notEmpty(filepath)) {
             options.setImporters(Collections.singleton(new JScssImporterImpl(threadLocal.get(), new File(filepath))));
         }
         Output output = compiler.compileString(
@@ -191,16 +164,12 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     }
 
     @JsBridgeMethod
-    public String parseLess(String url, String filepath, String lessCode, boolean isDebug) throws Exception
-    {
+    public String parseLess(String url, String filepath, String lessCode, boolean isDebug) throws Exception {
         String css = Less
-                .compile(new File(filepath).getParentFile().toURI().toURL(), lessCode, false, new ReaderFactory()
-                {
+                .compile(new File(filepath).getParentFile().toURI().toURL(), lessCode, false, new ReaderFactory() {
                     @Override
-                    public InputStream openStream(URL url) throws IOException
-                    {
-                        if (url.getProtocol().equals("file") && threadLocal.get() != null)
-                        {
+                    public InputStream openStream(URL url) throws IOException {
+                        if (url.getProtocol().equals("file") && threadLocal.get() != null) {
                             threadLocal.get().getRelatedFiles().add(new File(url.getFile()));
                         }
                         return super.openStream(url);
@@ -223,8 +192,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
      * @return
      */
     @JsBridgeMethod
-    public String staticInclude(String filename, String content) throws IOException
-    {
+    public String staticInclude(String filename, String content) throws IOException {
         return staticInclude(filename, content, fileContentGetter, fileListener);
     }
 
@@ -240,44 +208,34 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
      * @throws IOException
      */
     public static String staticInclude(String filename, @MayNull String fileContent, @MayNull IFileContentGetter getter,
-            @MayNull ILoadFileListener fileListener) throws IOException
-    {
-        if (OftenTool.notEmpty(filename))
-        {
-            if (fileContent == null)
-            {
+            @MayNull ILoadFileListener fileListener) throws IOException {
+        if (OftenTool.notEmpty(filename)) {
+            if (fileContent == null) {
                 fileContent = FileTool.getString(new File(filename));
             }
             filename = filename.replace('\\', '/');
             Matcher matcher = PATTERN_STATIC_INCLUDE.matcher(fileContent);
             StringBuilder stringBuilder = new StringBuilder();
             int lastIndex = 0;
-            while (matcher.find())
-            {
+            while (matcher.find()) {
                 stringBuilder.append(fileContent, lastIndex, matcher.start());
 
                 String relative = matcher.group(1).trim().replace('\\', '/');
                 String path = PackageUtil.getPathWithRelative(filename, relative);
                 File file = new File(path);
-                if (file.exists() && file.isFile())
-                {
+                if (file.exists() && file.isFile()) {
                     String encoding = matcher.group(3);
-                    if (OftenTool.isEmpty(encoding))
-                    {
+                    if (OftenTool.isEmpty(encoding)) {
                         encoding = "utf-8";
                     }
 
-                    if (getter == null)
-                    {
-                        getter = new IFileContentGetter()
-                        {
+                    if (getter == null) {
+                        getter = new IFileContentGetter() {
                         };
                     }
                     IFileContentGetter.Result result = getter.getResult(file, encoding);
-                    if (result != null)
-                    {
-                        if (fileListener != null)
-                        {
+                    if (result != null) {
+                        if (fileListener != null) {
                             fileListener.onLoadFile(file);
                         }
 
@@ -285,8 +243,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                         includeContent = staticInclude(path, includeContent, getter, fileListener);//递归引入
                         stringBuilder.append(includeContent);
                     }
-                } else
-                {
+                } else {
                     stringBuilder.append("/*未找到文件:").append(matcher.group()).append("*/");
                 }
                 lastIndex = matcher.end();
@@ -295,8 +252,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
             fileContent = stringBuilder.toString();
         }
 
-        if (fileContent != null)
-        {
+        if (fileContent != null) {
             fileContent = Es6Wrapper.removeSChars(fileContent);
         }
 
@@ -308,10 +264,8 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
 
     @JsBridgeMethod
     public String staticVueTemplate(String currentUrl, String filepath, String scriptContent, boolean isDebug,
-            String funName, V8Object funMap)
-    {
-        if (scriptContent != null)
-        {
+            String funName, V8Object funMap) {
+        if (scriptContent != null) {
             Matcher matcher = PATTERN_STATIC_VUE_TEMPLATE.matcher(scriptContent);
             StringBuilder stringBuilder = new StringBuilder();
             int lastIndex = 0;
@@ -319,11 +273,9 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
             V8 v8 = getV8();
             V8Object xsloaderServer = null;
             V8Object result = null;
-            try
-            {
+            try {
                 xsloaderServer = v8.getObject("XsloaderServer");
-                while (matcher.find())
-                {
+                while (matcher.find()) {
                     stringBuilder.append(scriptContent, lastIndex, matcher.start());
                     String template = matcher.group(2);
                     V8Array parameters = newV8Array().push(currentUrl).push(filepath).push(template).push(isDebug);
@@ -332,19 +284,15 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                     int currentLen = stringBuilder.length();
                     String id = OftenKeyUtil.randomUUID();
 
-                    if (result.contains("render"))
-                    {
+                    if (result.contains("render")) {
                         stringBuilder.append("render:").append(funName).append("['").append(id).append("-render']");
                         funMap.add(id + "-render", result.getString("render"));
                     }
 
-                    if (result.contains("staticRenderFns"))
-                    {
-                        if (result.contains("render"))
-                        {
+                    if (result.contains("staticRenderFns")) {
+                        if (result.contains("render")) {
                             stringBuilder.append(",\n");
-                            if (lastLn > 0)
-                            {
+                            if (lastLn > 0) {
                                 stringBuilder.append(stringBuilder.subSequence(lastLn + 1, currentLen));
                             }
                         }
@@ -353,16 +301,14 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
                         funMap.add(id + "-staticRenderFns", result.getString("staticRenderFns"));
                     }
 
-                    if (result.contains("staticRenderFns") || result.contains("render"))
-                    {
+                    if (result.contains("staticRenderFns") || result.contains("render")) {
                         stringBuilder.append("\n");
                     }
 
                     lastIndex = matcher.end();
                 }
 
-            } finally
-            {
+            } finally {
                 JsScriptUtil.release(xsloaderServer, result);
             }
             stringBuilder.append(scriptContent, lastIndex, scriptContent.length());
@@ -373,26 +319,34 @@ public class J2BaseInterface extends J2Object implements AutoCloseable
     }
 
     @JsBridgeMethod(isRootFun = true)
-    public void print(String str)
-    {
+    public void print(String str) {
         LOGGER.debug("js print:(url={})\n{}", currentUrl.get(), str);
     }
 
     @JsBridgeMethod
-    public void warn(String str)
-    {
-        LOGGER.warn("js warn:(url={})\n{}", currentUrl.get(), str);
+    public void logText(String str, String type) {
+        if ("debug".equals(type)) {
+            LOGGER.debug("js debug:(url={})\n{}", currentUrl.get(), str);
+        } else if ("log".equals(type)) {
+            LOGGER.debug("js log:(url={})\n{}", currentUrl.get(), str);
+        } else if ("info".equals(type)) {
+            LOGGER.info("js info:(url={})\n{}", currentUrl.get(), str);
+        } else if ("warn".equals(type)) {
+            LOGGER.warn("js warn:(url={})\n{}", currentUrl.get(), str);
+        } else if ("error".equals(type)) {
+            LOGGER.error("js error:(url={})\n{}", currentUrl.get(), str);
+        } else {
+            LOGGER.warn("js:(url={})\n{}", currentUrl.get(), str);
+        }
     }
 
 
     @JsBridgeMethod
-    public String getPolyfillPath()
-    {
+    public String getPolyfillPath() {
         return polyfillPath;
     }
 
-    public V8Object getRootObject(String name)
-    {
+    public V8Object getRootObject(String name) {
         return getV8().getObject(name);
     }
 }
