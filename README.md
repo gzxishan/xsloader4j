@@ -91,7 +91,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 - xsloader.htmv.enable：是否启用htmv，默认为false
-- xsloader.htmv.paths：配置默认的html模板（可选）
+- xsloader.htmv.paths：配置默认的html模板（可选）。`classpath:`开头表示资源目录，其他表示在web路径下（通过`servletContext.getRealPath`获取）
 - xsloader.conf.forceCacheSeconds：配置被浏览器强制缓存的时间
 - xsloader.es6.versionAppendTag：如果设置了该标记，当文件变化后，会在该标记后添加文件版本（支持的文件为所有需要转换的文件）；该标记右边加`,`表示需要前置逗号；
 
@@ -648,6 +648,7 @@ cnpm install --save @babel/polyfill
 2. 增加配置`xsloader.es6.detectBrowser`，默认为false，用于开启浏览器版本判断，对js进行不同级别的转换；
 3. 升级`polyfill`为`7.12.1`；
 4. 加入`xsloader.__ignoreCurrentRequireDep`属性，配合`xsloader4j`，优化处理速度；
+5. xsloader.htmv.paths：配置默认的html模板（可选）。`classpath:`开头表示资源目录，其他表示在web路径下（通过`servletContext.getRealPath`获取）
 
 ### v1.2.36 2021/03/26
 

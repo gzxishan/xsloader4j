@@ -30,65 +30,50 @@ import java.util.regex.Pattern;
 /**
  * @author Created by https://github.com/CLovinr on 2020-05-14.
  */
-public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
-{
+public class HtmvFilterer implements WrapperFilterManager.WrapperFilter {
     private static final Pattern PATH_PATTERN = Pattern.compile("(^[\\s\\S]+?)\\s+to\\s+([\\s\\S]+?)$");
     private static final Pattern SETTINGS_PATTERN = Pattern.compile("<!--settings:([\\s\\S]*?)-->");
 
-    private class Item
-    {
+    private class Item {
         String filepath;
         String content;
         long lastModified;
 
-        public Item(String filepath)
-        {
+        public Item(String filepath) {
             this.filepath = filepath;
         }
 
-        public boolean isChange()
-        {
+        public boolean isChange() {
             File file = new File(filepath);
             return file.exists() && file.lastModified() != lastModified;
         }
 
-        public String getContent(Document baseDoc, String path) throws IOException
-        {
+        public String getContent(Document baseDoc, String path) throws IOException {
             File file = new File(filepath);
-            if (!file.exists())
-            {
+            if (!file.exists()) {
                 return null;
-            } else
-            {
-                if (isChange())
-                {
-                    synchronized (this)
-                    {
-                        if (isChange())
-                        {
+            } else {
+                if (isChange()) {
+                    synchronized (this) {
+                        if (isChange()) {
                             lastModified = file.lastModified();
                             String htmvContent = FileTool.getString(file, encoding);
                             Matcher matcher = SETTINGS_PATTERN.matcher(htmvContent);
                             JSONObject settings;
-                            if (matcher.find())
-                            {
+                            if (matcher.find()) {
                                 settings = JSON.parseObject(matcher.group(1));
-                            } else
-                            {
+                            } else {
                                 settings = new JSONObject();
                             }
 
                             Document document = baseDoc.clone();
-                            if (settings.containsKey("title"))
-                            {
+                            if (settings.containsKey("title")) {
                                 document.title(settings.getString("title"));
                             }
 
-                            if (settings.containsKey("heads"))
-                            {
+                            if (settings.containsKey("heads")) {
                                 JSONArray heads = settings.getJSONArray("heads");
-                                for (int i = 0; i < heads.size(); i++)
-                                {
+                                for (int i = 0; i < heads.size(); i++) {
                                     document.head().append(heads.getString(i));
                                 }
                             }
@@ -112,44 +97,42 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
         }
     }
 
-    private class HtmvPath
-    {
+    private class HtmvPath {
         private String pathPrefix;
         private Document document;
         private Map<String, Item> path2Content;
 
-        public HtmvPath(String str) throws IOException
-        {
+        public HtmvPath(String str) throws IOException {
             str = str.trim();
             Matcher matcher = PATH_PATTERN.matcher(str);
-            if (!matcher.find())
-            {
+            if (!matcher.find()) {
                 throw new InitException("illegal htmv path:" + str);
-            } else
-            {
+            } else {
                 this.pathPrefix = matcher.group(1).trim();
                 String resourcePath = matcher.group(2).trim();
-                String realPath = servletContext.getRealPath(resourcePath);
-                File file = new File(realPath);
-                if (!file.exists())
-                {
-                    throw new FileNotFoundException("not found file:" + realPath);
-                } else
-                {
-                    String content = FileTool.getString(file, encoding);
+                if (resourcePath.startsWith("classpath:")) {
+                    String content =
+                            ResourceUtil.getAbsoluteResourceString(resourcePath.substring(10).trim(), encoding);
                     dealContent(content);
+                } else {
+                    String realPath = servletContext.getRealPath(resourcePath);
+                    File file = new File(realPath);
+                    if (!file.exists()) {
+                        throw new FileNotFoundException("not found file:" + realPath);
+                    } else {
+                        String content = FileTool.getString(file, encoding);
+                        dealContent(content);
+                    }
                 }
             }
         }
 
-        public HtmvPath(String pathPrefix, String content) throws IOException
-        {
+        public HtmvPath(String pathPrefix, String content) throws IOException {
             this.pathPrefix = pathPrefix;
             dealContent(content);
         }
 
-        private void dealContent(String content) throws IOException
-        {
+        private void dealContent(String content) throws IOException {
             InputStream in = new ByteArrayInputStream(content.getBytes(encoding));
             Document document = Jsoup.parse(in, encoding, "");
             Element head = document.getElementsByTag("head").get(0);
@@ -163,8 +146,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             loader.attr("id", "xsloader-script");
             head.prependChild(loader);
 
-            if (document.body().getElementById("vue-app") == null)
-            {
+            if (document.body().getElementById("vue-app") == null) {
                 Element app = new Element("div");
                 app.attr("id", "vue-app");
                 document.body().prependChild(app);
@@ -175,20 +157,15 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
         }
 
 
-        public String getPathPrefix()
-        {
+        public String getPathPrefix() {
             return pathPrefix;
         }
 
         public String getContent(HttpServletRequest request, HttpServletResponse response,
-                String path) throws IOException
-        {
-            if (!path2Content.containsKey(path))
-            {
-                synchronized (this)
-                {
-                    if (!path2Content.containsKey(path))
-                    {
+                String path) throws IOException {
+            if (!path2Content.containsKey(path)) {
+                synchronized (this) {
+                    if (!path2Content.containsKey(path)) {
                         String realPath = request.getServletContext().getRealPath(path)
                                 .replace(File.separatorChar, '/');
                         Item item = new Item(realPath);
@@ -198,18 +175,15 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
             }
 
             Item item = path2Content.get(path);
-            if (!item.isChange() && !HttpCacheUtil.isCacheIneffectiveWithModified(item.lastModified, request, response))
-            {
+            if (!item.isChange() &&
+                    !HttpCacheUtil.isCacheIneffectiveWithModified(item.lastModified, request, response)) {
                 HttpCacheUtil.setCacheWithModified(cacheSeconds, item.lastModified, response);
                 return null;
-            } else
-            {
+            } else {
                 String content = item.getContent(document, path);
-                if (content == null)
-                {
+                if (content == null) {
                     response.sendError(404);
-                } else
-                {
+                } else {
                     HttpCacheUtil.setCacheWithModified(cacheSeconds, item.lastModified, response);
                 }
                 return content;
@@ -229,8 +203,7 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
     private HtmvPath starHtmvPath;
     private String appScript;
 
-    public HtmvFilterer(ServletContext servletContext)
-    {
+    public HtmvFilterer(ServletContext servletContext) {
         this.servletContext = servletContext;
     }
 
@@ -248,36 +221,29 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
      */
     @AutoSet.SetOk
     public void setOk(@Property(name = "xsloader.htmv.paths", choice = Property.Choice.ArrayPrefix)
-            JSONArray conf) throws Exception
-    {
+            JSONArray conf) throws Exception {
         this.appScript = ResourceUtil.getAbsoluteResourceString("/xsloader-js/htmv/app.js", "utf-8");
         List<HtmvPath> list = new ArrayList<>();
-        if (conf != null)
-        {
-            for (int i = 0; i < conf.size(); i++)
-            {
+        if (conf != null) {
+            for (int i = 0; i < conf.size(); i++) {
                 String str = conf.getString(i);
                 HtmvPath htmvPath = new HtmvPath(str);
-                if (htmvPath.getPathPrefix().equals("*"))
-                {
+                if (htmvPath.getPathPrefix().equals("*")) {
                     starHtmvPath = htmvPath;
-                } else
-                {
+                } else {
                     list.add(htmvPath);
                 }
 
             }
         }
 
-        if (list.isEmpty())
-        {
+        if (list.isEmpty()) {
             list.add(new HtmvPath("/mobile/",
                     ResourceUtil.getAbsoluteResourceString("/xsloader-js/htmv/mobile.html", "utf-8")));
         }
 
         this.htmvPaths = list.toArray(new HtmvPath[0]);
-        if (starHtmvPath == null)
-        {
+        if (starHtmvPath == null) {
             starHtmvPath = new HtmvPath("*",
                     ResourceUtil.getAbsoluteResourceString("/xsloader-js/htmv/default.html", "utf-8"));
         }
@@ -285,13 +251,10 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
 
     @Override
     public WrapperFilterManager.Wrapper doFilter(HttpServletRequest request,
-            HttpServletResponse response) throws IOException, ServletException
-    {
-        if ("GET".equals(request.getMethod()))
-        {
+            HttpServletResponse response) throws IOException, ServletException {
+        if ("GET".equals(request.getMethod())) {
             String uri = request.getRequestURI();
-            if (uri.endsWith(".htmv"))
-            {
+            if (uri.endsWith(".htmv")) {
                 doHtmv(request, response, uri.substring(request.getContextPath().length()));
                 WrapperFilterManager.Wrapper wrapper = new WrapperFilterManager.Wrapper(request, response);
                 wrapper.setFilterResult(WrapperFilterManager.FilterResult.RETURN);
@@ -301,13 +264,10 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
         return null;
     }
 
-    private void doHtmv(HttpServletRequest request, HttpServletResponse response, String path) throws IOException
-    {
+    private void doHtmv(HttpServletRequest request, HttpServletResponse response, String path) throws IOException {
         HtmvPath htmvPath = starHtmvPath;
-        for (HtmvPath hp : htmvPaths)
-        {
-            if (path.startsWith(hp.getPathPrefix()))
-            {
+        for (HtmvPath hp : htmvPaths) {
+            if (path.startsWith(hp.getPathPrefix())) {
                 htmvPath = hp;
                 break;
             }
@@ -316,10 +276,8 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter
         response.setContentType("text/html");
         response.setCharacterEncoding(encoding);
         String content = htmvPath.getContent(request, response, path);
-        if (content != null)
-        {
-            try (PrintWriter writer = response.getWriter())
-            {
+        if (content != null) {
+            try (PrintWriter writer = response.getWriter()) {
                 writer.print(content);
                 writer.flush();
             }
