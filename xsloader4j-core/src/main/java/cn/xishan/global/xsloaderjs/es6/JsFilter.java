@@ -586,6 +586,19 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
     }
 
+    private static final Map<String, Integer> MAX_SUPPORT_BROWSER_VERSIONS;
+
+    static {
+        MAX_SUPPORT_BROWSER_VERSIONS = new HashMap<>();
+        MAX_SUPPORT_BROWSER_VERSIONS.put("chrome", 86);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("firefox", 82);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("opera", 72);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("ie", 11);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("edge", 85);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("ios", 14);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("safari", 14);
+    }
+
     private static BrowserInfo getBrowserInfo(HttpServletRequest request) {
         BrowserInfo browserInfo = null;
         if (detectBrowser && request != null) {
@@ -596,6 +609,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                     Browser browser = userAgent.getBrowser();
                     Browser browserGroup = browser.getGroup();
                     OperatingSystem os = userAgent.getOperatingSystem().getGroup();
+                    int version = Math.abs(Integer.parseInt(userAgent.getBrowserVersion().getMajorVersion()));
+
                     switch (browserGroup) {
                         case FIREFOX:
                             type = "firefox";
@@ -626,14 +641,17 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
                     String versionText = "no";
                     if (!"no".equals(type)) {
-                        int version =
-                                Math.abs(Integer.parseInt(userAgent.getBrowserVersion().getMajorVersion()));
-                        if (version > 20) {
+                        if (version > 20 && !(version >= 80 && version <= 120)) {
                             version = (version / 5) * 5;
                         }
 
                         if (version > 200) {//防止恶意传递版本
                             version = 200;
+                        }
+
+                        Integer maxVersion = MAX_SUPPORT_BROWSER_VERSIONS.get(type);
+                        if (maxVersion != null && version > maxVersion) {
+                            version = MAX_SUPPORT_BROWSER_VERSIONS.get(type);
                         }
 
                         versionText = String.valueOf(version);
