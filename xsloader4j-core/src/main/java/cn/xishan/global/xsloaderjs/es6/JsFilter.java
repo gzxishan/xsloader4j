@@ -29,7 +29,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.nio.charset.StandardCharsets;
+
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -195,9 +195,6 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
     @AutoSet.SetOk
     public void setOk(ServletContext servletContext) throws IOException {
-        CachedResource.init(name);
-        JsScriptUtil.init(v8flags);
-
         if (OftenTool.isEmpty(dealt)) {
             pathDealt = new DefaultPathDealt(servletContext, staticPath, ignores);
         } else {
@@ -224,6 +221,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         }
 
         initVersionAppend(servletContext);
+
+        CachedResource.init(name);
+        JsScriptUtil.init(v8flags);
     }
 
     public static boolean isSupport(String path) {
