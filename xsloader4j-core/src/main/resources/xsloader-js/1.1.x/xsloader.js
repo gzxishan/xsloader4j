@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.44
+ * xsloader.js v1.1.45
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Wed Apr 14 2021 13:46:17 GMT+0800 (GMT+08:00)
+ * build time:Wed May 12 2021 23:23:54 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -126,19 +126,6 @@
     return _setPrototypeOf(o, p);
   }
 
-  function _isNativeReflectConstruct() {
-    if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-    if (Reflect.construct.sham) return false;
-    if (typeof Proxy === "function") return true;
-
-    try {
-      Date.prototype.toString.call(Reflect.construct(Date, [], function () {}));
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -153,25 +140,6 @@
     }
 
     return _assertThisInitialized(self);
-  }
-
-  function _createSuper(Derived) {
-    var hasNativeReflectConstruct = _isNativeReflectConstruct();
-
-    return function _createSuperInternal() {
-      var Super = _getPrototypeOf(Derived),
-          result;
-
-      if (hasNativeReflectConstruct) {
-        var NewTarget = _getPrototypeOf(this).constructor;
-
-        result = Reflect.construct(Super, arguments, NewTarget);
-      } else {
-        result = Super.apply(this, arguments);
-      }
-
-      return _possibleConstructorReturn(this, result);
-    };
   }
 
   var id = 0;
@@ -1217,9 +1185,9 @@
     };
   }
 
-  var U = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, urls), {}, {
+  var U = _objectSpread2({}, urls, {
     global: global$1
-  }, base), loading), {}, {
+  }, base, {}, loading, {
     base64: Base64
   });
 
@@ -2508,17 +2476,17 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.44"
+    version: "1.1.45"
   };
 
-  var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
+  var toGlobal = _objectSpread2({}, deprecated, {}, base$1);
 
   for (var k in toGlobal) {
     L$6[k] = toGlobal[k];
     G$5[k] = toGlobal[k];
   }
 
-  var justLoader = _objectSpread2(_objectSpread2(_objectSpread2(_objectSpread2({}, is), funs), browser), {}, {
+  var justLoader = _objectSpread2({}, is, {}, funs, {}, browser, {
     ignoreAspect_: {},
     each: U.each,
     Base64: U.base64,
@@ -3777,7 +3745,7 @@
     }, defineObject.handle.orderDep);
   }
 
-  var moduleScript = _objectSpread2(_objectSpread2({}, moduleDef), {}, {
+  var moduleScript = _objectSpread2({}, moduleDef, {
     newModule: newModule,
     everyRequired: everyRequired,
     newModuleInstance: newModuleInstance,
@@ -5058,8 +5026,22 @@
       },
       dealUrl: function dealUrl(module, url) {
         var addVersion = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-        var urlArgs = this.getUrlArgs(module, url, addVersion);
-        return L$a.appendArgs2Url(url, urlArgs);
+        var urlArgs;
+        var index = url.indexOf("?");
+
+        if (index > 0) {
+          var index2 = url.indexOf("#", index);
+          urlArgs = url.substring(index + 1, index2 > 0 ? index2 : url.length);
+        }
+
+        var newUrlArgs = this.getUrlArgs(module, url, addVersion);
+        var newUrl = L$a.appendArgs2Url(url, newUrlArgs);
+
+        if (urlArgs) {
+          newUrl = L$a.appendArgs2Url(url, urlArgs);
+        }
+
+        return newUrl;
       },
       getUrlArgs: function getUrlArgs(module, url) {
         var addVersion = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
@@ -6945,9 +6927,9 @@
   }
 
   function doSendMessage(isserver, source, msg) {
-    msg = _objectSpread2(_objectSpread2({
+    msg = _objectSpread2({
       isserver: !!isserver
-    }, msg), {}, {
+    }, msg, {
       __ifmsg: true
     });
 
@@ -7204,7 +7186,7 @@
       try {
         var closable = as[id];
         var data = closable.getUnloadData(_objectSpread2({}, evt));
-        closable.close(true, _objectSpread2(_objectSpread2({}, evt), {}, {
+        closable.close(true, _objectSpread2({}, evt, {
           data: data
         }));
       } catch (e) {
@@ -7223,7 +7205,7 @@
       try {
         var closable = as[id];
         var data = closable.getUnloadData(_objectSpread2({}, evt));
-        closable.close(true, _objectSpread2(_objectSpread2({}, evt), {}, {
+        closable.close(true, _objectSpread2({}, evt, {
           data: data
         }));
       } catch (e) {
@@ -7303,8 +7285,6 @@
   var Client = function (_Base) {
     _inherits(Client, _Base);
 
-    var _super = _createSuper(Client);
-
     function Client(cmd, source, origin, fromid) {
       var _this;
 
@@ -7312,7 +7292,7 @@
 
       _classCallCheck(this, Client);
 
-      _this = _super.call(this, cmd);
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Client).call(this, cmd));
       Object.defineProperty(_assertThisInitialized(_this), _source, {
         writable: true,
         value: void 0
@@ -7685,14 +7665,12 @@
   var Server = function (_Base2) {
     _inherits(Server, _Base2);
 
-    var _super2 = _createSuper(Server);
-
     function Server(cmd, singleMode) {
       var _this5;
 
       _classCallCheck(this, Server);
 
-      _this5 = _super2.call(this, cmd);
+      _this5 = _possibleConstructorReturn(this, _getPrototypeOf(Server).call(this, cmd));
       _this5._start = void 0;
       _this5._destroyed = false;
       _this5._onConnect = void 0;
