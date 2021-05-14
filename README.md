@@ -4,9 +4,9 @@
 
 ## 二、版本
 
-当前最新版本为  [**1.2.36**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
+当前最新版本为  [**1.2.49**](https://mvnrepository.com/artifact/com.xishankeji/xsloader4j-core)
 
-![Version](https://img.shields.io/badge/Version-1.2.36-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-1.2.49-brightgreen.svg)
 ![JDK 1.8](https://img.shields.io/badge/JDK-1.8-green.svg)
 
 [Github](https://github.com/gzxishan/xsloader4j)
@@ -87,7 +87,7 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
 - xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,/index.js,/index.vue,/index.jsx"
   ，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+]中的值
-- xsloader.es6.detectBrowser：是否根据浏览器版本，进行不同级别的js转换
+- xsloader.es6.detectBrowser：是否根据浏览器版本，进行不同级别的js转换。默认true。
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
 - xsloader.htmv.enable：是否启用htmv，默认为false
@@ -644,10 +644,13 @@ cnpm install --save @babel/polyfill
 ## 八、发布记录
 
 ### v进行中
+
+### v1.2.49 2021/05/14
+
 1. 升级`babel`为`v7.13.15`;
-2. 增加配置`xsloader.es6.detectBrowser`，默认为false，用于开启浏览器版本判断，对js进行不同级别的转换；
+2. 增加配置`xsloader.es6.detectBrowser`，默认为true，用于开启浏览器版本判断，对js进行不同级别的转换；
 3. 升级`polyfill`为`7.12.1`；
-4. 加入`xsloader.__ignoreCurrentRequireDep`属性，配合`xsloader4j`，优化处理速度；
+4. 加入`xsloader.__ignoreCurrentRequireDep`属性，配合`xsloader`，优化处理速度；
 5. xsloader.htmv.paths：配置默认的html模板（可选）。`classpath:`开头表示资源目录，其他表示在web路径下（通过`servletContext.getRealPath`获取）；
 6. 完善`xsloader`的`getUrl`，提供的相对地址上的参数优先级更高；
 

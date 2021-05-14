@@ -54,7 +54,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     @Property(name = "xsloader.es6.debug", defaultVal = "false")
     private static Boolean isDebug;
 
-    @Property(name = "xsloader.es6.detectBrowser", defaultVal = "false")
+    @Property(name = "xsloader.es6.detectBrowser", defaultVal = "true")
     private static Boolean detectBrowser;
 
     @Property(name = "xsloader.es6.name", defaultVal = "default")
