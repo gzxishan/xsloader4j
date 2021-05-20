@@ -394,7 +394,7 @@
 				var __compileVue=__serverBridge__.getVueCompiler(thiz);
 				var __ImporT__=__serverBridge__.getImporter(thiz);
 				var __defineEsModuleProp=function(obj){
-					if(!obj||typeof obj != 'object'||(obj instanceof Function)){return};
+					if(!obj||typeof obj != 'object'||obj.__esModule||(obj instanceof Function)){return};
 					Object.defineProperty(obj,'__esModule',{value: true});
 					for(var x in obj){__defineEsModuleProp(obj[x])}
 				};

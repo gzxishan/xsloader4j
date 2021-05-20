@@ -646,6 +646,7 @@ cnpm install --save @babel/polyfill
 ### v进行中
 
 ### v1.2.49 2021/05/14
+1. 完善`xsloader`对`htmv`的支持；
 
 1. 升级`babel`为`v7.13.15`;
 2. 增加配置`xsloader.es6.detectBrowser`，默认为true，用于开启浏览器版本判断，对js进行不同级别的转换；

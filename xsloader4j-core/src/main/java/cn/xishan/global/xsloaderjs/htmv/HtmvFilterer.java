@@ -144,6 +144,8 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter {
             loader.attr("async", "async");
             loader.attr("charset", "utf-8");
             loader.attr("id", "xsloader-script");
+            loader.attr("data-htmv", "true");
+
             head.prependChild(loader);
 
             if (document.body().getElementById("vue-app") == null) {

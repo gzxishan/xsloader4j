@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.45
+ * xsloader.js v1.1.46
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Fri May 14 2021 11:06:37 GMT+0800 (GMT+08:00)
+ * build time:Thu May 20 2021 14:31:12 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2508,7 +2508,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.45"
+    version: "1.1.46"
   };
 
   var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
@@ -9038,7 +9038,7 @@
       loader.defineFunction = loader.defineFunction || {};
       loader.depsPaths = loader.depsPaths || {};
 
-      if (L$u.endsWith(location.pathname, ".htmv")) {
+      if (L$u.endsWith(location.pathname, ".htmv") || L$u.script().getAttribute("data-htmv") == "true") {
         if (G$8.__htmv_init_bridge_) {
           G$8.__htmv_init_bridge_();
         }
