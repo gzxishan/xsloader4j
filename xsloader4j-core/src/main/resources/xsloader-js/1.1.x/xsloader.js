@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.46
+ * xsloader.js v1.1.47
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu May 20 2021 14:31:12 GMT+0800 (GMT+08:00)
+ * build time:Fri May 21 2021 16:51:12 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -216,7 +216,7 @@
 
   var ABSOLUTE_PROTOCOL_REG = /^(([a-zA-Z0-9_]*:\/\/)|(\/)|(\/\/))/;
   var ABSOLUTE_PROTOCOL_REG2 = /^([a-zA-Z0-9_]+:)\/\/([^/\s]+)/;
-  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue", ".*", ".htmv_vue"];
+  var defaultJsExts = [".js", ".js+", ".js++", ".es", "es6", ".jsx", ".vue", ".*", ".htmv_vue", ".ts"];
   var L = global$1.xsloader;
 
   function isJsFile(path) {
@@ -2508,7 +2508,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.46"
+    version: "1.1.47"
   };
 
   var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
@@ -3294,7 +3294,7 @@
         nodes: []
       };
 
-      this._printOnNotDefined(root);
+      this._printOnNotDefined(root, 0);
 
       var leafs = [];
 
@@ -3424,8 +3424,12 @@
       console.error("}-----------------------------------------------------------------------------------------------");
     };
 
-    moduleMap._printOnNotDefined = function (parentNode) {
+    moduleMap._printOnNotDefined = function (parentNode, deepCount) {
       var _this4 = this;
+
+      if (deepCount >= 32 || this.state == "defined") {
+        return;
+      }
 
       var node = {
         err: "[" + this.description() + "].state=" + this.state,
@@ -3435,11 +3439,6 @@
         nodes: []
       };
       parentNode.nodes.push(node);
-
-      if (this.state == "defined") {
-        return;
-      }
-
       U.each(this.deps, function (dep) {
         if (dep == "exports") {
           return;
@@ -3459,13 +3458,13 @@
         }
 
         if (mod && mod.state == "defined") {
-          mod._printOnNotDefined(node);
+          mod._printOnNotDefined(node, deepCount + 1);
 
           return;
         }
 
         if (mod) {
-          mod._printOnNotDefined && mod._printOnNotDefined(node);
+          mod._printOnNotDefined && mod._printOnNotDefined(node, deepCount + 1);
         } else {
           node.nodes.push({
             parent: parentNode,
@@ -4161,6 +4160,7 @@
       this.names = [];
       this.index = void 0;
       this.ignoreCurrentRequireDep = void 0;
+      var config = L$9.config();
       this.parentDefine = currentDefineModuleQueue.peek();
       this.thatInvoker = getInvoker(thiz);
       this.ignoreCurrentRequireDep = !U.isLoaderEnd() || L$9.__ignoreCurrentRequireDep || this.parentDefine && this.parentDefine.ignoreCurrentRequireDep() || false;
@@ -4213,6 +4213,7 @@
         U.appendInnerDeps(deps, callback);
       }
 
+      config && config.plugins.css.autoCssDeal(deps);
       this.selfname = selfname;
       this.deps = deps;
       this.pushName(selfname);
@@ -4666,6 +4667,9 @@
       }
 
       oneDep = config.replaceDepAlias(oneDep);
+      var arr = [oneDep];
+      config && config.plugins.css.autoCssDeal(arr);
+      oneDep = arr[0];
       var module = moduleScript.getModule(oneDep);
 
       if (!module) {
@@ -5166,6 +5170,38 @@
       height: 1,
       delay: 500
     }, option.plugins.loading);
+    option.plugins.css = L$a.extend({
+      inverse: true,
+      autoCss: true,
+      autoExts: [".css", ".scss", ".sass", ".less"]
+    }, option.plugins.css);
+
+    option.plugins.css.autoCssDeal = function (deps) {
+      if (this.autoCss) {
+        for (var i = 0; i < deps.length; i++) {
+          var dep = deps[i];
+
+          if (!L$a.startsWith(dep, "css!")) {
+            var index = dep.lastIndexOf("?");
+            var query = "";
+
+            if (index != -1) {
+              query = dep.substring(index);
+              dep = dep.substring(0, index);
+            }
+
+            var autoExts = this.autoExts;
+
+            for (var k = 0; k < autoExts.length; k++) {
+              if (L$a.endsWith(dep, autoExts[k])) {
+                deps[i] = "css!" + dep + query;
+                break;
+              }
+            }
+          }
+        }
+      }
+    };
 
     if (L$a.domAttr(script.theLoaderScript, "disable-loading") !== undefined) {
       option.plugins.loading.enable = false;

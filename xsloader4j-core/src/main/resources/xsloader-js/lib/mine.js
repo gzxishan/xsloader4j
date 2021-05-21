@@ -170,6 +170,7 @@
 			inlineSourceMap: false,
 			browserType: null,
 			browserMajorVersion: null,
+			scriptLang: undefined,
 		}, otherOption);
 
 		let option = {
@@ -236,9 +237,9 @@
 					}
 				}]
 			];
-			
+
 		}
-		
+
 		// if (otherOption.browserType == "ie") {
 		// 	option.plugins.push(
 		// 		['transform-async-to-generator'], //es2017
@@ -254,10 +255,20 @@
 		// 	);
 		// }
 
-		option.plugins.push(['transform-react-jsx', {
+		let currentPath = otherOption.currentPath;
+
+		let isTypeScript = otherOption.scriptLang == "typescript" || currentPath && currentPath.endsWith(".ts");
+
+		option.plugins.push(
+			(isTypeScript ? ['transform-typescript', {
+				jsxPragma: "__serverBridge__.renderJsx(this)",
+				allowNamespaces: true,
+				allowDeclareFields: true,
+				onlyRemoveTypeImports: true,
+			}] : ['transform-react-jsx', {
 				pragma: "__serverBridge__.renderJsx(this)",
 				throwIfNamespace: true
-			}],
+			}]),
 			//["transform-regenerator"],
 			["proposal-decorators", {
 				"legacy": true
@@ -310,17 +321,31 @@
 			isInline: false,
 			doStaticInclude: true,
 			doStaticVueTemplate: true,
+			scriptLang: undefined,
 		}, otherOption);
 
 		let __unstrictFunMap = {};
 		if (otherOption.doStaticInclude) {
 			scriptContent = $jsBridge$.staticInclude(filepath, scriptContent);
 		}
+
 		if (otherOption.doStaticVueTemplate) {
 			scriptContent = $jsBridge$.staticVueTemplate(currentUrl, filepath, scriptContent, hasSourceMap,
 				"__unstrictFunMap",
 				__unstrictFunMap);
 		}
+
+		let currentPath;
+		if (currentUrl) {
+			let index = currentUrl.indexOf("://");
+			if (index > 0) {
+				index = currentUrl.indexOf("/", index + 3);
+				if (index > 0) {
+					currentPath = currentUrl.substring(index);
+				}
+			}
+		}
+		otherOption.currentPath = currentPath;
 
 		customerScriptPart = customerScriptPart || "";
 		let requireModules = [];
@@ -350,17 +375,6 @@
 				code: parsedCode,
 				sourceMap
 			};
-		}
-
-		let currentPath;
-		if (currentUrl) {
-			let index = currentUrl.indexOf("://");
-			if (index > 0) {
-				index = currentUrl.indexOf("/", index + 3);
-				if (index > 0) {
-					currentPath = currentUrl.substring(index);
-				}
-			}
 		}
 
 		let scriptPrefix =
@@ -398,7 +412,8 @@
 					Object.defineProperty(obj,'__esModule',{value: true});
 					for(var x in obj){__defineEsModuleProp(obj[x])}
 				};
-				__defineEsModuleProp(exports);(function(__unstrictFunMap){`;
+				__defineEsModuleProp(exports);
+				(function(__unstrictFunMap){`;
 		scriptPrefix = scriptPrefix.replace(/[\r\n]+[\t\b ]+/g, ' ');
 
 		let scriptSuffix = "\n})(" + (function() {
@@ -408,9 +423,14 @@
 			}
 			let rs = "{" + as.join(",\n") + "}";
 			return rs;
-		})() + ");" + customerScriptPart + "});\n";
+		})() + ");" + customerScriptPart + `
+		if(module.exports){
+			return module.exports;
+		}
+		});
+		`;
 
-		let finalCode = scriptPrefix + parsedCode + scriptSuffix
+		let finalCode = scriptPrefix + parsedCode + scriptSuffix;
 		return {
 			code: finalCode,
 			sourceMap
@@ -727,7 +747,8 @@
 
 		otherOption = extend({}, otherOption, {
 			doStaticInclude: false,
-			doStaticVueTemplate: false
+			doStaticVueTemplate: false,
+			scriptLang: scriptLang,
 		});
 
 		let result = this.parseEs6(url, filepath, scriptContent, customerScriptPart, hasSourceMap,

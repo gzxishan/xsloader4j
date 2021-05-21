@@ -1,6 +1,6 @@
 ## 一、项目介绍
 
-让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx。
+让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx、*.ts。
 
 ## 二、版本
 
@@ -85,8 +85,8 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
-- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,/index.js,/index.vue,/index.jsx"
-  ，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+]中的值
+- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,.ts,/index.js,/index.vue,/index.jsx,/index.ts"
+  ，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+,/index.ts]中的值
 - xsloader.es6.detectBrowser：是否根据浏览器版本，进行不同级别的js转换。默认true。
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
@@ -645,8 +645,12 @@ cnpm install --save @babel/polyfill
 
 ### v进行中
 
-### v1.2.49 2021/05/14
 1. 完善`xsloader`对`htmv`的支持；
+2. 升级`babel`到`7.14.3`；
+3. 支持`typescript`，后缀为`.ts`；
+4. 完善`xsloader`，当导入`css`、`scss`、`sass`、`less`后缀名的样式时，自动添加`css!`前缀
+
+### v1.2.49 2021/05/14
 
 1. 升级`babel`为`v7.13.15`;
 2. 增加配置`xsloader.es6.detectBrowser`，默认为true，用于开启浏览器版本判断，对js进行不同级别的转换；

@@ -133,7 +133,7 @@ public class JsScriptUtil {
                 new ScriptItem("/xsloader-js/lib/babel-polyfills/init1.js"),
                 new ScriptItem("/xsloader-js/lib/babel-polyfills/polyfills.js"),
                 new ScriptItem("/xsloader-js/lib/babel-polyfills/regexp-sticky.js"),
-                new ScriptItem("/xsloader-js/lib/babel-7.13.15/babel.js"),
+                new ScriptItem("/xsloader-js/lib/babel-7.14.3/babel.js"),
                 new ScriptItem("/xsloader-js/lib/vue-2.6.11-server-compiler.js")
         };
 

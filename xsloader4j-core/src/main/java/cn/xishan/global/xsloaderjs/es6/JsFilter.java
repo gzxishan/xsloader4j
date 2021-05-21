@@ -66,7 +66,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     @Property(name = "xsloader.sourcemap", defaultVal = "true")
     private static Boolean hasSourceMap;
 
-    @Property(name = "xsloader.es6.extensions", defaultVal = ".js,.vue,.jsx,/index.js,/index.vue,/index.jsx")
+    @Property(name = "xsloader.es6.extensions",
+              defaultVal = ".js,.vue,.jsx,.ts,/index.js,/index.vue,/index.jsx,/index.ts")
     private static String[] extensions;
 
     @Property(name = "xsloader.es6.v8flags")
@@ -232,6 +233,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             case "js+":
             case "jsx":
             case "js":
+            case "ts":
             case "vue":
             case "htmv_vue":
             case "scss":
@@ -314,15 +316,13 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
                                     XsloaderConfigFilter.setVersion(requestPath, version);
                                     int index = -1;
-                                    if (requestPath.endsWith("/index.js")) {
+                                    if (requestPath.endsWith("/index.js") || requestPath.endsWith("/index.ts")) {
                                         index = requestPath.length() - 6 - 3;
-
                                     } else if (requestPath.endsWith("/index.vue") || requestPath
                                             .endsWith("/index.jsx")) {
                                         index = requestPath.length() - 6 - 4;
-                                    } else if (requestPath.endsWith(".js")) {
+                                    } else if (requestPath.endsWith(".js") || requestPath.endsWith(".ts")) {
                                         index = requestPath.length() - 3;
-
                                     } else if (requestPath
                                             .endsWith(".vue") || requestPath
                                             .endsWith(".jsx")) {
@@ -383,7 +383,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
         String suffix = OftenStrUtil.getSuffix(path);
         String realPath = file.getAbsolutePath();
-        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx")) {
+        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx") || suffix.equals("ts")) {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
                     hasSourceMap);
@@ -594,7 +594,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         MAX_SUPPORT_BROWSER_VERSIONS.put("firefox", 82);
         MAX_SUPPORT_BROWSER_VERSIONS.put("opera", 72);
         MAX_SUPPORT_BROWSER_VERSIONS.put("ie", 11);
-        MAX_SUPPORT_BROWSER_VERSIONS.put("edge", 85);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("edge", 86);//85
         MAX_SUPPORT_BROWSER_VERSIONS.put("ios", 14);
         MAX_SUPPORT_BROWSER_VERSIONS.put("safari", 14);
     }
@@ -721,8 +721,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                         bos.write(newScript.getBytes(encoding));
                         byte[] data = bos.toByteArray();
                         response.setContentLength(data.length);
-                        HttpCacheUtil
-                                .setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
+                        HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
                         FileTool.in2out(new ByteArrayInputStream(data), response.getOutputStream(), 2048);
                         hasDealt = true;
                     }
