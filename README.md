@@ -77,6 +77,10 @@ xsloader.conf.properties.prop1=xxx
 xsloader.htmv.enable=false
 xsloader.htmv.paths[0]=* to /WEB-INF/htmv/default.html
 xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
+xsloader.react.autojs=true
+xsloader.react.product=true
+xsloader.htmr.paths[0]=* to /WEB-INF/htmr/default.html
+xsloader.htmr.paths[1]=/mobile/ to /WEB-INF/htmr/mobile.html
 ```
 
 - xsloader.es6.polyfill：是否使用polyfill，为true时、会自动加载polyfill，默认为true。
@@ -94,6 +98,8 @@ xsloader.htmv.paths[1]=/mobile/ to /WEB-INF/htmv/mobile.html
 - xsloader.htmv.paths：配置默认的html模板（可选）。`classpath:`开头表示资源目录，其他表示在web路径下（通过`servletContext.getRealPath`获取）
 - xsloader.conf.forceCacheSeconds：配置被浏览器强制缓存的时间
 - xsloader.es6.versionAppendTag：如果设置了该标记，当文件变化后，会在该标记后添加文件版本（支持的文件为所有需要转换的文件）；该标记右边加`,`表示需要前置逗号；
+- xsloader.react.autojs：默认为true，是否导入内置的react依赖。
+- xsloader.react.product：默认为true，使用内置react依赖时，是否为产品模式。
 
 ### 2、xsloader配置
 
@@ -473,7 +479,7 @@ return (`\jsx
 }
 ```
 
-#### 3）*.htmv
+#### 3.1）*.htmv
 
 - 该文件实际是一个vue格式的文件，更多说明见*.vue
 
@@ -487,7 +493,7 @@ return (`\jsx
 <template>
 
 </template>
-<script>
+<script lang>
 
 </script>
 
@@ -495,7 +501,7 @@ return (`\jsx
 
 </style>
 ```
-
+- `script`的`lang`支持`typescript`
 - 通过settings注释里的json格式对文档进行设置：
 
 1. title：设置文档标题
@@ -517,6 +523,35 @@ return (`\jsx
 ```
 
 - 通过设置`xsloader.htmv.enable=true`来启用htmv
+
+#### 3.2）*.htmr
+
+- 该文件实际是一个jsr格式的文件，更多说明见*.jsr
+
+```html
+<!--settings:
+{
+    title:"文档标题",
+    heads:['<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">']
+}
+-->
+<script lnag="">
+    export default <h1>Hello, world!</h1>;
+</script>
+
+<style lang="scss" scoped="true">
+
+</style>
+```
+- `script`的`lang`支持`typescript`
+- 通过settings注释里的json格式对文档进行设置：
+
+1. title：设置文档标题
+2. heads：用于添加到`<head>`标签中
+
+- 通过浏览器可以直接访问htmr文件（java端会自动转换）。
+- 通过设置`xsloader.htmr.enable=true`来启用htmr
+- 若`xsloader.react.autojs`为false需要配置`react`与`react-dom`依赖
 
 #### 4）*.scss
 
@@ -612,7 +647,10 @@ return (`\jsx
 }
 ```
 
-#### 6）sourcemap源码
+#### 7）*.jsr
+代码为react模式，脚本语法同js，jsx属性见react（不同于vue的）。
+
+#### 8）sourcemap源码
 
 转换的源码可在浏览器控制台Sources标签下，对应页面的`/$$xs-sources$$/`路径下找到，支持脚本断点调试。
 
@@ -649,6 +687,8 @@ cnpm install --save @babel/polyfill
 2. 升级`babel`到`7.14.3`；
 3. 支持`typescript`，后缀为`.ts`；
 4. 完善`xsloader`，当导入`css`、`scss`、`sass`、`less`后缀名的样式时，自动添加`css!`前缀
+5. 支持`react`,后缀为`.jsr`；
+6. 支持`*.htmr`文件，可直接通过浏览器访问；
 
 ### v1.2.49 2021/05/14
 

@@ -143,7 +143,8 @@ public class Es6Wrapper {
         return content;
     }
 
-    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap) {
+    public Result<String> parseEs6(String url, String filepath, String es6Content, boolean hasSourceMap,
+            boolean reactAutojs) {
         LOGGER.info("parse es6 code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url)) {
             Result<String> result = new Result<>(getBrowserInfo());
@@ -153,6 +154,7 @@ public class Es6Wrapper {
             V8Object option = j2BaseInterface.newV8Object();
             option.add("browserType", browserInfo == null ? null : browserInfo.getBrowserType());
             option.add("browserMajorVersion", browserInfo == null ? null : browserInfo.getBrowserMajorVersion());
+            option.add("reactAutojs", reactAutojs);
 
             es6Content = removeSChars(es6Content);
 
@@ -189,7 +191,8 @@ public class Es6Wrapper {
         }
     }
 
-    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap) {
+    public Result<String> parseVue(String url, @MayNull String filepath, String vueContent, boolean hasSourceMap,
+            boolean htmr_jsr) {
         LOGGER.info("parse vue code:url={},file={}", url, filepath);
         try (J2BaseInterface j2BaseInterface = JsScriptUtil.getAndAcquire(url)) {
             vueContent = removeSChars(vueContent);
@@ -202,6 +205,7 @@ public class Es6Wrapper {
             V8Object option = j2BaseInterface.newV8Object();
             option.add("browserType", browserInfo == null ? null : browserInfo.getBrowserType());
             option.add("browserMajorVersion", browserInfo == null ? null : browserInfo.getBrowserMajorVersion());
+            option.add("htmr_jsr", htmr_jsr);
 
             V8Object xsloaderServer = j2BaseInterface.getRootObject("XsloaderServer");
             V8Array parameters = j2BaseInterface.newV8Array()

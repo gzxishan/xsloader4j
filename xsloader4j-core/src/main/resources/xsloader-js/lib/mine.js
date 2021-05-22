@@ -4,6 +4,7 @@
 	}
 
 	const POLYFILL_PATH = $jsBridge$.getPolyfillPath();
+	const CONTEXT_PATH = $jsBridge$.getContextPath();
 
 	let api = {};
 	root.XsloaderServer = api;
@@ -258,15 +259,16 @@
 		let currentPath = otherOption.currentPath;
 
 		let isTypeScript = otherOption.scriptLang == "typescript" || currentPath && currentPath.endsWith(".ts");
+		let isReact = otherOption.htmr_jsr || currentPath && currentPath.endsWith(".jsr");
 
 		option.plugins.push(
 			(isTypeScript ? ['transform-typescript', {
-				jsxPragma: "__serverBridge__.renderJsx(this)",
+				jsxPragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				allowNamespaces: true,
 				allowDeclareFields: true,
 				onlyRemoveTypeImports: true,
 			}] : ['transform-react-jsx', {
-				pragma: "__serverBridge__.renderJsx(this)",
+				pragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				throwIfNamespace: true
 			}]),
 			//["transform-regenerator"],
@@ -322,6 +324,8 @@
 			doStaticInclude: true,
 			doStaticVueTemplate: true,
 			scriptLang: undefined,
+			reactAutojs: true,
+
 		}, otherOption);
 
 		let __unstrictFunMap = {};
@@ -377,12 +381,16 @@
 			};
 		}
 
+		let isReact = otherOption.htmr_jsr || currentPath && currentPath.endsWith(".jsr");
+
 		let scriptPrefix =
 			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
 			xsloader.__ignoreCurrentRequireDep=true;
 			xsloader.define(['exports','exists!xsloader4j-server-bridge or server-bridge']
+				.concat(${JSON.stringify(isReact?[!otherOption.reactAutojs?'react':CONTEXT_PATH+'/react.react-inner.js',!otherOption.reactAutojs?'react-dom':CONTEXT_PATH+'/react-dom.react-inner.js']:[])})
 				.concat(window.__hasPolyfill?[]:[${POLYFILL_PATH?"'"+POLYFILL_PATH+"'":""}])
-				.concat([${innerDeps.join(',')}]),function(exports,__serverBridge__){
+				.concat([${innerDeps.join(',')}])
+				,function(exports,__serverBridge__${isReact&&otherOption.reactAutojs?',React,ReactDOM':''}){
 				var thiz=this;
 				var module={};
 				var __real_require=__serverBridge__.getRequire(thiz);
@@ -479,6 +487,7 @@
 		let scriptContent = undefined;
 		let scriptLang;
 		let scriptResult = tagExec("script", content);
+		let htmr_jsr = otherOption.htmr_jsr;
 
 		let appendPrefixComment = function(str, markedComments, offset) {
 			if (!str) {
@@ -595,7 +604,7 @@
 			}
 		}
 
-		let templateResult = tagExec("template", content);
+		let templateResult = htmr_jsr ? null : tagExec("template", content);
 
 		//获取template
 		let template = templateResult ? templateResult.content : "";
@@ -643,107 +652,128 @@
 
 		let customerScriptPart = '\nexports.default=exports.default||{};\n' +
 			'var __cssBase64="' + encodeBase64(theFinalCssContent) + '";\n' +
-			`var __styleObj=__styleBuilder(__decodeBase64(__cssBase64),'${filename}');
-			var origin__beforeCreate;
-			var origin__created;
-			var origin__mounted;
-			var origin__destroyed;\n` +
-			(function() { //服务端编译<template>
-				let strs = [];
+			`var __styleObj=__styleBuilder(__decodeBase64(__cssBase64),'${filename}');\n`
+		if (htmr_jsr) {
+			customerScriptPart += `__styleObj&&__styleObj.init();\n` +
+				(() => {
+					let strs = [];
+					if (scopedClasses.length) {
+						let scopedClass = scopedClasses.join(" ");
+						strs.push(`
+						try{
+							var reactAppDom = document.getElementById('react-app');
+							reactAppDom&&reactAppDom.classList.add(${JSON.stringify(scopedClass)});
+						}catch(e){
+							console.error(e);
+						}
+						`);
+					}
+					return strs.join("");
+				})();
+		} else {
+			customerScriptPart +=
+				`var origin__beforeCreate;
+				var origin__created;
+				var origin__mounted;
+				var origin__destroyed;\n` +
+				(() => { //服务端编译<template>
+					let strs = [];
 
-				if (scopedClasses.length) {
-					let scopedClass = scopedClasses.join(" ");
-					let index = template.indexOf("<");
-					let index2 = template.indexOf(">", index + 1);
-					if (index != -1 && index2 != -1) {
-						let tag = template.substring(index, index2 + 1);
-						let result = /^<\s*([a-zA-Z0-9_$\.-])/.exec(tag);
-						if (result) {
-							let tagName = result[1];
-							let regResult = tagExec(tagName, tag + "</" + tagName + ">");
-							if (regResult && regResult.attrs["class"]) {
-								let classObj = regResult.attrs["class"];
-								let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj
-									.content + classObj.s2;
-								template = template.substring(0, index) +
-									tag.substring(0, classObj.index) +
-									classStr +
-									tag.substring(classObj.index + classObj.fullContent.length) +
-									template.substring(index2 + 1);
-							} else {
-								template = template.substring(0, index2) + " class='" + scopedClass +
-									"' " +
-									template.substring(index2);
+					if (scopedClasses.length) {
+						let scopedClass = scopedClasses.join(" ");
+						let index = template.indexOf("<");
+						let index2 = template.indexOf(">", index + 1);
+						if (index != -1 && index2 != -1) {
+							let tag = template.substring(index, index2 + 1);
+							let result = /^<\s*([a-zA-Z0-9_$\.-])/.exec(tag);
+							if (result) {
+								let tagName = result[1];
+								let regResult = tagExec(tagName, tag + "</" + tagName + ">");
+								if (regResult && regResult.attrs["class"]) {
+									let classObj = regResult.attrs["class"];
+									let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj
+										.content + classObj.s2;
+									template = template.substring(0, index) +
+										tag.substring(0, classObj.index) +
+										classStr +
+										tag.substring(classObj.index + classObj.fullContent.length) +
+										template.substring(index2 + 1);
+								} else {
+									template = template.substring(0, index2) + " class='" + scopedClass +
+										"' " +
+										template.substring(index2);
+								}
 							}
 						}
 					}
-				}
 
-				let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap,
-					otherOption);
-				if (compiledTemplate.render) {
-					strs.push("exports.default.render=", compiledTemplate.render, ";\n");
-				}
+					let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap,
+						otherOption);
+					if (compiledTemplate.render) {
+						strs.push("exports.default.render=", compiledTemplate.render, ";\n");
+					}
 
-				if (compiledTemplate.staticRenderFns) {
-					strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns,
-						";\n");
-				}
-				return strs.join("");
-			})() +
-			`origin__beforeCreate = exports.default.beforeCreate;
-			origin__created = exports.default.created;
-			origin__mounted = exports.default.mounted;
-			origin__destroyed = exports.default.destroyed;
-			
-			exports.default.beforeCreate = function() {
-			   this.$_styleObj=__styleObj&&__styleObj.init();
-			   this.$keepVueStyle=false;
-			   this.$thiz=thiz;
-			   var that=this;
-			   this.$destroyVueStyle=function(){
-				   that.$_styleObj&&that.$_styleObj.destroy();
-				   that.$_styleObj=null;
-			   };
-			   this.__xsloader_vue=true;
-			   var rt;
-			   if(origin__beforeCreate) {
-			    rt = origin__beforeCreate.apply(this, arguments);
-			   }
-			   return rt;
-			};
-			exports.default.created = function() {
-			   this.$emit('vue-created',this);
-			   var rt;
-			   if(origin__created) {
-			    rt = origin__created.apply(this, arguments);
-			   }
-			   this.$emit('invoked-vue-created',this);
-			   return rt;
-			};
-			
-			exports.default.mounted = function() {
-			   this.$emit('vue-mounted',this);
-			   var rt;
-			   if(origin__mounted) {
-			    rt = origin__mounted.apply(this, arguments);
-			   }
-			   this.$emit('invoked-vue-mounted',this);
-			   return rt;
-			};
-			
-			exports.default.destroyed = function() {
-			   this.$emit('vue-destroyed',this);
-			   this.$keepVueStyle!==true&&this.$destroyVueStyle();
-			   var rt;
-			   if(origin__destroyed) {
-			    rt = origin__destroyed.apply(this, arguments);
-			   }
-			   this.$emit('invoked-vue-destroyed',this);
-			   return rt;
-			};
-			__compileVue(exports);
-			__defineEsModuleProp(exports);\n`;
+					if (compiledTemplate.staticRenderFns) {
+						strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns,
+							";\n");
+					}
+					return strs.join("");
+				})() +
+				`origin__beforeCreate = exports.default.beforeCreate;
+				origin__created = exports.default.created;
+				origin__mounted = exports.default.mounted;
+				origin__destroyed = exports.default.destroyed;
+				
+				exports.default.beforeCreate = function() {
+				   this.$_styleObj=__styleObj&&__styleObj.init();
+				   this.$keepVueStyle=false;
+				   this.$thiz=thiz;
+				   var that=this;
+				   this.$destroyVueStyle=function(){
+					   that.$_styleObj&&that.$_styleObj.destroy();
+					   that.$_styleObj=null;
+				   };
+				   this.__xsloader_vue=true;
+				   var rt;
+				   if(origin__beforeCreate) {
+					rt = origin__beforeCreate.apply(this, arguments);
+				   }
+				   return rt;
+				};
+				exports.default.created = function() {
+				   this.$emit('vue-created',this);
+				   var rt;
+				   if(origin__created) {
+					rt = origin__created.apply(this, arguments);
+				   }
+				   this.$emit('invoked-vue-created',this);
+				   return rt;
+				};
+				
+				exports.default.mounted = function() {
+				   this.$emit('vue-mounted',this);
+				   var rt;
+				   if(origin__mounted) {
+					rt = origin__mounted.apply(this, arguments);
+				   }
+				   this.$emit('invoked-vue-mounted',this);
+				   return rt;
+				};
+				
+				exports.default.destroyed = function() {
+				   this.$emit('vue-destroyed',this);
+				   this.$keepVueStyle!==true&&this.$destroyVueStyle();
+				   var rt;
+				   if(origin__destroyed) {
+					rt = origin__destroyed.apply(this, arguments);
+				   }
+				   this.$emit('invoked-vue-destroyed',this);
+				   return rt;
+				};__compileVue(exports);`;
+		}
+
+
+		customerScriptPart += '__defineEsModuleProp(exports);\n';
 
 		otherOption = extend({}, otherOption, {
 			doStaticInclude: false,

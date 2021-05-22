@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,7 +68,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     private static Boolean hasSourceMap;
 
     @Property(name = "xsloader.es6.extensions",
-              defaultVal = ".js,.vue,.jsx,.ts,/index.js,/index.vue,/index.jsx,/index.ts")
+              defaultVal = ".js,.vue,.jsx,.ts,.jsr,/index.js,/index.vue,/index.jsx,/index.ts,/index.jsr")
     private static String[] extensions;
 
     @Property(name = "xsloader.es6.v8flags")
@@ -114,11 +115,20 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     @Property(name = "xsloader.es6.dealt.removeSChars", defaultVal = "true")
     static Boolean removeSChars;
 
+
+    //////////////////////////
+    ///react
+    @Property(name = "xsloader.react.autojs", defaultVal = "true")
+    static boolean reactAutojs;
+    @Property(name = "xsloader.react.product", defaultVal = "true")
+    static boolean reactProduct;
+
     @AutoSet
     ServletContext servletContext;
 
     private IPathDealt pathDealt;
     private byte[] polyfillData;
+    private byte[] reactData, reactDomData;
 
 
     public static final Version VERSION_NEED_REPLACE_REQUIRE = new Version("1.1.10");
@@ -217,8 +227,18 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         if (usePolyfill) {
             String script = ResourceUtil.getAbsoluteResourceString("/xsloader-js/polyfill/polyfill.min.js", "utf-8");
             script = "if(!window.__hasPolyfill){window.__hasPolyfill=true;" + script + "}";
-            polyfillData = script.getBytes("utf-8");
+            polyfillData = script.getBytes(encoding);
             J2BaseInterface.polyfillPath = servletContext.getContextPath() + "/polyfill.js";
+            J2BaseInterface.contextPath = servletContext.getContextPath();
+        }
+
+        if (reactAutojs) {
+            reactData = ResourceUtil.getAbsoluteResourceString(
+                    "/xsloader-js/react/react." + (reactProduct ? "production.min" : "development") + ".js",
+                    "utf-8").getBytes(encoding);
+            reactDomData = ResourceUtil.getAbsoluteResourceString(
+                    "/xsloader-js/react/react-dom." + (reactProduct ? "production.min" : "development") + ".js",
+                    "utf-8").getBytes(encoding);
         }
 
         initVersionAppend(servletContext);
@@ -234,6 +254,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             case "jsx":
             case "js":
             case "ts":
+            case "jsr":
+            case "htmr_jsr":
             case "vue":
             case "htmv_vue":
             case "scss":
@@ -323,9 +345,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                                         index = requestPath.length() - 6 - 4;
                                     } else if (requestPath.endsWith(".js") || requestPath.endsWith(".ts")) {
                                         index = requestPath.length() - 3;
-                                    } else if (requestPath
-                                            .endsWith(".vue") || requestPath
-                                            .endsWith(".jsx")) {
+                                    } else if (requestPath.endsWith(".vue") || requestPath.endsWith(".jsx") ||
+                                            requestPath.endsWith(".jsr")) {
                                         index = requestPath.length() - 4;
                                     }
 
@@ -383,18 +404,21 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
         String suffix = OftenStrUtil.getSuffix(path);
         String realPath = file.getAbsolutePath();
-        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx") || suffix.equals("ts")) {
+        if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx") || suffix.equals("ts") ||
+                suffix.equals("jsr")) {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
-                    hasSourceMap);
+                    hasSourceMap, reactAutojs);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "application/javascript", result);
-        } else if (suffix.equals("vue") || suffix.endsWith("htmv_vue")) {
+        } else if (suffix.equals("vue") || suffix.equals("htmv_vue") || suffix.equals("htmr_jsr")) {
+            boolean htmr_jsr=suffix.equals("htmr_jsr");
+
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper
-                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap);
+                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap,htmr_jsr);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource
@@ -510,7 +534,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                 realFile = pathDealt.getRealFile(servletContext, path.substring(0, path.length() - 1));
             } else {
                 File file = pathDealt.getRealFile(servletContext, path);
-                if (file != null && file.getName().endsWith(".htmv_vue")) {
+                if (file != null && (file.getName().endsWith(".htmv_vue")||file.getName().endsWith(".htmr_jsr"))) {
                     String filepath = file.getAbsolutePath();
                     file = new File(filepath.substring(0, filepath.length() - 4));
                 }
@@ -700,6 +724,22 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                 HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
                 FileTool.in2out(new ByteArrayInputStream(polyfillData), response.getOutputStream(), 2048);
                 hasDealt = true;
+            } else if (reactAutojs && path.endsWith("react-inner.js")) {
+                if (path.endsWith("/react.react-inner.js")) {
+                    response.setContentType("application/javascript");
+                    response.setCharacterEncoding(encoding);
+                    response.setContentLength(reactData.length);
+                    HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
+                    FileTool.in2out(new ByteArrayInputStream(reactData), response.getOutputStream(), 2048);
+                    hasDealt = true;
+                } else if (path.endsWith("/react-dom.react-inner.js")) {
+                    response.setContentType("application/javascript");
+                    response.setCharacterEncoding(encoding);
+                    response.setContentLength(reactDomData.length);
+                    HttpCacheUtil.setCacheWithModified(forceCacheSeconds, System.currentTimeMillis(), response);
+                    FileTool.in2out(new ByteArrayInputStream(reactDomData), response.getOutputStream(), 2048);
+                    hasDealt = true;
+                }
             } else {
                 String realPath = autoPathThreadLocal.get();
                 if (realPath == null) {
@@ -810,7 +850,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             path = path.substring(0, path.length() - 4);
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null, browserInfo);
-        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap);
+        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap,false);
         registerListenForVersionAppend(url, filepath == null ? null : new File(filepath), result.getRelatedFiles());
 
         CachedResource cachedResource = CachedResource

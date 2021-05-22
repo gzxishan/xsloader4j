@@ -1,6 +1,7 @@
 package cn.xishan.global.xsloaderjs;
 
 import cn.xishan.global.xsloaderjs.es6.JsFilter;
+import cn.xishan.global.xsloaderjs.htmr.HtmrFilterer;
 import cn.xishan.global.xsloaderjs.htmv.HtmvFilterer;
 import cn.xishan.oftenporter.porter.core.advanced.IConfigData;
 import cn.xishan.oftenporter.porter.core.annotation.AutoSet;
@@ -36,11 +37,10 @@ import java.util.Map;
         description = "xsloader.js依赖",
         dispatcherTypes = {DispatcherType.REQUEST, DispatcherType.FORWARD}, asyncSupported = true
 )
-public class XsloaderFilter implements Filterer
-{
+public class XsloaderFilter implements Filterer {
     private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
 
-    public static final String XSLOADER_VERSION = "1.1.47";
+    public static final String XSLOADER_VERSION = "1.1.48";
 
     private byte[] content;
     private byte[] map;
@@ -55,10 +55,18 @@ public class XsloaderFilter implements Filterer
     private Boolean disabled;
 
     /**
-     * 是否启用htmv，默认false。
+     * 是否启用htmv，默认true。
      */
-    @Property(name = "xsloader.htmv.enable", defaultVal = "false")
+    @Property(name = "xsloader.htmv.enable", defaultVal = "true")
     private Boolean enableHtmv;
+
+    /**
+     * 是否启用htmr，默认true。
+     */
+    @Property(name = "xsloader.htmr.enable", defaultVal = "true")
+    private Boolean enableHtmr;
+    @Property(name = "xsloader.react.autojs", defaultVal = "true")
+    private boolean reactAutojs;
 
     /**
      * 用于开发。
@@ -116,23 +124,19 @@ public class XsloaderFilter implements Filterer
     @AutoSet
     ServletContext servletContext;
 
-    public XsloaderFilter()
-    {
+    public XsloaderFilter() {
         LOGGER.info("XsloaderFilter is new");
     }
 
     @Override
-    public String oftenContext()
-    {
+    public String oftenContext() {
         return "*";
     }
 
     @AutoSet.SetOk
-    public void setOk()
-    {
+    public void setOk() {
 
-        try
-        {
+        try {
             XsloaderConfigFilter.versionAppendTag = versionAppendTag;
 
             Map<String, Object> props = configData.getJSONByKeyPrefix(propertiesPrefix);
@@ -146,11 +150,16 @@ public class XsloaderFilter implements Filterer
             autoSetter.forInstance(new Object[]{jsFilter});
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
 
-            if (enableHtmv)
-            {
+            if (enableHtmv) {
                 HtmvFilterer htmvFilterer = new HtmvFilterer(servletContext);
                 autoSetter.forInstance(new Object[]{htmvFilterer});
                 WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(htmvFilterer);
+            }
+
+            if (enableHtmr) {
+                HtmrFilterer htmrFilterer = new HtmrFilterer(servletContext, reactAutojs);
+                autoSetter.forInstance(new Object[]{htmrFilterer});
+                WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(htmrFilterer);
             }
 
             content = FileTool.getData(getClass().getResourceAsStream(
@@ -158,49 +167,39 @@ public class XsloaderFilter implements Filterer
             map = FileTool.getData(getClass().getResourceAsStream(
                     "/xsloader-js/1.1.x/" + (useMin ? "xsloader.min.js.map" : "xsloader.js.map")), 2048);
             etag = HashUtil.md5(content);
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new InitException(e);
         }
     }
 
     @Override
-    public void doInit(FilterConfig filterConfig) throws ServletException
-    {
+    public void doInit(FilterConfig filterConfig) throws ServletException {
 
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
-            FilterChain chain) throws IOException, ServletException
-    {
-        if (disabled)
-        {
+            FilterChain chain) throws IOException, ServletException {
+        if (disabled) {
             chain.doFilter(servletRequest, servletResponse);
-        } else
-        {
+        } else {
             HttpServletRequest request = (HttpServletRequest) servletRequest;
             HttpServletResponse response = (HttpServletResponse) servletResponse;
 
             String name = OftenStrUtil.getNameFormPath(request.getRequestURI());
-            if (latestDirForDebug != null)
-            {
+            if (latestDirForDebug != null) {
 
-                if (name.endsWith(".map"))
-                {
+                if (name.endsWith(".map")) {
                     File file = new File(latestDirForDebug + File.separator + name);
-                    if (file.exists() && file.lastModified() != mapTime)
-                    {
+                    if (file.exists() && file.lastModified() != mapTime) {
                         map = FileTool.getData(file, 2048);
                         mapTime = file.lastModified();
                     }
-                } else
-                {
+                } else {
                     File file = new File(
                             latestDirForDebug + File.separator + (useMin ? "xsloader.min.js" : "xsloader.js"));
 
-                    if (file.exists() && file.lastModified() != contentTime)
-                    {
+                    if (file.exists() && file.lastModified() != contentTime) {
                         content = FileTool.getData(file, 2048);
                         contentTime = file.lastModified();
                         etag = HashUtil.md5(content);
@@ -209,35 +208,27 @@ public class XsloaderFilter implements Filterer
             }
 
 
-            if (name.endsWith(".map"))
-            {
-                if (!hasMap || map == null || useMin && !name.contains(".min") || !useMin && name.contains(".min"))
-                {
+            if (name.endsWith(".map")) {
+                if (!hasMap || map == null || useMin && !name.contains(".min") || !useMin && name.contains(".min")) {
                     response.sendError(404);
-                } else
-                {
-                    if (HttpCacheUtil.isCacheIneffectiveWithModified(mapTime, request, response))
-                    {
+                } else {
+                    if (HttpCacheUtil.isCacheIneffectiveWithModified(mapTime, request, response)) {
                         HttpCacheUtil.setCacheWithModified(forceCacheSeconds, mapTime, response);
                         response.setCharacterEncoding("utf-8");
                         response.setContentLength(map.length);
                         FileTool.in2out(new ByteArrayInputStream(map), response.getOutputStream(), 2048);
-                    } else
-                    {
+                    } else {
                         HttpCacheUtil.setCacheWithModified(forceCacheSeconds, mapTime, response);
                     }
                 }
-            } else
-            {
-                if (HttpCacheUtil.isCacheIneffectiveWithEtag(etag, request, response))
-                {
+            } else {
+                if (HttpCacheUtil.isCacheIneffectiveWithEtag(etag, request, response)) {
                     HttpCacheUtil.setCacheWithEtag(forceCacheSeconds, etag, response);
                     response.setContentType("application/javascript");
                     response.setCharacterEncoding("utf-8");
                     response.setContentLength(content.length);
                     FileTool.in2out(new ByteArrayInputStream(content), response.getOutputStream(), 2048);
-                } else
-                {
+                } else {
                     HttpCacheUtil.setCacheWithEtag(forceCacheSeconds, etag, response);
                 }
             }
@@ -245,8 +236,7 @@ public class XsloaderFilter implements Filterer
     }
 
     @Override
-    public void destroy()
-    {
+    public void destroy() {
 
     }
 }

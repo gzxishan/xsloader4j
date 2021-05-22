@@ -43,6 +43,7 @@ public class J2BaseInterface extends J2Object implements AutoCloseable {
     private ConcurrentKeyLock lock;
     private J2BaseInterfaceImpl impl;
     static String polyfillPath;
+    static String contextPath;
 
     public J2BaseInterface(V8 v8, boolean isAutoRegisterMethod) {
         super(newRootObject(v8));
@@ -344,6 +345,11 @@ public class J2BaseInterface extends J2Object implements AutoCloseable {
     @JsBridgeMethod
     public String getPolyfillPath() {
         return polyfillPath;
+    }
+
+    @JsBridgeMethod
+    public String getContextPath(){
+        return contextPath;
     }
 
     public V8Object getRootObject(String name) {
