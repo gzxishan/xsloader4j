@@ -9,13 +9,6 @@ module.exports = {
         filename: "#{name}.js" // 打包后输出文件的文件名
     },
 	devtool:"source-map",
-	 resolve: {
-      fallback: {
-       
-      },
-      alias: {
-        
-      }
-    }
+	target: ['web', 'es5']
 }
 

@@ -3,6 +3,7 @@
     {
       "name": "index",
       "build": true,
+      "ignoreCurrentRequireDep": true,
       "dependencies": {
       }
     }

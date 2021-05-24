@@ -11,7 +11,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import java.io.File;
+import java.io.*;
 
 @Mojo(name = "cnpm")
 public class CnpmDepMojo extends AbstractMojo {
@@ -32,13 +32,16 @@ public class CnpmDepMojo extends AbstractMojo {
             File targetDir = new File(project.getBuild().getDirectory() +
                     File.separator + "xsloader4j-npm" + File.separator);
             getLog().info("target dir:" + targetDir.getAbsolutePath());
-            FileTool.delete(targetDir, false);
+            FileTool.delete(new File(targetDir.getAbsolutePath() + File.separator + "dist"), false);
 
             JSONObject config = JSON.parseObject(FileTool.getString(configFile));
             JSONArray builds = config.getJSONArray("builds");
             for (int i = 0; i < builds.size(); i++) {
                 JSONObject item = builds.getJSONObject(i);
                 if (item.getBooleanValue("build")) {
+                    boolean ignoreCurrentRequireDep = !item.containsKey("ignoreCurrentRequireDep") ||
+                            item.getBooleanValue("ignoreCurrentRequireDep");
+
                     if (!targetDir.exists()) {
                         targetDir.mkdirs();
                     }
@@ -96,6 +99,34 @@ public class CnpmDepMojo extends AbstractMojo {
                     } catch (Exception e) {
                         getLog().warn(e);
                         throw new MojoExecutionException("npm build failed:" + e.getMessage());
+                    }
+
+                    if (ignoreCurrentRequireDep) {
+                        File targetFile = new File(
+                                targetDir.getAbsolutePath() + File.separator + "dist" + File.separator + name + ".js");
+                        File tempFile = new File(targetFile.getAbsolutePath() + ".temp");
+                        try {
+                            getLog().info("create temp file:" + tempFile.getAbsolutePath());
+                            tempFile.createNewFile();
+                            try (OutputStream os = new BufferedOutputStream(new FileOutputStream(tempFile));
+                                 InputStream in = new BufferedInputStream(new FileInputStream(targetFile))) {
+                                os.write("if(typeof xsloader!='undefined'){xsloader.__ignoreCurrentRequireDep=true;}"
+                                        .getBytes());
+                                byte[] buf = new byte[4096];
+                                int n;
+                                while ((n = in.read(buf)) > 0) {
+                                    os.write(buf, 0, n);
+                                }
+                                os.flush();
+                            }
+
+                            getLog().info("rename temp file:" + tempFile.getAbsolutePath());
+                            targetFile.delete();
+                            tempFile.renameTo(targetFile);
+                        } catch (Exception e) {
+                            getLog().warn(e);
+                            throw new MojoExecutionException("deal target file failed:" + e.getMessage());
+                        }
                     }
 
                     getLog().info(String.format("build %s success", name));
