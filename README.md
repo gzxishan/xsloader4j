@@ -1,6 +1,6 @@
 ## 一、项目介绍
 
-让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx、*.ts。
+让java web项目支持JavaScript ES6+、*.scss、*.less、*.vue、*.jsx、*.ts等。
 
 ## 二、版本
 
@@ -89,8 +89,8 @@ xsloader.htmr.paths[1]=/mobile/ to /WEB-INF/htmr/mobile.html
 - xsloader.sourcemap：是否转换source map。
 - xsloader.es6.dealt.ignores：忽略转换的目录，用逗号分隔，如“/static/lib1,/static/lib2”。
 - xsloader.es6.dealt.static：静态资源在资源目录下的路径（在spring boot嵌入式版本中使用），如“/static”，多个用逗号分隔。
-- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,.ts,/index.js,/index.vue,/index.jsx,/index.ts"
-  ，且取值只能是[.js,.jsx,.vue,.js+,/index.vue,/index.jsx,/index.js+,/index.ts]中的值
+- xsloader.es6.extensions：脚本后缀，可以省略里面指定的后缀名（但路径中必须含有/分隔符），默认为".js,.vue,.jsx,.ts,.jsr,.jtr,/index.js,/index.vue,/index.jsx,/index.ts,/index.jsr,/index.jtr"
+  ，且取值只能是[.js,.vue,.jsx,.ts,.jsr,.jtr,/index.js,/index.vue,/index.jsx,/index.ts,/index.jsr,/index.jtr]中的值
 - xsloader.es6.detectBrowser：是否根据浏览器版本，进行不同级别的js转换。默认true。
 - xsloader.es6.v8flags：v8引擎flags
 - xsloader.conf.properties.xxx：参数可直接在xsloader配置文件里使用`#{propName}`进行引用。
@@ -527,6 +527,8 @@ return (`\jsx
 #### 3.2）*.htmr
 
 - 该文件实际是一个jsr格式的文件，更多说明见*.jsr
+- htmr文件无`<template>`,html注释`<!---->`后面需有换行，`<style>`标签前面需要有换行。
+- js代码可以省略`script`标签，`style`标签必须放在js代码后面，js代码里不能出现`<style>`标签与html注释`<!---->`。
 
 ```html
 <!--settings:
@@ -535,9 +537,7 @@ return (`\jsx
     heads:['<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">']
 }
 -->
-<script lnag="">
-    export default <h1>Hello, world!</h1>;
-</script>
+export default <h1>Hello, world!</h1>;
 
 <style lang="scss" scoped="true">
 
@@ -647,7 +647,8 @@ return (`\jsx
 }
 ```
 
-#### 7）*.jsr
+#### 7）*.jsr,*.jtr
+- *.jtr后缀的语言为typescript
 代码为react模式，脚本语法同js，jsx属性见react（不同于vue的）。
 
 #### 8）sourcemap源码
@@ -687,7 +688,7 @@ cnpm install --save @babel/polyfill
 2. 升级`babel`到`7.14.3`；
 3. 支持`typescript`，后缀为`.ts`；
 4. 完善`xsloader`，当导入`css`、`scss`、`sass`、`less`后缀名的样式时，自动添加`css!`前缀
-5. 支持`react`,后缀为`.jsr`；
+5. 支持`react`,后缀为`.jsr`；支持typescript的`react`,后缀为`.jtr`；
 6. 支持`*.htmr`文件，可直接通过浏览器访问；
 
 ### v1.2.49 2021/05/14

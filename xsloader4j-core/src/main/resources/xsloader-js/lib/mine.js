@@ -258,19 +258,31 @@
 
 		let currentPath = otherOption.currentPath;
 
-		let isTypeScript = otherOption.scriptLang == "typescript" || currentPath && currentPath.endsWith(".ts");
-		let isReact = otherOption.htmr_jsr || currentPath && currentPath.endsWith(".jsr");
-
-		option.plugins.push(
-			(isTypeScript ? ['transform-typescript', {
+		let isTypeScript = otherOption.scriptLang == "typescript" || currentPath && (currentPath.endsWith(".ts")||currentPath.endsWith(".jtr"));
+		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr")||currentPath.endsWith(".jtr"));
+		
+		if(isTypeScript){
+			option.plugins.push(['transform-typescript', {
+				isTSX:isReact,
 				jsxPragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				allowNamespaces: true,
 				allowDeclareFields: true,
 				onlyRemoveTypeImports: true,
-			}] : ['transform-react-jsx', {
+			}]);
+			
+			if(isReact){
+				option.plugins.push( ['transform-react-jsx', {
+					throwIfNamespace: true
+				}]);
+			}
+		}else{
+			option.plugins.push( ['transform-react-jsx', {
 				pragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				throwIfNamespace: true
-			}]),
+			}]);
+		}
+
+		option.plugins.push(
 			//["transform-regenerator"],
 			["proposal-decorators", {
 				"legacy": true
@@ -381,7 +393,7 @@
 			};
 		}
 
-		let isReact = otherOption.htmr_jsr || currentPath && currentPath.endsWith(".jsr");
+		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr")||currentPath.endsWith(".jtr"));
 
 		let scriptPrefix =
 			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
@@ -431,12 +443,8 @@
 			}
 			let rs = "{" + as.join(",\n") + "}";
 			return rs;
-		})() + ");" + customerScriptPart + `
-		if(module.exports){
-			return module.exports;
-		}
-		});
-		`;
+		})() + ");" + customerScriptPart + 
+		`if(module.exports){return module.exports;} });\n`;
 
 		let finalCode = scriptPrefix + parsedCode + scriptSuffix;
 		return {
@@ -468,12 +476,14 @@
 	 * <template></template>
 	 * <script></script>
 	 * <style></style>
+	 * <style></style>
 	 * //////////
 	 * 说明：
 	 * 1、<template>：内部只能有一个根元素，表达式支持es6表达式，在服务器端编译。
 	 * 2、<script>：支持ES6代码。支持import,vue异步加载组件用'()=>import(...)'
 	 * 3、<style>：lang属性支持default、scss(推荐)、less；可包含多个style标签；scoped:true(scoped),false
 	 * 4、支持:staticInclude(relativePath)
+	 * 5、htmr文件无template，可以js代码可以省略script标签，style标签必须放在js代码后面，js代码里不能出现<style>标签与html注释。
 	 * 
 	 * @param {Object} url
 	 * @param {Object} filepath
@@ -485,14 +495,48 @@
 
 		//获取script的内容
 		let scriptContent = undefined;
-		let scriptLang;
-		let scriptResult = tagExec("script", content);
+		let scriptLang = undefined;
 		let htmr_jsr = otherOption.htmr_jsr;
+		let scriptResult;
+		if(!htmr_jsr){
+			scriptResult = tagExec("script", content);
+		}else{
+			let commontIndex=content.lastIndexOf("-->\n");//注释需要换行结尾
+			let styleIndex=content.indexOf("\n<style");//样式需要换行开头
+			let cindex,cend;
+			if(commontIndex>0 && styleIndex>0){//同时含有注释与样式
+				cindex=commontIndex+4;
+				cend=styleIndex;
+			}else if(commontIndex>0){
+				cindex=commontIndex+4;
+				cend=content.length;
+			}else if(styleIndex>0){
+				cindex=0;
+				cend=styleIndex;
+			}else{
+				cindex=0;
+				cend=content.length;
+			}
+			
+			let scontent=content.substring(cindex,cend);
+			
+			scriptResult={
+				content:scontent, //标签里的内容
+				lang: "", //lang属性
+				tag:"", //标签名字
+				index: cindex, //标签开始位置
+				length: scontent.length, //整个内容的长度（包括标签）
+				attrs:{}, //所有标签上的属性
+				cindex, //标签里的内容的开始位置
+				cend //结束标签的开始位置
+			}
+		}
 
 		let appendPrefixComment = function(str, markedComments, offset) {
 			if (!str) {
 				return "";
 			}
+			
 			if (offset === undefined) {
 				offset = 0;
 			}
@@ -659,14 +703,10 @@
 					let strs = [];
 					if (scopedClasses.length) {
 						let scopedClass = scopedClasses.join(" ");
-						strs.push(`
-						try{
-							var reactAppDom = document.getElementById('react-app');
-							reactAppDom&&reactAppDom.classList.add(${JSON.stringify(scopedClass)});
-						}catch(e){
-							console.error(e);
-						}
-						`);
+						strs.push(`try{`+
+							`var reactAppDom = document.getElementById('react-app');`+
+							`reactAppDom&&reactAppDom.classList.add(${JSON.stringify(scopedClass)});`+
+						`}catch(e){console.error(e);}\n`);
 					}
 					return strs.join("");
 				})();

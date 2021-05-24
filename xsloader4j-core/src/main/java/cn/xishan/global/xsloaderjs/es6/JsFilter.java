@@ -68,7 +68,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
     private static Boolean hasSourceMap;
 
     @Property(name = "xsloader.es6.extensions",
-              defaultVal = ".js,.vue,.jsx,.ts,.jsr,/index.js,/index.vue,/index.jsx,/index.ts,/index.jsr")
+              defaultVal = ".js,.vue,.jsx,.ts,.jsr,.jtr,/index.js,/index.vue,/index.jsx,/index.ts,/index.jsr,/index" +
+                      ".jtr")
     private static String[] extensions;
 
     @Property(name = "xsloader.es6.v8flags")
@@ -256,6 +257,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             case "ts":
             case "jsr":
             case "htmr_jsr":
+            case "jtr":
             case "vue":
             case "htmv_vue":
             case "scss":
@@ -346,7 +348,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                                     } else if (requestPath.endsWith(".js") || requestPath.endsWith(".ts")) {
                                         index = requestPath.length() - 3;
                                     } else if (requestPath.endsWith(".vue") || requestPath.endsWith(".jsx") ||
-                                            requestPath.endsWith(".jsr")) {
+                                            requestPath.endsWith(".jsr") || requestPath.endsWith(".jtr")) {
                                         index = requestPath.length() - 4;
                                     }
 
@@ -405,7 +407,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
         String suffix = OftenStrUtil.getSuffix(path);
         String realPath = file.getAbsolutePath();
         if (suffix.equals("js+") || suffix.equals("js") || suffix.equals("jsx") || suffix.equals("ts") ||
-                suffix.equals("jsr")) {
+                suffix.equals("jsr") || suffix.equals("jtr")) {
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper.parseEs6(requestUrl, realPath, fileContent,
                     hasSourceMap, reactAutojs);
@@ -414,11 +416,11 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             cachedResource = CachedResource.save(realPath, isSourceMap, path, sourceMapName, file.lastModified(),
                     encoding, "application/javascript", result);
         } else if (suffix.equals("vue") || suffix.equals("htmv_vue") || suffix.equals("htmr_jsr")) {
-            boolean htmr_jsr=suffix.equals("htmr_jsr");
+            boolean htmr_jsr = suffix.equals("htmr_jsr");
 
             Es6Wrapper es6Wrapper = new Es6Wrapper(fileContentGetter, browserInfo);
             Es6Wrapper.Result<String> result = es6Wrapper
-                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap,htmr_jsr);
+                    .parseVue(requestUrl, realPath, fileContent, hasSourceMap, htmr_jsr);
             registerListenForVersionAppend(requestUrl, file, result.getRelatedFiles());
 
             cachedResource = CachedResource
@@ -534,7 +536,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
                 realFile = pathDealt.getRealFile(servletContext, path.substring(0, path.length() - 1));
             } else {
                 File file = pathDealt.getRealFile(servletContext, path);
-                if (file != null && (file.getName().endsWith(".htmv_vue")||file.getName().endsWith(".htmr_jsr"))) {
+                if (file != null && (file.getName().endsWith(".htmv_vue") || file.getName().endsWith(".htmr_jsr"))) {
                     String filepath = file.getAbsolutePath();
                     file = new File(filepath.substring(0, filepath.length() - 4));
                 }
@@ -850,7 +852,7 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             path = path.substring(0, path.length() - 4);
         }
         Es6Wrapper es6Wrapper = new Es6Wrapper(null, browserInfo);
-        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap,false);
+        Es6Wrapper.Result<String> result = es6Wrapper.parseVue(url, filepath, vueContent, hasSourceMap, false);
         registerListenForVersionAppend(url, filepath == null ? null : new File(filepath), result.getRelatedFiles());
 
         CachedResource cachedResource = CachedResource

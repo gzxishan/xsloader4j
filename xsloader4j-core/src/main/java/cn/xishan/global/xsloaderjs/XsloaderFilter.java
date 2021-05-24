@@ -40,7 +40,7 @@ import java.util.Map;
 public class XsloaderFilter implements Filterer {
     private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
 
-    public static final String XSLOADER_VERSION = "1.1.48";
+    public static final String XSLOADER_VERSION = "1.1.49";
 
     private byte[] content;
     private byte[] map;
