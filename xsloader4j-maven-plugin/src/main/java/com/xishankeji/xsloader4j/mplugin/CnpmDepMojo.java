@@ -29,25 +29,27 @@ public class CnpmDepMojo extends AbstractMojo {
         if (!configFile.exists()) {
             throw new MojoExecutionException(String.format("not found config file:%s", configFile.getAbsolutePath()));
         } else {
+            File targetDir = new File(project.getBuild().getDirectory() +
+                    File.separator + "xsloader4j-npm" + File.separator);
+            getLog().info("target dir:" + targetDir.getAbsolutePath());
+            FileTool.delete(targetDir, false);
+
             JSONObject config = JSON.parseObject(FileTool.getString(configFile));
             JSONArray builds = config.getJSONArray("builds");
             for (int i = 0; i < builds.size(); i++) {
                 JSONObject item = builds.getJSONObject(i);
                 if (item.getBooleanValue("build")) {
-                    String name = item.getString("name");
+                    if (!targetDir.exists()) {
+                        targetDir.mkdirs();
+                    }
 
-                    JSONObject dependencies = item.getJSONObject("dependencies");
+                    String name = item.getString("name");
+                    getLog().info(String.format("build %s:", name));
 
                     JSONObject packageJson = JSONObject.parseObject(ResourceUtil.getAbsoluteResourceString(
                             "/npm-conf/package.json", "utf-8"));
                     JSONObject packageDependencies = packageJson.getJSONObject("dependencies");
-                    packageDependencies.putAll(dependencies);
-
-                    File targetDir = new File(project.getBuild().getDirectory() +
-                            File.separator + "xsloader4j-npm" + File.separator + name);
-                    getLog().info("target dir:" + targetDir.getAbsolutePath());
-                    targetDir.mkdirs();
-                    FileTool.delete(targetDir, false);
+                    packageDependencies.putAll(item.getJSONObject("dependencies"));
 
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "package.json"),
                             JSON.toJSONString(packageJson, true));
@@ -61,7 +63,7 @@ public class CnpmDepMojo extends AbstractMojo {
                     StringBuilder mainScriptImport = new StringBuilder();
                     StringBuilder mainScriptDefine = new StringBuilder();
                     int index = 0;
-                    for (String dep : dependencies.keySet()) {
+                    for (String dep : packageDependencies.keySet()) {
                         String varName = "var" + (index++);
                         mainScriptImport.append("const ").append(varName).append(" = require('").append(dep)
                                 .append("');\n");
