@@ -1,0 +1,10 @@
+{
+  "builds": [
+    {
+      "name": "index",
+      "build": true,
+      "dependencies": {
+      }
+    }
+  ]
+}

@@ -7,7 +7,7 @@
     <groupId>com.xishankeji</groupId>
     <artifactId>xsloader4j</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.53</version>
+    <version>1.2.55</version>
 
     <modules>
         <module>xsloader4j-core</module>
@@ -15,6 +15,7 @@
         <module>demo-servlet</module>
         <module>demo-spring-boot-main</module>
         <module>demo-spring-boot-servlet</module>
+        <module>xsloader4j-maven-plugin</module>
     </modules>
 
     <name>xsloader4j</name>
