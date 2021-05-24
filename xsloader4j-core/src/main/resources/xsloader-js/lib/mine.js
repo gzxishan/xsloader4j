@@ -272,13 +272,15 @@
 			
 			if(isReact){
 				option.plugins.push( ['transform-react-jsx', {
-					throwIfNamespace: true
+					throwIfNamespace: true,
+					runtime:'classic',
 				}]);
 			}
 		}else{
 			option.plugins.push( ['transform-react-jsx', {
 				pragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
-				throwIfNamespace: true
+				throwIfNamespace: true,
+				runtime:'classic',
 			}]);
 		}
 
