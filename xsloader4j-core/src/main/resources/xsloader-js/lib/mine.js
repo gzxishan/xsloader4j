@@ -52,7 +52,7 @@
 	function tagExec(tag, str, isMulti) {
 		let q = isMulti ? "?" : ""; //当isMulti为true时，转换为非贪婪匹配模式
 
-		let reg = new RegExp(`(<\s*${tag}\\s*)([^>]*)>([\\w\\W]*${q})</\s*${tag}\s*>`);
+		let reg = new RegExp(`(<\\s*${tag}\\s*)([^>]*)>([\\w\\W]*${q})</\\s*${tag}\\s*>`);
 		let regResult = reg.exec(str);
 		if (regResult) {
 			let content = regResult[3];
@@ -78,7 +78,7 @@
 					break;
 				}
 			}
-			let cindex = regResult.index + regResult[1].length + 1;
+			let cindex = regResult.index + regResult[1].length + regResult[2].length + 1;
 			return {
 				content, //标签里的内容
 				lang: attrs.lang ? attrs.lang.content : null, //lang属性
@@ -258,29 +258,31 @@
 
 		let currentPath = otherOption.currentPath;
 
-		let isTypeScript = otherOption.scriptLang == "typescript" || currentPath && (currentPath.endsWith(".ts")||currentPath.endsWith(".jtr"));
-		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr")||currentPath.endsWith(".jtr"));
-		
-		if(isTypeScript){
+		let isTypeScript = otherOption.scriptLang == "typescript" || otherOption.scriptLang == "ts" ||
+			currentPath && (currentPath.endsWith(".ts") || currentPath.endsWith(".jtr"));
+		let isTSFile = currentPath && currentPath.endsWith(".ts");
+		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr") || currentPath.endsWith(
+			".jtr"));
+
+		if (isTypeScript) {
 			option.plugins.push(['transform-typescript', {
-				isTSX:isReact,
+				isTSX: isReact || !isTSFile,
 				jsxPragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				allowNamespaces: true,
 				allowDeclareFields: true,
 				onlyRemoveTypeImports: true,
 			}]);
-			
-			if(isReact){
-				option.plugins.push( ['transform-react-jsx', {
-					throwIfNamespace: true,
-					runtime:'classic',
-				}]);
-			}
-		}else{
-			option.plugins.push( ['transform-react-jsx', {
+
+			option.plugins.push(['transform-react-jsx', {
 				pragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
 				throwIfNamespace: true,
-				runtime:'classic',
+				runtime: 'classic',
+			}]);
+		} else {
+			option.plugins.push(['transform-react-jsx', {
+				pragma: isReact ? undefined : "__serverBridge__.renderJsx(this)",
+				throwIfNamespace: true,
+				runtime: 'classic',
 			}]);
 		}
 
@@ -339,7 +341,6 @@
 			doStaticVueTemplate: true,
 			scriptLang: undefined,
 			reactAutojs: true,
-
 		}, otherOption);
 
 		let __unstrictFunMap = {};
@@ -395,7 +396,8 @@
 			};
 		}
 
-		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr")||currentPath.endsWith(".jtr"));
+		let isReact = otherOption.htmr_jsr || currentPath && (currentPath.endsWith(".jsr") || currentPath
+			.endsWith(".jtr"));
 
 		let scriptPrefix =
 			`${currentPath?'xsloader.__currentPath="'+currentPath+'";':''}
@@ -439,14 +441,14 @@
 		scriptPrefix = scriptPrefix.replace(/[\r\n]+[\t\b ]+/g, ' ');
 
 		let scriptSuffix = "\n})(" + (function() {
-			let as = [];
-			for (let k in __unstrictFunMap) {
-				as.push("'" + k + "':" + __unstrictFunMap[k]);
-			}
-			let rs = "{" + as.join(",\n") + "}";
-			return rs;
-		})() + ");" + customerScriptPart + 
-		`if(module.exports){return module.exports;} });\n`;
+				let as = [];
+				for (let k in __unstrictFunMap) {
+					as.push("'" + k + "':" + __unstrictFunMap[k]);
+				}
+				let rs = "{" + as.join(",\n") + "}";
+				return rs;
+			})() + ");" + customerScriptPart +
+			`if(module.exports){return module.exports;} });\n`;
 
 		let finalCode = scriptPrefix + parsedCode + scriptSuffix;
 		return {
@@ -500,35 +502,35 @@
 		let scriptLang = undefined;
 		let htmr_jsr = otherOption.htmr_jsr;
 		let scriptResult;
-		if(!htmr_jsr){
+		if (!htmr_jsr) {
 			scriptResult = tagExec("script", content);
-		}else{
-			let commontIndex=content.lastIndexOf("-->\n");//注释需要换行结尾
-			let styleIndex=content.indexOf("\n<style");//样式需要换行开头
-			let cindex,cend;
-			if(commontIndex>0 && styleIndex>0){//同时含有注释与样式
-				cindex=commontIndex+4;
-				cend=styleIndex;
-			}else if(commontIndex>0){
-				cindex=commontIndex+4;
-				cend=content.length;
-			}else if(styleIndex>0){
-				cindex=0;
-				cend=styleIndex;
-			}else{
-				cindex=0;
-				cend=content.length;
+		} else {
+			let commontIndex = content.lastIndexOf("-->\n"); //注释需要换行结尾
+			let styleIndex = content.indexOf("\n<style"); //样式需要换行开头
+			let cindex, cend;
+			if (commontIndex > 0 && styleIndex > 0) { //同时含有注释与样式
+				cindex = commontIndex + 4;
+				cend = styleIndex;
+			} else if (commontIndex > 0) {
+				cindex = commontIndex + 4;
+				cend = content.length;
+			} else if (styleIndex > 0) {
+				cindex = 0;
+				cend = styleIndex;
+			} else {
+				cindex = 0;
+				cend = content.length;
 			}
-			
-			let scontent=content.substring(cindex,cend);
-			
-			scriptResult={
-				content:scontent, //标签里的内容
+
+			let scontent = content.substring(cindex, cend);
+
+			scriptResult = {
+				content: scontent, //标签里的内容
 				lang: "", //lang属性
-				tag:"", //标签名字
+				tag: "", //标签名字
 				index: cindex, //标签开始位置
 				length: scontent.length, //整个内容的长度（包括标签）
-				attrs:{}, //所有标签上的属性
+				attrs: {}, //所有标签上的属性
 				cindex, //标签里的内容的开始位置
 				cend //结束标签的开始位置
 			}
@@ -538,7 +540,7 @@
 			if (!str) {
 				return "";
 			}
-			
+
 			if (offset === undefined) {
 				offset = 0;
 			}
@@ -571,6 +573,7 @@
 			if (!(scriptResult.content.charAt(0) == '\r' || scriptResult.content.charAt(0) == '\n')) {
 				scriptContent += isR ? "\r\n" : "\n";
 			}
+
 			scriptContent += scriptResult.content;
 			if (!(scriptResult.content.charAt(scriptResult.content.length - 1) == '\n')) {
 				scriptContent += isR ? "\r\n" : "\n";
@@ -696,7 +699,13 @@
 			filename = "__" + names.join("$").replace(/['\"\.:\*\s]/g, "_");
 		}
 
-		let customerScriptPart = '\nexports.default=exports.default||{};\n' +
+		let customerScriptPart = `\n
+		exports.default=exports.default||{};
+		var exportsDefault=exports.default;
+		if(xsloader.isFunction(exports.default)&&xsloader.isFunction(exports.default.extend)){
+			exportsDefault={};
+		}
+		\n` +
 			'var __cssBase64="' + encodeBase64(theFinalCssContent) + '";\n' +
 			`var __styleObj=__styleBuilder(__decodeBase64(__cssBase64),'${filename}');\n`
 		if (htmr_jsr) {
@@ -705,10 +714,10 @@
 					let strs = [];
 					if (scopedClasses.length) {
 						let scopedClass = scopedClasses.join(" ");
-						strs.push(`try{`+
-							`var reactAppDom = document.getElementById('react-app');`+
-							`reactAppDom&&reactAppDom.classList.add(${JSON.stringify(scopedClass)});`+
-						`}catch(e){console.error(e);}\n`);
+						strs.push(`try{` +
+							`var reactAppDom = document.getElementById('react-app');` +
+							`reactAppDom&&reactAppDom.classList.add(${JSON.stringify(scopedClass)});` +
+							`}catch(e){console.error(e);}\n`);
 					}
 					return strs.join("");
 				})();
@@ -716,13 +725,14 @@
 			customerScriptPart +=
 				`var origin__beforeCreate;
 				var origin__created;
+				var origin_beforeMount;
 				var origin__mounted;
 				var origin__destroyed;\n` +
 				(() => { //服务端编译<template>
 					let strs = [];
 
 					if (scopedClasses.length) {
-						let scopedClass = scopedClasses.join(" ");
+						let classNames = scopedClasses.join(" ");
 						let index = template.indexOf("<");
 						let index2 = template.indexOf(">", index + 1);
 						if (index != -1 && index2 != -1) {
@@ -733,7 +743,7 @@
 								let regResult = tagExec(tagName, tag + "</" + tagName + ">");
 								if (regResult && regResult.attrs["class"]) {
 									let classObj = regResult.attrs["class"];
-									let classStr = classObj.k + classObj.s1 + scopedClass + " " + classObj
+									let classStr = classObj.k + classObj.s1 + classNames + " " + classObj
 										.content + classObj.s2;
 									template = template.substring(0, index) +
 										tag.substring(0, classObj.index) +
@@ -741,8 +751,8 @@
 										tag.substring(classObj.index + classObj.fullContent.length) +
 										template.substring(index2 + 1);
 								} else {
-									template = template.substring(0, index2) + " class='" + scopedClass +
-										"' " +
+									template = template.substring(0, index2) +
+										" class='" + classNames + "' " +
 										template.substring(index2);
 								}
 							}
@@ -751,22 +761,25 @@
 
 					let compiledTemplate = api.compileVueTemplate(url, filepath, template, hasSourceMap,
 						otherOption);
+
 					if (compiledTemplate.render) {
-						strs.push("exports.default.render=", compiledTemplate.render, ";\n");
+						strs.push("exportsDefault.render=", compiledTemplate.render, ";\n");
 					}
 
 					if (compiledTemplate.staticRenderFns) {
-						strs.push("exports.default.staticRenderFns=", compiledTemplate.staticRenderFns,
+						strs.push("exportsDefault.staticRenderFns=", compiledTemplate.staticRenderFns,
 							";\n");
 					}
+
 					return strs.join("");
 				})() +
-				`origin__beforeCreate = exports.default.beforeCreate;
-				origin__created = exports.default.created;
-				origin__mounted = exports.default.mounted;
-				origin__destroyed = exports.default.destroyed;
+				`origin__beforeCreate = exportsDefault.beforeCreate;
+				origin__created = exportsDefault.created;
+				origin_beforeMount = exportsDefault.beforeMount;
+				origin__mounted = exportsDefault.mounted;
+				origin__destroyed = exportsDefault.destroyed;
 				
-				exports.default.beforeCreate = function() {
+				exportsDefault.beforeCreate = function() {
 				   this.$_styleObj=__styleObj&&__styleObj.init();
 				   this.$keepVueStyle=false;
 				   this.$thiz=thiz;
@@ -782,7 +795,8 @@
 				   }
 				   return rt;
 				};
-				exports.default.created = function() {
+				
+				exportsDefault.created = function() {
 				   this.$emit('vue-created',this);
 				   var rt;
 				   if(origin__created) {
@@ -792,17 +806,29 @@
 				   return rt;
 				};
 				
-				exports.default.mounted = function() {
+				exportsDefault.beforeMount = function() {
+				   this.$emit('vue-beforeMount',this);
+				   var rt;
+				   if(origin_beforeMount) {
+					rt = origin_beforeMount.apply(this, arguments);
+				   }
+				   this.$emit('invoked-vue-beforeMount',this);
+				   return rt;
+				};
+				
+				exportsDefault.mounted = function() {
 				   this.$emit('vue-mounted',this);
+				   
 				   var rt;
 				   if(origin__mounted) {
 					rt = origin__mounted.apply(this, arguments);
 				   }
+				   
 				   this.$emit('invoked-vue-mounted',this);
 				   return rt;
 				};
 				
-				exports.default.destroyed = function() {
+				exportsDefault.destroyed = function() {
 				   this.$emit('vue-destroyed',this);
 				   this.$keepVueStyle!==true&&this.$destroyVueStyle();
 				   var rt;
@@ -811,11 +837,19 @@
 				   }
 				   this.$emit('invoked-vue-destroyed',this);
 				   return rt;
-				};__compileVue(exports);`;
+				};
+				if(xsloader.isFunction(exports.default)&&xsloader.isFunction(exports.default.extend)){
+					exportsDefault = exports.default.extend(exportsDefault);
+					exports.default=exportsDefault;
+				}else{
+					__compileVue(exports);
+				}
+				`;
 		}
 
-
 		customerScriptPart += '__defineEsModuleProp(exports);\n';
+
+		customerScriptPart = customerScriptPart.replace(/\n\s+/g, "\n");
 
 		otherOption = extend({}, otherOption, {
 			doStaticInclude: false,

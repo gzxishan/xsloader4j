@@ -1,6 +1,7 @@
 package com.xishankeji.xsloader4j.mplugin;
 
 import cn.xishan.oftenporter.porter.core.util.FileTool;
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -13,8 +14,8 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.*;
 
-@Mojo(name = "cnpm")
-public class CnpmDepMojo extends AbstractMojo {
+@Mojo(name = "npm")
+public class NpmDepMojo extends AbstractMojo {
 
     @Parameter(property = "type", defaultValue = "cnpm")
     private String npmType;
@@ -41,6 +42,7 @@ public class CnpmDepMojo extends AbstractMojo {
                 if (item.getBooleanValue("build")) {
                     boolean ignoreCurrentRequireDep = !item.containsKey("ignoreCurrentRequireDep") ||
                             item.getBooleanValue("ignoreCurrentRequireDep");
+                    boolean isProduct = !item.containsKey("product") || item.getBooleanValue("product");
 
                     if (!targetDir.exists()) {
                         targetDir.mkdirs();
@@ -60,8 +62,21 @@ public class CnpmDepMojo extends AbstractMojo {
                     String webpackConfig =
                             ResourceUtil.getAbsoluteResourceString("/npm-conf/webpack.config.js", "utf-8");
                     webpackConfig = webpackConfig.replace("#{name}", name);
+                    webpackConfig = webpackConfig.replace("#{mode}", isProduct ? "production" : "development");
+
+                    JSONObject externals = item.getJSONObject("externals");
+                    if (externals == null) {
+                        externals = new JSONObject(0);
+                    }
+
+                    webpackConfig = webpackConfig.replace("#{externals}", JSON.toJSONString(externals, true));
+
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "webpack.config.js"),
                             webpackConfig);
+
+
+                    String exportName = item.getString("export");
+                    String exportVarName = null;//用于导出的模块
 
                     StringBuilder mainScriptImport = new StringBuilder();
                     StringBuilder mainScriptDefine = new StringBuilder();
@@ -70,12 +85,21 @@ public class CnpmDepMojo extends AbstractMojo {
                         String varName = "var" + (index++);
                         mainScriptImport.append("const ").append(varName).append(" = require('").append(dep)
                                 .append("');\n");
-                        mainScriptDefine.append("this.define('").append(dep).append("',function(){return ")
-                                .append(varName)
-                                .append(";});\n");
+                        if (dep.equals(exportName)) {
+                            exportVarName = varName;
+                        }else{
+                            mainScriptDefine.append("defineEnv.define('").append(dep).append("',function(){return ")
+                                    .append(varName)
+                                    .append(";});\n");
+                        }
                     }
 
-                    String script = "" + mainScriptImport + mainScriptDefine;
+                    String script = "const defineEnv='xsloader' in window?xsloader:window;\n" + mainScriptImport +
+                            mainScriptDefine;
+                    if (exportVarName != null) {
+                        script += "module.exports=" + exportVarName + ";\n";
+                    }
+
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "main.js"), script);
 
                     ProcessUtil.ConsoleLog consoleLog = new ProcessUtil.ConsoleLog2Log(getLog());

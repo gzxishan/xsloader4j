@@ -1,10 +1,21 @@
 {
   "builds": [
     {
-      "name": "index",
+      "name": "vue-property-decorator",
       "build": true,
+      "product": true,
+      "export": "vue-property-decorator",
       "ignoreCurrentRequireDep": true,
       "dependencies": {
+        "vue-class-component": "^7.2.6",
+        "vue-property-decorator": "^9.1.2"
+      },
+      "externals": {
+        "vue": {
+          "commonjs": "vue",
+          "commonjs2": "vue",
+          "amd": "vue"
+        }
       }
     }
   ]

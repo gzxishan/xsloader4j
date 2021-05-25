@@ -390,7 +390,7 @@ new Vue({
 
 ### 3、代码转换说明
 
-#### 1）*.js
+#### 1.1）*.js
 
 - 语法支持到es2018
 - 支持jsx语法
@@ -427,6 +427,10 @@ thiz变量指向当前模块，更多请见[xsloader的this](https://github.com/
   }
 }
 ```
+
+#### 1.2）*.ts
+- typescript脚本；
+- 不支持jsx语法；
 
 #### 2）*.vue
 
@@ -501,7 +505,7 @@ return (`\jsx
 
 </style>
 ```
-- `script`的`lang`支持`typescript`
+- `script`的`lang`支持`typescript`或`ts`
 - 通过settings注释里的json格式对文档进行设置：
 
 1. title：设置文档标题
@@ -690,6 +694,8 @@ cnpm install --save @babel/polyfill
 4. 完善`xsloader`，当导入`css`、`scss`、`sass`、`less`后缀名的样式时，自动添加`css!`前缀
 5. 支持`react`,后缀为`.jsr`；支持typescript的`react`,后缀为`.jtr`；
 6. 支持`*.htmr`文件，可直接通过浏览器访问；
+7. 修复`vue`文件解析标签偏移问题；
+8. 增加`xsloader4j-maven-plugin`插件；
 
 ### v1.2.49 2021/05/14
 
