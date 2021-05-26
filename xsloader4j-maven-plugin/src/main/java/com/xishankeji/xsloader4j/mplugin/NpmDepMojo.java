@@ -1,11 +1,11 @@
 package com.xishankeji.xsloader4j.mplugin;
 
 import cn.xishan.oftenporter.porter.core.util.FileTool;
-import cn.xishan.oftenporter.porter.core.util.OftenTool;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.Feature;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -23,6 +23,10 @@ public class NpmDepMojo extends AbstractMojo {
     @Parameter(required = true, readonly = true, defaultValue = "${project}")
     private MavenProject project;
 
+    public static JSONObject parseJSONOrdered(String json) {
+        return JSON.parseObject(json, Feature.OrderedField);
+    }
+
     public void execute() throws MojoExecutionException {
         File configFile = new File(
                 project.getBasedir().getAbsolutePath() + File.separator + "src" + File.separator + "main" +
@@ -35,7 +39,7 @@ public class NpmDepMojo extends AbstractMojo {
             getLog().info("target dir:" + targetDir.getAbsolutePath());
             FileTool.delete(new File(targetDir.getAbsolutePath() + File.separator + "dist"), false);
 
-            JSONObject config = JSON.parseObject(FileTool.getString(configFile));
+            JSONObject config = parseJSONOrdered(FileTool.getString(configFile));
             JSONArray builds = config.getJSONArray("builds");
             for (int i = 0; i < builds.size(); i++) {
                 JSONObject item = builds.getJSONObject(i);

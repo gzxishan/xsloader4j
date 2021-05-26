@@ -5,29 +5,14 @@ window.__htmv_init_bridge_=function(){
 			var appid='#{app-id}';
 			var appclass='#{app-class}';
 
-			if(!xsloader.isFunction(App)){
-                App=Vue.extend(App);
-            }
-
-            function setClass(vm){
-                try{
-                    vm.$el.classList.add(appclass);
-                }catch(e){console.error(e)}
-            }
-
-            var vm = new App({
-                mounted:function(){
-                    try{
-                        setClass(this);
-                        this.$el.setAttribute("id",appid);
-                    }catch(e){console.error(e)}
-                },
-                updated:function(){
-                   setClass(this);
+			document.getElementById(appid).innerHTML = "";
+			new Vue({
+                el: '#'+appid,
+                template:"<app id='"+appid+"' class='"+appclass+"'></app>",
+                components:{
+                    app:App
                 }
             });
-            document.getElementById(appid).innerHTML = "";
-            vm.$mount('#'+appid);
 		}).setTag("#{app}");
     });
 };
