@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.49
+ * xsloader.js v1.1.50
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Mon May 24 2021 11:37:13 GMT+0800 (GMT+08:00)
+ * build time:Thu May 27 2021 09:53:02 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2508,7 +2508,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.49"
+    version: "1.1.50"
   };
 
   var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
@@ -4658,6 +4658,11 @@
 
       var originDep = deps;
       var oneDep = deps;
+      {
+        var arr = [oneDep];
+        config.plugins.css.autoCssDeal(arr);
+        oneDep = arr[0];
+      }
       var pluginArgs = undefined;
       var pluginIndex = oneDep.indexOf("!");
 
@@ -4667,9 +4672,6 @@
       }
 
       oneDep = config.replaceDepAlias(oneDep);
-      var arr = [oneDep];
-      config && config.plugins.css.autoCssDeal(arr);
-      oneDep = arr[0];
       var module = moduleScript.getModule(oneDep);
 
       if (!module) {
