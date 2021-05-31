@@ -1,6 +1,8 @@
 package com.xishankeji.xsloader4j.mplugin;
 
 import cn.xishan.oftenporter.porter.core.util.FileTool;
+import cn.xishan.oftenporter.porter.core.util.OftenTool;
+import cn.xishan.oftenporter.porter.core.util.PackageUtil;
 import cn.xishan.oftenporter.porter.core.util.ResourceUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -13,9 +15,14 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
-@Mojo(name = "npm")
-public class NpmDepMojo extends AbstractMojo {
+/**
+ * 用于打包npm依赖及本地依赖，需要安装nodejs、npm、cnpm。
+ */
+@Mojo(name = "pack-dep")
+public class PackDepMojo extends AbstractMojo {
 
     @Parameter(property = "type", defaultValue = "cnpm")
     private String npmType;
@@ -28,14 +35,21 @@ public class NpmDepMojo extends AbstractMojo {
     }
 
     public void execute() throws MojoExecutionException {
-        File configFile = new File(
-                project.getBasedir().getAbsolutePath() + File.separator + "src" + File.separator + "main" +
-                        File.separator + "resources" + File.separator + "xsloader-build.json");
+        File rootDir = new File(project.getBasedir().getAbsolutePath() + File.separator + "src" +
+                File.separator + "main");
+        File configFile = new File(rootDir.getAbsolutePath() + File.separator + "resources" +
+                File.separator + "xsloader-build.json");
+
         if (!configFile.exists()) {
             throw new MojoExecutionException(String.format("not found config file:%s", configFile.getAbsolutePath()));
         } else {
             File targetDir = new File(project.getBuild().getDirectory() +
-                    File.separator + "xsloader4j-npm" + File.separator);
+                    File.separator + "xsloader4j-pack-dep" + File.separator);
+            String targetDirPath = targetDir.getAbsolutePath().replace(File.separatorChar, '/');
+
+            File localModuleDir = new File(targetDir.getAbsolutePath() + File.separator +
+                    "local-modules");
+
             getLog().info("target dir:" + targetDir.getAbsolutePath());
             FileTool.delete(new File(targetDir.getAbsolutePath() + File.separator + "dist"), false);
 
@@ -44,6 +58,7 @@ public class NpmDepMojo extends AbstractMojo {
             for (int i = 0; i < builds.size(); i++) {
                 JSONObject item = builds.getJSONObject(i);
                 if (item.getBooleanValue("build")) {
+
                     boolean ignoreCurrentRequireDep = !item.containsKey("ignoreCurrentRequireDep") ||
                             item.getBooleanValue("ignoreCurrentRequireDep");
                     boolean isProduct = !item.containsKey("product") || item.getBooleanValue("product");
@@ -53,31 +68,33 @@ public class NpmDepMojo extends AbstractMojo {
                     }
 
                     String name = item.getString("name");
-                    getLog().info(String.format("build %s:", name));
+                    getLog().info(String.format("build: %s", name));
 
-                    JSONObject packageJson = JSONObject.parseObject(ResourceUtil.getAbsoluteResourceString(
+                    JSONObject webpackEntry = new JSONObject(true);
+                    webpackEntry.put(name + ".js", "./main.js");
+
+                    JSONObject packageJson = parseJSONOrdered(ResourceUtil.getAbsoluteResourceString(
                             "/npm-conf/package.json", "utf-8"));
                     JSONObject packageDependencies = packageJson.getJSONObject("dependencies");
+                    //添加npm依赖
                     packageDependencies.putAll(item.getJSONObject("dependencies"));
 
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "package.json"),
                             JSON.toJSONString(packageJson, true));
 
-                    String webpackConfig =
-                            ResourceUtil.getAbsoluteResourceString("/npm-conf/webpack.config.js", "utf-8");
+                    String webpackConfig = ResourceUtil.getAbsoluteResourceString("/npm-conf/webpack.config.js",
+                            "utf-8");
                     webpackConfig = webpackConfig.replace("#{name}", name);
+                    webpackConfig = webpackConfig.replace("#{library}",name);
                     webpackConfig = webpackConfig.replace("#{mode}", isProduct ? "production" : "development");
 
-                    JSONObject externals = item.getJSONObject("externals");
-                    if (externals == null) {
-                        externals = new JSONObject(0);
+                    //处理webpack的externals
+                    JSONObject webpackExternals = item.getJSONObject("externals");
+                    if (webpackExternals == null) {
+                        webpackExternals = new JSONObject(0);
                     }
 
-                    webpackConfig = webpackConfig.replace("#{externals}", JSON.toJSONString(externals, true));
-
-                    FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "webpack.config.js"),
-                            webpackConfig);
-
+                    webpackConfig = webpackConfig.replace("#{externals}", JSON.toJSONString(webpackExternals, true));
 
                     String exportName = item.getString("export");
                     String exportVarName = null;//用于导出的模块
@@ -91,10 +108,65 @@ public class NpmDepMojo extends AbstractMojo {
                                 .append("');\n");
                         if (dep.equals(exportName)) {
                             exportVarName = varName;
-                        }else{
+                        } else {
                             mainScriptDefine.append("defineEnv.define('").append(dep).append("',function(){return ")
                                     .append(varName)
                                     .append(";});\n");
+                        }
+                    }
+
+                    //本地依赖
+                    if (item.containsKey("localDependencies")) {
+                        JSONObject localDependencies = item.getJSONObject("localDependencies");
+                        for (String moduleName : localDependencies.keySet()) {
+                            JSONObject module = localDependencies.getJSONObject(moduleName);
+
+                            getLog().info(String.format("append local dependency: %s", moduleName));
+
+                            File targetModuleDir = new File(localModuleDir.getAbsolutePath() + File.separator
+                                    + moduleName);
+                            if (targetModuleDir.exists()) {
+                                FileTool.delete(targetModuleDir, false);
+                            } else {
+                                targetModuleDir.mkdirs();
+                            }
+
+                            File srcModuleDir = new File(rootDir.getAbsolutePath() + File.separator +
+                                    module.getString("dir"));
+                            try {
+                                FileTool.copy(srcModuleDir, targetModuleDir);
+                            } catch (Exception e) {
+                                getLog().warn(e);
+                                throw new MojoExecutionException("copy local module failed:" + moduleName);
+                            }
+
+                            JSONObject entry = module.getJSONObject("entry");
+                            if (entry != null) {
+                                for (String entryName : entry.keySet()) {
+                                    String entryPath = entry.getString(entryName);
+                                    entryPath = PackageUtil.getPathWithRelative(targetModuleDir, entryPath);
+                                    if (entryPath.startsWith(targetDirPath)) {
+                                        entryPath = "." + entryPath.substring(targetDirPath.length());
+                                    }
+                                    webpackEntry.put(entryName, entryPath);
+                                }
+                            }
+
+                            String main = module.getString("main");
+                            String rpath = "./" + localModuleDir.getName() + "/" + moduleName + "/" +
+                                    (OftenTool.isEmpty(main) ? "index" : main);
+
+                            String varName = "var" + (index++);
+                            mainScriptImport.append("const ").append(varName).append(" = require('").append(rpath)
+                                    .append("');\n");
+                            if (moduleName.equals(exportName)) {
+                                exportVarName = varName;
+                            } else {
+                                mainScriptDefine.append("defineEnv.define('").append(moduleName)
+                                        .append("',function(){return ")
+                                        .append(varName)
+                                        .append(";});\n");
+                            }
                         }
                     }
 
@@ -104,7 +176,11 @@ public class NpmDepMojo extends AbstractMojo {
                         script += "module.exports=" + exportVarName + ";\n";
                     }
 
+                    webpackConfig = webpackConfig.replace("#{entry}", JSON.toJSONString(webpackEntry, true));
+
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "main.js"), script);
+                    FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "webpack.config.js"),
+                            webpackConfig);
 
                     ProcessUtil.ConsoleLog consoleLog = new ProcessUtil.ConsoleLog2Log(getLog());
                     try {
@@ -164,6 +240,8 @@ public class NpmDepMojo extends AbstractMojo {
     }
 
     private int npmInstall(File workDir, ProcessUtil.ConsoleLog consoleLog) throws Exception {
+        getLog().info(npmType + " install");
+
         ProcessUtil processUtil = new ProcessUtil();
         int n = processUtil.exeProcess(npmType + " install", null, workDir,
                 consoleLog);
@@ -171,6 +249,8 @@ public class NpmDepMojo extends AbstractMojo {
     }
 
     private int npmBuild(File workDir, ProcessUtil.ConsoleLog consoleLog) throws Exception {
+        getLog().info(npmType + " run build");
+
         ProcessUtil processUtil = new ProcessUtil();
         int n = processUtil.exeProcess(npmType + " run build", null, workDir,
                 consoleLog);
