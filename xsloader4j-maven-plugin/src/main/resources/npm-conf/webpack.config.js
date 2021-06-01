@@ -71,7 +71,7 @@ const tsRule = {
         compilerOptions: {
           declaration: false,
           module: 'es6',
-          sourceMap: hasSourceMap,
+//          sourceMap: hasSourceMap,
           target: 'es5',
         },
         transpileOnly: true,
@@ -91,13 +91,13 @@ module.exports = {
         path: __dirname + "/dist", // 打包后的文件存放的地方
         filename: "[name]" // 打包后输出文件的文件名
     },
-	optimization: {
-        minimizer: [
-          new UglifyJsPlugin({
-            sourceMap: hasSourceMap,
-          }),
-        ],
-    },
+//	optimization: {
+//        minimizer: [
+//          new UglifyJsPlugin({
+//            sourceMap: hasSourceMap,
+//          }),
+//        ],
+//    },
 	target: 'web',
 	devtool:'source-map',
 	externals:#{externals},
