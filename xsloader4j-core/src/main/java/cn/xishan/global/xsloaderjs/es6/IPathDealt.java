@@ -32,6 +32,18 @@ public interface IPathDealt {
      * 含有:const语句
      * </li>
      * </ol>
+     * 且不含以下语句：
+     * <ol>
+     *     <li>
+     *         xsloader.__ignoreCurrentRequireDep=true
+     *     </li>
+     *     <li>
+     *         __webpack_require__
+     *     </li>
+     *     <li>
+     *         __webpack_modules__
+     *     </li>
+     * </ol>
      */
     Pattern DEFAULT_ES6_PATTERN = Pattern.compile("((^|\\n)[\\s]*let[\\s]+)|((^|\\n)[\\s]*import[\\s]+)|((^|\\n)" +
             "[\\s]*export[\\s]+)|((^|\\n)[\\s]*const[\\s]+)");
@@ -64,7 +76,9 @@ public interface IPathDealt {
      * @return
      */
     default boolean isESCode(String path, String script) {
-        return DEFAULT_ES6_PATTERN.matcher(script).find();
+        return DEFAULT_ES6_PATTERN.matcher(script).find() &&
+                !script.contains("xsloader.__ignoreCurrentRequireDep=true") &&
+                !script.contains("__webpack_require__") && !script.contains("__webpack_modules__");
     }
 
     /**

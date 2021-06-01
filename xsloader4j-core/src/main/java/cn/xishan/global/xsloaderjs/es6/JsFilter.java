@@ -158,7 +158,8 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
     public JsFilter() {
         handle = (path, script) -> {
-            if (OftenTool.notEmpty(script) && pathDealt.ignoreCurrentRequireDep(path, script)) {
+            if (OftenTool.notEmpty(script) && !script.contains("xsloader.__ignoreCurrentRequireDep=true") &&
+                    pathDealt.ignoreCurrentRequireDep(path, script)) {
                 script = "if(typeof xsloader!='undefined'){xsloader.__ignoreCurrentRequireDep=true;}" + script;
             }
             return script;

@@ -85,8 +85,9 @@ public class PackDepMojo extends AbstractMojo {
                     String webpackConfig = ResourceUtil.getAbsoluteResourceString("/npm-conf/webpack.config.js",
                             "utf-8");
                     webpackConfig = webpackConfig.replace("#{name}", name);
-                    webpackConfig = webpackConfig.replace("#{library}",name);
+                    webpackConfig = webpackConfig.replace("#{library}", name);
                     webpackConfig = webpackConfig.replace("#{mode}", isProduct ? "production" : "development");
+                    webpackConfig = webpackConfig.replace("#{sourceMap}", String.valueOf(true));
 
                     //处理webpack的externals
                     JSONObject webpackExternals = item.getJSONObject("externals");
