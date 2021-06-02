@@ -67,15 +67,6 @@ const tsRule = {
   use: [
     {
       loader: 'ts-loader',
-      options: {
-        compilerOptions: {
-          declaration: false,
-          module: 'es6',
-//          sourceMap: hasSourceMap,
-          target: 'es5',
-        },
-        transpileOnly: true,
-      },
     },
   ],
 };
@@ -90,6 +81,9 @@ module.exports = {
 		libraryTarget: 'umd',
         path: __dirname + "/dist", // 打包后的文件存放的地方
         filename: "[name]" // 打包后输出文件的文件名
+    },
+    resolve: {
+        extensions: ['.ts','.tsx', '.js', '.json']
     },
 //	optimization: {
 //        minimizer: [

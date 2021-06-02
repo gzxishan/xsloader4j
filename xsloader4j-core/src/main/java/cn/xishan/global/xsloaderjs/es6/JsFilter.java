@@ -617,11 +617,11 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
 
     static {
         MAX_SUPPORT_BROWSER_VERSIONS = new HashMap<>();
-        MAX_SUPPORT_BROWSER_VERSIONS.put("chrome", 86);
-        MAX_SUPPORT_BROWSER_VERSIONS.put("firefox", 82);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("chrome", 91);
+        MAX_SUPPORT_BROWSER_VERSIONS.put("firefox", 90);
         MAX_SUPPORT_BROWSER_VERSIONS.put("opera", 72);
         MAX_SUPPORT_BROWSER_VERSIONS.put("ie", 11);
-        MAX_SUPPORT_BROWSER_VERSIONS.put("edge", 86);//85
+        MAX_SUPPORT_BROWSER_VERSIONS.put("edge", 86);
         MAX_SUPPORT_BROWSER_VERSIONS.put("ios", 14);
         MAX_SUPPORT_BROWSER_VERSIONS.put("safari", 14);
     }

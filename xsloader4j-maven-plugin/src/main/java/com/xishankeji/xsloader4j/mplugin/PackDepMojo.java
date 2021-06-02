@@ -187,6 +187,9 @@ public class PackDepMojo extends AbstractMojo {
                     FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "webpack.config.js"),
                             webpackConfig);
 
+                    FileTool.writeString(new File(targetDir.getAbsolutePath() + File.separator + "tsconfig.json"),
+                            ResourceUtil.getAbsoluteResourceString("/npm-conf/tsconfig.json", "utf-8"));
+
                     ProcessUtil.ConsoleLog consoleLog = new ProcessUtil.ConsoleLog2Log(getLog());
                     try {
                         int code = npmInstall(targetDir, consoleLog);

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.xishankeji</groupId>
         <artifactId>xsloader4j</artifactId>
-        <version>1.2.63</version>
+        <version>1.2.64</version>
     </parent>
 
     <artifactId>xsloader4j-maven-plugin</artifactId>

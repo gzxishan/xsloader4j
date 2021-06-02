@@ -5573,7 +5573,7 @@
   });
   var functionCommon = {
     params: {
-      validate: chain$1(assertValueType("array"), assertEach(assertNodeType("Identifier", "Pattern", "RestElement", "TSParameterProperty")))
+      validate: chain$1(assertValueType("array"), assertEach(assertNodeType("Identifier", "Pattern", "RestElement")))
     },
     generator: {
       "default": false
@@ -6566,6 +6566,9 @@
     }
   };
   var classMethodOrDeclareMethodCommon = Object.assign({}, functionCommon, classMethodOrPropertyCommon, {
+    params: {
+      validate: chain$1(assertValueType("array"), assertEach(assertNodeType("Identifier", "Pattern", "RestElement", "TSParameterProperty")))
+    },
     kind: {
       validate: assertOneOf("get", "set", "method", "constructor"),
       "default": "method"
@@ -12720,10 +12723,10 @@
     createDebug.enable = enable;
     createDebug.enabled = enabled;
     createDebug.humanize = ms$1;
+    createDebug.destroy = destroy;
     Object.keys(env).forEach(function (key) {
       createDebug[key] = env[key];
     });
-    createDebug.instances = [];
     createDebug.names = [];
     createDebug.skips = [];
     createDebug.formatters = {};
@@ -12743,6 +12746,9 @@
 
     function createDebug(namespace) {
       var prevTime;
+      var enableOverride = null;
+      var namespacesCache;
+      var enabledCache;
 
       function debug() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -12769,7 +12775,7 @@
         var index = 0;
         args[0] = args[0].replace(/%([a-zA-Z%])/g, function (match, format) {
           if (match === '%%') {
-            return match;
+            return '%';
           }
 
           index++;
@@ -12790,29 +12796,35 @@
       }
 
       debug.namespace = namespace;
-      debug.enabled = createDebug.enabled(namespace);
       debug.useColors = createDebug.useColors();
-      debug.color = selectColor(namespace);
-      debug.destroy = destroy;
+      debug.color = createDebug.selectColor(namespace);
       debug.extend = extend;
+      debug.destroy = createDebug.destroy;
+      Object.defineProperty(debug, 'enabled', {
+        enumerable: true,
+        configurable: false,
+        get: function get() {
+          if (enableOverride !== null) {
+            return enableOverride;
+          }
+
+          if (namespacesCache !== createDebug.namespaces) {
+            namespacesCache = createDebug.namespaces;
+            enabledCache = createDebug.enabled(namespace);
+          }
+
+          return enabledCache;
+        },
+        set: function set(v) {
+          enableOverride = v;
+        }
+      });
 
       if (typeof createDebug.init === 'function') {
         createDebug.init(debug);
       }
 
-      createDebug.instances.push(debug);
       return debug;
-    }
-
-    function destroy() {
-      var index = createDebug.instances.indexOf(this);
-
-      if (index !== -1) {
-        createDebug.instances.splice(index, 1);
-        return true;
-      }
-
-      return false;
     }
 
     function extend(namespace, delimiter) {
@@ -12823,6 +12835,7 @@
 
     function enable(namespaces) {
       createDebug.save(namespaces);
+      createDebug.namespaces = namespaces;
       createDebug.names = [];
       createDebug.skips = [];
       var i;
@@ -12841,11 +12854,6 @@
         } else {
           createDebug.names.push(new RegExp('^' + namespaces + '$'));
         }
-      }
-
-      for (i = 0; i < createDebug.instances.length; i++) {
-        var instance = createDebug.instances[i];
-        instance.enabled = createDebug.enabled(instance.namespace);
       }
     }
 
@@ -12892,6 +12900,10 @@
       return val;
     }
 
+    function destroy() {
+      console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+    }
+
     createDebug.enable(createDebug.load());
     return createDebug;
   }
@@ -12899,12 +12911,22 @@
   var common$1 = setup$2;
 
   var browser$5 = createCommonjsModule(function (module, exports) {
-    exports.log = log;
     exports.formatArgs = formatArgs;
     exports.save = save;
     exports.load = load;
     exports.useColors = useColors;
     exports.storage = localstorage();
+
+    exports.destroy = function () {
+      var warned = false;
+      return function () {
+        if (!warned) {
+          warned = true;
+          console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+        }
+      };
+    }();
+
     exports.colors = ['#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC', '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF', '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC', '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF', '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC', '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033', '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366', '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933', '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC', '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF', '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'];
 
     function useColors() {
@@ -12944,11 +12966,7 @@
       args.splice(lastC, 0, c);
     }
 
-    function log() {
-      var _console;
-
-      return typeof console === 'object' && console.log && (_console = console).log.apply(_console, arguments);
-    }
+    exports.log = console.debug || console.log || function () {};
 
     function save(namespaces) {
       try {
@@ -29407,7 +29425,7 @@
 
       var _proto = _class.prototype;
 
-      _proto.estreeParseRegExpLiteral = function estreeParseRegExpLiteral(_ref) {
+      _proto.parseRegExpLiteral = function parseRegExpLiteral(_ref) {
         var pattern = _ref.pattern,
             flags = _ref.flags;
         var regex = null;
@@ -29424,7 +29442,7 @@
         return node;
       };
 
-      _proto.estreeParseBigIntLiteral = function estreeParseBigIntLiteral(value) {
+      _proto.parseBigIntLiteral = function parseBigIntLiteral(value) {
         var bigInt;
 
         try {
@@ -29438,7 +29456,7 @@
         return node;
       };
 
-      _proto.estreeParseDecimalLiteral = function estreeParseDecimalLiteral(value) {
+      _proto.parseDecimalLiteral = function parseDecimalLiteral(value) {
         var decimal = null;
         var node = this.estreeParseLiteral(decimal);
         node.decimal = String(node.value || value);
@@ -29447,6 +29465,22 @@
 
       _proto.estreeParseLiteral = function estreeParseLiteral(value) {
         return this.parseLiteral(value, "Literal");
+      };
+
+      _proto.parseStringLiteral = function parseStringLiteral(value) {
+        return this.estreeParseLiteral(value);
+      };
+
+      _proto.parseNumericLiteral = function parseNumericLiteral(value) {
+        return this.estreeParseLiteral(value);
+      };
+
+      _proto.parseNullLiteral = function parseNullLiteral() {
+        return this.estreeParseLiteral(null);
+      };
+
+      _proto.parseBooleanLiteral = function parseBooleanLiteral(value) {
+        return this.estreeParseLiteral(value);
       };
 
       _proto.directiveToStmt = function directiveToStmt(directive) {
@@ -29520,35 +29554,6 @@
         classBody.body.push(method);
       };
 
-      _proto.parseExprAtom = function parseExprAtom(refExpressionErrors) {
-        switch (this.state.type) {
-          case types$1.num:
-          case types$1.string:
-            return this.estreeParseLiteral(this.state.value);
-
-          case types$1.regexp:
-            return this.estreeParseRegExpLiteral(this.state.value);
-
-          case types$1.bigint:
-            return this.estreeParseBigIntLiteral(this.state.value);
-
-          case types$1.decimal:
-            return this.estreeParseDecimalLiteral(this.state.value);
-
-          case types$1._null:
-            return this.estreeParseLiteral(null);
-
-          case types$1._true:
-            return this.estreeParseLiteral(true);
-
-          case types$1._false:
-            return this.estreeParseLiteral(false);
-
-          default:
-            return _superClass.prototype.parseExprAtom.call(this, refExpressionErrors);
-        }
-      };
-
       _proto.parseMaybePrivateName = function parseMaybePrivateName() {
         var _superClass$prototype2;
 
@@ -29591,8 +29596,8 @@
         return node.name;
       };
 
-      _proto.parseLiteral = function parseLiteral(value, type, startPos, startLoc) {
-        var node = _superClass.prototype.parseLiteral.call(this, value, type, startPos, startLoc);
+      _proto.parseLiteral = function parseLiteral(value, type) {
+        var node = _superClass.prototype.parseLiteral.call(this, value, type);
 
         node.raw = node.extra.raw;
         delete node.extra;
@@ -29807,15 +29812,13 @@
     }(superClass);
   });
 
-  var TokContext = function TokContext(token, isExpr, preserveSpace, override) {
+  var TokContext = function TokContext(token, isExpr, preserveSpace) {
     this.token = void 0;
     this.isExpr = void 0;
     this.preserveSpace = void 0;
-    this.override = void 0;
     this.token = token;
     this.isExpr = !!isExpr;
     this.preserveSpace = !!preserveSpace;
-    this.override = override;
   };
   var types = {
     braceStatement: new TokContext("{", false),
@@ -29824,9 +29827,7 @@
     templateQuasi: new TokContext("${", false),
     parenStatement: new TokContext("(", false),
     parenExpression: new TokContext("(", true),
-    template: new TokContext("`", true, true, function (p) {
-      return p.readTmplToken();
-    }),
+    template: new TokContext("`", true, true),
     functionExpression: new TokContext("function", true),
     functionStatement: new TokContext("function", false)
   };
@@ -29901,7 +29902,6 @@
     this.state.exprAllowed = true;
   };
 
-  var keywordRelationalOperator = /^in(stanceof)?$/;
   function isIteratorStart(current, next) {
     return current === 64 && next === 64;
   }
@@ -31397,11 +31397,11 @@
               this.next();
 
               if (this.match(types$1.num)) {
-                return this.parseLiteral(-this.state.value, "NumberLiteralTypeAnnotation", node.start, node.loc.start);
+                return this.parseLiteralAtNode(-this.state.value, "NumberLiteralTypeAnnotation", node);
               }
 
               if (this.match(types$1.bigint)) {
-                return this.parseLiteral(-this.state.value, "BigIntLiteralTypeAnnotation", node.start, node.loc.start);
+                return this.parseLiteralAtNode(-this.state.value, "BigIntLiteralTypeAnnotation", node);
               }
 
               throw this.raise(this.state.start, FlowErrors.UnexpectedSubtractionOperand);
@@ -32340,7 +32340,7 @@
 
       _proto.parseImportSpecifier = function parseImportSpecifier(node) {
         var specifier = this.startNode();
-        var firstIdentLoc = this.state.start;
+        var firstIdentIsString = this.match(types$1.string);
         var firstIdent = this.parseModuleExportName();
         var specifierTypeKind = null;
 
@@ -32377,7 +32377,7 @@
             specifier.local = specifier.imported.__clone();
           }
         } else {
-          if (firstIdent.type === "StringLiteral") {
+          if (firstIdentIsString) {
             throw this.raise(specifier.start, ErrorMessages.ImportBindingIsString, firstIdent.value);
           }
 
@@ -32391,7 +32391,7 @@
         var specifierIsTypeImport = hasTypeImportKind(specifier);
 
         if (nodeIsTypeImport && specifierIsTypeImport) {
-          this.raise(firstIdentLoc, FlowErrors.ImportTypeShorthandOnlyInPureImport);
+          this.raise(specifier.start, FlowErrors.ImportTypeShorthandOnlyInPureImport);
         }
 
         if (nodeIsTypeImport || specifierIsTypeImport) {
@@ -32863,7 +32863,7 @@
         switch (this.state.type) {
           case types$1.num:
             {
-              var literal = this.parseLiteral(this.state.value, "NumericLiteral");
+              var literal = this.parseNumericLiteral(this.state.value);
 
               if (endOfInit()) {
                 return {
@@ -32881,7 +32881,7 @@
 
           case types$1.string:
             {
-              var _literal = this.parseLiteral(this.state.value, "StringLiteral");
+              var _literal = this.parseStringLiteral(this.state.value);
 
               if (endOfInit()) {
                 return {
@@ -32900,7 +32900,7 @@
           case types$1._true:
           case types$1._false:
             {
-              var _literal2 = this.parseBooleanLiteral();
+              var _literal2 = this.parseBooleanLiteral(this.match(types$1._true));
 
               if (endOfInit()) {
                 return {
@@ -33510,6 +33510,88 @@
     diams: "\u2666"
   };
 
+  var State = function () {
+    function State() {
+      this.strict = void 0;
+      this.curLine = void 0;
+      this.startLoc = void 0;
+      this.endLoc = void 0;
+      this.errors = [];
+      this.potentialArrowAt = -1;
+      this.noArrowAt = [];
+      this.noArrowParamsConversionAt = [];
+      this.maybeInArrowParameters = false;
+      this.inPipeline = false;
+      this.inType = false;
+      this.noAnonFunctionType = false;
+      this.inPropertyName = false;
+      this.hasFlowComment = false;
+      this.isAmbientContext = false;
+      this.inAbstractClass = false;
+      this.topicContext = {
+        maxNumOfResolvableTopics: 0,
+        maxTopicIndex: null
+      };
+      this.soloAwait = false;
+      this.inFSharpPipelineDirectBody = false;
+      this.labels = [];
+      this.decoratorStack = [[]];
+      this.comments = [];
+      this.trailingComments = [];
+      this.leadingComments = [];
+      this.commentStack = [];
+      this.commentPreviousNode = null;
+      this.pos = 0;
+      this.lineStart = 0;
+      this.type = types$1.eof;
+      this.value = null;
+      this.start = 0;
+      this.end = 0;
+      this.lastTokEndLoc = null;
+      this.lastTokStartLoc = null;
+      this.lastTokStart = 0;
+      this.lastTokEnd = 0;
+      this.context = [types.braceStatement];
+      this.exprAllowed = true;
+      this.containsEsc = false;
+      this.strictErrors = new Map();
+      this.exportedIdentifiers = [];
+      this.tokensLength = 0;
+    }
+
+    var _proto = State.prototype;
+
+    _proto.init = function init(options) {
+      this.strict = options.strictMode === false ? false : options.sourceType === "module";
+      this.curLine = options.startLine;
+      this.startLoc = this.endLoc = this.curPosition();
+    };
+
+    _proto.curPosition = function curPosition() {
+      return new Position(this.curLine, this.pos - this.lineStart);
+    };
+
+    _proto.clone = function clone(skipArrays) {
+      var state = new State();
+      var keys = Object.keys(this);
+
+      for (var i = 0, length = keys.length; i < length; i++) {
+        var key = keys[i];
+        var val = this[key];
+
+        if (!skipArrays && Array.isArray(val)) {
+          val = val.slice();
+        }
+
+        state[key] = val;
+      }
+
+      return state;
+    };
+
+    return State;
+  }();
+
   var HEX_NUMBER = /^[\da-fA-F]+$/;
   var DECIMAL_NUMBER = /^\d+$/;
   var JsxErrors = makeErrorTemplates({
@@ -33966,6 +34048,13 @@
         } else {
           return _superClass.prototype.parseExprAtom.call(this, refExpressionErrors);
         }
+      };
+
+      _proto.createLookaheadState = function createLookaheadState(state) {
+        var lookaheadState = _superClass.prototype.createLookaheadState.call(this, state);
+
+        lookaheadState.inPropertyName = state.inPropertyName;
+        return lookaheadState;
       };
 
       _proto.getTokenFromCode = function getTokenFromCode(code) {
@@ -35187,6 +35276,7 @@
             if (thisTypePredicate.type === "TSThisType") {
               node.parameterName = thisTypePredicate;
               node.asserts = true;
+              node.typeAnnotation = null;
               thisTypePredicate = _this6.finishNode(node, "TSTypePredicate");
             } else {
               _this6.resetStartLocationFromNode(thisTypePredicate, node);
@@ -35207,6 +35297,7 @@
 
             node.parameterName = _this6.parseIdentifier();
             node.asserts = asserts;
+            node.typeAnnotation = null;
             t.typeAnnotation = _this6.finishNode(node, "TSTypePredicate");
             return _this6.finishNode(t, "TSTypeAnnotation");
           }
@@ -37260,88 +37351,6 @@
     return options;
   }
 
-  var State = function () {
-    function State() {
-      this.strict = void 0;
-      this.curLine = void 0;
-      this.startLoc = void 0;
-      this.endLoc = void 0;
-      this.errors = [];
-      this.potentialArrowAt = -1;
-      this.noArrowAt = [];
-      this.noArrowParamsConversionAt = [];
-      this.maybeInArrowParameters = false;
-      this.inPipeline = false;
-      this.inType = false;
-      this.noAnonFunctionType = false;
-      this.inPropertyName = false;
-      this.hasFlowComment = false;
-      this.isAmbientContext = false;
-      this.inAbstractClass = false;
-      this.topicContext = {
-        maxNumOfResolvableTopics: 0,
-        maxTopicIndex: null
-      };
-      this.soloAwait = false;
-      this.inFSharpPipelineDirectBody = false;
-      this.labels = [];
-      this.decoratorStack = [[]];
-      this.comments = [];
-      this.trailingComments = [];
-      this.leadingComments = [];
-      this.commentStack = [];
-      this.commentPreviousNode = null;
-      this.pos = 0;
-      this.lineStart = 0;
-      this.type = types$1.eof;
-      this.value = null;
-      this.start = 0;
-      this.end = 0;
-      this.lastTokEndLoc = null;
-      this.lastTokStartLoc = null;
-      this.lastTokStart = 0;
-      this.lastTokEnd = 0;
-      this.context = [types.braceStatement];
-      this.exprAllowed = true;
-      this.containsEsc = false;
-      this.strictErrors = new Map();
-      this.exportedIdentifiers = [];
-      this.tokensLength = 0;
-    }
-
-    var _proto = State.prototype;
-
-    _proto.init = function init(options) {
-      this.strict = options.strictMode === false ? false : options.sourceType === "module";
-      this.curLine = options.startLine;
-      this.startLoc = this.endLoc = this.curPosition();
-    };
-
-    _proto.curPosition = function curPosition() {
-      return new Position(this.curLine, this.pos - this.lineStart);
-    };
-
-    _proto.clone = function clone(skipArrays) {
-      var state = new State();
-      var keys = Object.keys(this);
-
-      for (var i = 0, length = keys.length; i < length; i++) {
-        var key = keys[i];
-        var val = this[key];
-
-        if (!skipArrays && Array.isArray(val)) {
-          val = val.slice();
-        }
-
-        state[key] = val;
-      }
-
-      return state;
-    };
-
-    return State;
-  }();
-
   var _isDigit = function isDigit(code) {
     return code >= 48 && code <= 57;
   };
@@ -37391,12 +37400,10 @@
     };
 
     _proto.next = function next() {
-      if (!this.isLookahead) {
-        this.checkKeywordEscapes();
+      this.checkKeywordEscapes();
 
-        if (this.options.tokens) {
-          this.pushToken(new Token(this.state));
-        }
+      if (this.options.tokens) {
+        this.pushToken(new Token(this.state));
       }
 
       this.state.lastTokEnd = this.state.end;
@@ -37419,11 +37426,25 @@
       return this.state.type === type;
     };
 
+    _proto.createLookaheadState = function createLookaheadState(state) {
+      return {
+        pos: state.pos,
+        value: null,
+        type: state.type,
+        start: state.start,
+        end: state.end,
+        lastTokEnd: state.end,
+        context: [this.curContext()],
+        exprAllowed: state.exprAllowed,
+        inType: state.inType
+      };
+    };
+
     _proto.lookahead = function lookahead() {
       var old = this.state;
-      this.state = old.clone(true);
+      this.state = this.createLookaheadState(old);
       this.isLookahead = true;
-      this.next();
+      this.nextToken();
       this.isLookahead = false;
       var curr = this.state;
       this.state = old;
@@ -37477,19 +37498,17 @@
 
     _proto.nextToken = function nextToken() {
       var curContext = this.curContext();
-      if (!(curContext != null && curContext.preserveSpace)) this.skipSpace();
+      if (!curContext.preserveSpace) this.skipSpace();
       this.state.start = this.state.pos;
-      this.state.startLoc = this.state.curPosition();
+      if (!this.isLookahead) this.state.startLoc = this.state.curPosition();
 
       if (this.state.pos >= this.length) {
         this.finishToken(types$1.eof);
         return;
       }
 
-      var override = curContext == null ? void 0 : curContext.override;
-
-      if (override) {
-        override(this);
+      if (curContext === types.template) {
+        this.readTmplToken();
       } else {
         this.getTokenFromCode(this.codePointAtPos(this.state.pos));
       }
@@ -37509,7 +37528,8 @@
     };
 
     _proto.skipBlockComment = function skipBlockComment() {
-      var startLoc = this.state.curPosition();
+      var startLoc;
+      if (!this.isLookahead) startLoc = this.state.curPosition();
       var start = this.state.pos;
       var end = this.input.indexOf("*/", this.state.pos + 2);
       if (end === -1) throw this.raise(start, ErrorMessages.UnterminatedComment);
@@ -37528,7 +37548,8 @@
 
     _proto.skipLineComment = function skipLineComment(startSkip) {
       var start = this.state.pos;
-      var startLoc = this.state.curPosition();
+      var startLoc;
+      if (!this.isLookahead) startLoc = this.state.curPosition();
       var ch = this.input.charCodeAt(this.state.pos += startSkip);
 
       if (this.state.pos < this.length) {
@@ -37594,11 +37615,14 @@
 
     _proto.finishToken = function finishToken(type, val) {
       this.state.end = this.state.pos;
-      this.state.endLoc = this.state.curPosition();
       var prevType = this.state.type;
       this.state.type = type;
       this.state.value = val;
-      if (!this.isLookahead) this.updateContext(prevType);
+
+      if (!this.isLookahead) {
+        this.state.endLoc = this.state.curPosition();
+        this.updateContext(prevType);
+      }
     };
 
     _proto.readToken_numberSign = function readToken_numberSign() {
@@ -38908,7 +38932,13 @@
 
     _proto.isUnparsedContextual = function isUnparsedContextual(nameStart, name) {
       var nameEnd = nameStart + name.length;
-      return this.input.slice(nameStart, nameEnd) === name && (nameEnd === this.input.length || !isIdentifierChar(this.input.charCodeAt(nameEnd)));
+
+      if (this.input.slice(nameStart, nameEnd) === name) {
+        var nextCh = this.input.charCodeAt(nameEnd);
+        return !(isIdentifierChar(nextCh) || (nextCh & 0xfc00) === 0xd800);
+      }
+
+      return false;
     };
 
     _proto.isLookaheadContextual = function isLookaheadContextual(name) {
@@ -40347,33 +40377,29 @@
 
         case types$1.regexp:
           {
-            var value = this.state.value;
-            node = this.parseLiteral(value.value, "RegExpLiteral");
-            node.pattern = value.pattern;
-            node.flags = value.flags;
-            return node;
+            return this.parseRegExpLiteral(this.state.value);
           }
 
         case types$1.num:
-          return this.parseLiteral(this.state.value, "NumericLiteral");
+          return this.parseNumericLiteral(this.state.value);
 
         case types$1.bigint:
-          return this.parseLiteral(this.state.value, "BigIntLiteral");
+          return this.parseBigIntLiteral(this.state.value);
 
         case types$1.decimal:
-          return this.parseLiteral(this.state.value, "DecimalLiteral");
+          return this.parseDecimalLiteral(this.state.value);
 
         case types$1.string:
-          return this.parseLiteral(this.state.value, "StringLiteral");
+          return this.parseStringLiteral(this.state.value);
 
         case types$1._null:
-          node = this.startNode();
-          this.next();
-          return this.finishNode(node, "NullLiteral");
+          return this.parseNullLiteral();
 
         case types$1._true:
+          return this.parseBooleanLiteral(true);
+
         case types$1._false:
-          return this.parseBooleanLiteral();
+          return this.parseBooleanLiteral(false);
 
         case types$1.parenL:
           return this.parseParenAndDistinguishExpression(canBeArrow);
@@ -40434,14 +40460,14 @@
         case types$1.privateName:
           {
             var start = this.state.start;
-            var _value = this.state.value;
+            var value = this.state.value;
             node = this.parsePrivateName();
 
             if (this.match(types$1._in)) {
               this.expectPlugin("privateIn");
-              this.classScope.usePrivateName(_value, node.start);
+              this.classScope.usePrivateName(value, node.start);
             } else if (this.hasPlugin("privateIn")) {
-              this.raise(this.state.start, ErrorMessages.PrivateInExpectedIn, _value);
+              this.raise(this.state.start, ErrorMessages.PrivateInExpectedIn, value);
             } else {
               throw this.unexpected(start);
             }
@@ -40542,13 +40568,6 @@
       return this.finishNode(node, "Super");
     };
 
-    _proto.parseBooleanLiteral = function parseBooleanLiteral() {
-      var node = this.startNode();
-      node.value = this.match(types$1._true);
-      this.next();
-      return this.finishNode(node, "BooleanLiteral");
-    };
-
     _proto.parseMaybePrivateName = function parseMaybePrivateName(isPrivateNameAllowed) {
       var isPrivate = this.match(types$1.privateName);
 
@@ -40621,15 +40640,53 @@
       return this.parseMetaProperty(node, id, "meta");
     };
 
-    _proto.parseLiteral = function parseLiteral(value, type, startPos, startLoc) {
-      startPos = startPos || this.state.start;
-      startLoc = startLoc || this.state.startLoc;
-      var node = this.startNodeAt(startPos, startLoc);
+    _proto.parseLiteralAtNode = function parseLiteralAtNode(value, type, node) {
       this.addExtra(node, "rawValue", value);
-      this.addExtra(node, "raw", this.input.slice(startPos, this.state.end));
+      this.addExtra(node, "raw", this.input.slice(node.start, this.state.end));
       node.value = value;
       this.next();
       return this.finishNode(node, type);
+    };
+
+    _proto.parseLiteral = function parseLiteral(value, type) {
+      var node = this.startNode();
+      return this.parseLiteralAtNode(value, type, node);
+    };
+
+    _proto.parseStringLiteral = function parseStringLiteral(value) {
+      return this.parseLiteral(value, "StringLiteral");
+    };
+
+    _proto.parseNumericLiteral = function parseNumericLiteral(value) {
+      return this.parseLiteral(value, "NumericLiteral");
+    };
+
+    _proto.parseBigIntLiteral = function parseBigIntLiteral(value) {
+      return this.parseLiteral(value, "BigIntLiteral");
+    };
+
+    _proto.parseDecimalLiteral = function parseDecimalLiteral(value) {
+      return this.parseLiteral(value, "DecimalLiteral");
+    };
+
+    _proto.parseRegExpLiteral = function parseRegExpLiteral(value) {
+      var node = this.parseLiteral(value.value, "RegExpLiteral");
+      node.pattern = value.pattern;
+      node.flags = value.flags;
+      return node;
+    };
+
+    _proto.parseBooleanLiteral = function parseBooleanLiteral(value) {
+      var node = this.startNode();
+      node.value = value;
+      this.next();
+      return this.finishNode(node, "BooleanLiteral");
+    };
+
+    _proto.parseNullLiteral = function parseNullLiteral() {
+      var node = this.startNode();
+      this.next();
+      return this.finishNode(node, "NullLiteral");
     };
 
     _proto.parseParenAndDistinguishExpression = function parseParenAndDistinguishExpression(canBeArrow) {
@@ -41560,6 +41617,7 @@
       FUNC_HANGING_STATEMENT = 2,
       FUNC_NULLABLE_ID = 4;
   var loneSurrogate = /(?:[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])/;
+  var keywordRelationalOperator = new RegExp("in(?:stanceof)?", "y");
 
   function babel7CompatTokens(tokens) {
     {
@@ -41668,7 +41726,7 @@
 
     _proto.isLetKeyword = function isLetKeyword(context) {
       var next = this.nextTokenStart();
-      var nextCh = this.input.charCodeAt(next);
+      var nextCh = this.codePointAtPos(next);
 
       if (nextCh === 92 || nextCh === 91) {
         return true;
@@ -41678,14 +41736,18 @@
       if (nextCh === 123) return true;
 
       if (isIdentifierStart(nextCh)) {
-        var pos = next + 1;
+        keywordRelationalOperator.lastIndex = next;
+        var matched = keywordRelationalOperator.exec(this.input);
 
-        while (isIdentifierChar(this.input.charCodeAt(pos))) {
-          ++pos;
+        if (matched !== null) {
+          var endCh = this.codePointAtPos(next + matched[0].length);
+
+          if (!isIdentifierChar(endCh) && endCh !== 92) {
+            return false;
+          }
         }
 
-        var ident = this.input.slice(next, pos);
-        if (!keywordRelationalOperator.test(ident)) return true;
+        return true;
       }
 
       return false;
@@ -43074,7 +43136,7 @@
             if (!isFrom && specifier.local) {
               var local = specifier.local;
 
-              if (local.type === "StringLiteral") {
+              if (local.type !== "Identifier") {
                 this.raise(specifier.start, ErrorMessages.ExportBindingIsString, local.value, exportedName);
               } else {
                 this.checkReservedWord(local.name, local.start, true, false);
@@ -43160,7 +43222,7 @@
 
     _proto.parseModuleExportName = function parseModuleExportName() {
       if (this.match(types$1.string)) {
-        var result = this.parseLiteral(this.state.value, "StringLiteral");
+        var result = this.parseStringLiteral(this.state.value);
         var surrogate = result.value.match(loneSurrogate);
 
         if (surrogate) {
@@ -43229,7 +43291,7 @@
         var keyName = this.state.value;
 
         if (this.match(types$1.string)) {
-          node.key = this.parseLiteral(keyName, "StringLiteral");
+          node.key = this.parseStringLiteral(keyName);
         } else {
           node.key = this.parseIdentifier(true);
         }
@@ -43250,7 +43312,7 @@
           throw this.unexpected(this.state.start, ErrorMessages.ModuleAttributeInvalidValue);
         }
 
-        node.value = this.parseLiteral(this.state.value, "StringLiteral");
+        node.value = this.parseStringLiteral(this.state.value);
         this.finishNode(node, "ImportAttribute");
         attrs.push(node);
       } while (this.eat(types$1.comma));
@@ -43289,7 +43351,7 @@
           throw this.unexpected(this.state.start, ErrorMessages.ModuleAttributeInvalidValue);
         }
 
-        node.value = this.parseLiteral(this.state.value, "StringLiteral");
+        node.value = this.parseStringLiteral(this.state.value);
         this.finishNode(node, "ImportAttribute");
         attrs.push(node);
       } while (this.eat(types$1.comma));
@@ -43355,6 +43417,7 @@
 
     _proto.parseImportSpecifier = function parseImportSpecifier(node) {
       var specifier = this.startNode();
+      var importedIsString = this.match(types$1.string);
       specifier.imported = this.parseModuleExportName();
 
       if (this.eatContextual("as")) {
@@ -43362,7 +43425,7 @@
       } else {
         var imported = specifier.imported;
 
-        if (imported.type === "StringLiteral") {
+        if (importedIsString) {
           throw this.raise(specifier.start, ErrorMessages.ImportBindingIsString, imported.value);
         }
 
@@ -58127,7 +58190,7 @@
   	}
   ];
 
-  var browsers = {
+  var browsers$2 = {
     A: "ie",
     B: "edge",
     C: "firefox",
@@ -58149,933 +58212,936 @@
     S: "kaios"
   };
 
-  var browsers_1 = createCommonjsModule(function (module, exports) {
+  var browsers_1 = browsers$2;
+  var browsers$1 = {
+    browsers: browsers_1
+  };
 
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.browsers = browsers;
-  }, "/$$rollup_base$$/packages/babel-helper-compilation-targets/node_modules/browserslist/node_modules/caniuse-lite/dist/unpacker");
-
-  var browserVersions = {
-    "0": "42",
-    "1": "43",
-    "2": "44",
-    "3": "45",
-    "4": "46",
-    "5": "47",
-    "6": "48",
-    "7": "49",
-    "8": "50",
-    "9": "51",
+  var browserVersions$1 = {
+    "0": "44",
+    "1": "45",
+    "2": "46",
+    "3": "47",
+    "4": "48",
+    "5": "49",
+    "6": "50",
+    "7": "51",
+    "8": "52",
+    "9": "53",
     A: "10",
     B: "11",
     C: "12",
     D: "7",
-    E: "9",
-    F: "8",
-    G: "4",
-    H: "14",
+    E: "8",
+    F: "9",
+    G: "90",
+    H: "4",
     I: "6",
-    J: "16",
-    K: "17",
-    L: "18",
-    M: "87",
-    N: "90",
-    O: "13",
-    P: "62",
-    Q: "15",
-    R: "83",
-    S: "84",
-    T: "85",
-    U: "86",
-    V: "12.1",
-    W: "88",
-    X: "89",
-    Y: "65",
-    Z: "11.1",
-    a: "75",
-    b: "79",
-    c: "5",
-    d: "19",
-    e: "20",
-    f: "21",
-    g: "22",
-    h: "23",
-    i: "24",
-    j: "25",
-    k: "26",
-    l: "27",
-    m: "28",
-    n: "29",
-    o: "30",
-    p: "31",
-    q: "32",
-    r: "33",
-    s: "34",
-    t: "35",
-    u: "36",
-    v: "37",
-    w: "38",
-    x: "39",
-    y: "40",
-    z: "41",
-    AB: "52",
-    BB: "53",
-    CB: "54",
-    DB: "55",
-    EB: "56",
-    FB: "57",
-    GB: "58",
-    HB: "74",
-    IB: "60",
-    JB: "73",
-    KB: "80",
-    LB: "63",
-    MB: "64",
-    NB: "81",
-    OB: "66",
-    PB: "67",
-    QB: "68",
-    RB: "69",
-    SB: "70",
-    TB: "71",
-    UB: "72",
-    VB: "61",
-    WB: "3",
-    XB: "76",
-    YB: "77",
-    ZB: "78",
-    aB: "3.2",
-    bB: "10.1",
-    cB: "11.5",
-    dB: "4.2-4.3",
-    eB: "59",
-    fB: "92",
-    gB: "93",
-    hB: "3.1",
-    iB: "2.5",
-    jB: "5.1",
-    kB: "6.1",
-    lB: "7.1",
-    mB: "9.1",
-    nB: "82",
-    oB: "2",
-    pB: "5.5",
-    qB: "13.1",
-    rB: "TP",
-    sB: "9.5-9.6",
-    tB: "10.0-10.1",
-    uB: "10.5",
-    vB: "10.6",
-    wB: "3.5",
-    xB: "11.6",
-    yB: "4.0-4.1",
-    zB: "3.6",
-    "0B": "5.0-5.1",
-    "1B": "6.0-6.1",
-    "2B": "91",
-    "3B": "8.1-8.4",
-    "4B": "9.0-9.2",
-    "5B": "9.3",
-    "6B": "10.0-10.2",
-    "7B": "10.3",
-    "8B": "11.0-11.2",
-    "9B": "11.3-11.4",
-    AC: "12.0-12.1",
-    BC: "12.2-12.4",
-    CC: "13.0-13.1",
-    DC: "13.2",
-    EC: "13.3",
-    FC: "13.4-13.7",
-    GC: "14.0-14.5",
-    HC: "all",
-    IC: "2.1",
-    JC: "2.2",
-    KC: "2.3",
-    LC: "4.1",
-    MC: "4.4",
-    NC: "4.4.3-4.4.4",
-    OC: "12.12",
-    PC: "5.0-5.4",
-    QC: "6.2-6.4",
-    RC: "7.2-7.4",
-    SC: "8.2",
-    TC: "9.2",
-    UC: "11.1-11.2",
-    VC: "12.0",
-    WC: "13.0",
-    XC: "10.4",
-    YC: "7.12",
-    ZC: "7.0-7.1"
+    J: "13",
+    K: "14",
+    L: "15",
+    M: "16",
+    N: "17",
+    O: "18",
+    P: "87",
+    Q: "62",
+    R: "79",
+    S: "80",
+    T: "81",
+    U: "83",
+    V: "84",
+    W: "85",
+    X: "86",
+    Y: "88",
+    Z: "89",
+    a: "5",
+    b: "19",
+    c: "20",
+    d: "21",
+    e: "22",
+    f: "23",
+    g: "24",
+    h: "25",
+    i: "26",
+    j: "27",
+    k: "28",
+    l: "29",
+    m: "30",
+    n: "31",
+    o: "32",
+    p: "33",
+    q: "34",
+    r: "35",
+    s: "36",
+    t: "37",
+    u: "38",
+    v: "39",
+    w: "40",
+    x: "41",
+    y: "42",
+    z: "43",
+    AB: "54",
+    BB: "55",
+    CB: "56",
+    DB: "57",
+    EB: "58",
+    FB: "60",
+    GB: "63",
+    HB: "64",
+    IB: "65",
+    JB: "66",
+    KB: "67",
+    LB: "68",
+    MB: "69",
+    NB: "70",
+    OB: "71",
+    PB: "72",
+    QB: "73",
+    RB: "74",
+    SB: "75",
+    TB: "11.1",
+    UB: "12.1",
+    VB: "3",
+    WB: "59",
+    XB: "61",
+    YB: "76",
+    ZB: "77",
+    aB: "78",
+    bB: "3.2",
+    cB: "10.1",
+    dB: "11.5",
+    eB: "4.2-4.3",
+    fB: "5.5",
+    gB: "2",
+    hB: "82",
+    iB: "3.5",
+    jB: "3.6",
+    kB: "91",
+    lB: "92",
+    mB: "93",
+    nB: "3.1",
+    oB: "5.1",
+    pB: "6.1",
+    qB: "7.1",
+    rB: "9.1",
+    sB: "13.1",
+    tB: "14.1",
+    uB: "TP",
+    vB: "9.5-9.6",
+    wB: "10.0-10.1",
+    xB: "10.5",
+    yB: "10.6",
+    zB: "11.6",
+    "0B": "4.0-4.1",
+    "1B": "5.0-5.1",
+    "2B": "6.0-6.1",
+    "3B": "7.0-7.1",
+    "4B": "8.1-8.4",
+    "5B": "9.0-9.2",
+    "6B": "9.3",
+    "7B": "10.0-10.2",
+    "8B": "10.3",
+    "9B": "11.0-11.2",
+    AC: "11.3-11.4",
+    BC: "12.0-12.1",
+    CC: "12.2-12.4",
+    DC: "13.0-13.1",
+    EC: "13.2",
+    FC: "13.3",
+    GC: "13.4-13.7",
+    HC: "14.0-14.4",
+    IC: "14.5",
+    JC: "all",
+    KC: "2.1",
+    LC: "2.2",
+    MC: "2.3",
+    NC: "4.1",
+    OC: "4.4",
+    PC: "4.4.3-4.4.4",
+    QC: "12.12",
+    RC: "5.0-5.4",
+    SC: "6.2-6.4",
+    TC: "7.2-7.4",
+    UC: "8.2",
+    VC: "9.2",
+    WC: "11.1-11.2",
+    XC: "12.0",
+    YC: "13.0",
+    ZC: "14.0",
+    aC: "10.4",
+    bC: "7.12",
+    cC: "2.5"
   };
 
-  var browserVersions_1 = createCommonjsModule(function (module, exports) {
+  var browserVersions_1 = browserVersions$1;
+  var browserVersions = {
+    browserVersions: browserVersions_1
+  };
 
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.browserVersions = browserVersions;
-  }, "/$$rollup_base$$/packages/babel-helper-compilation-targets/node_modules/browserslist/node_modules/caniuse-lite/dist/unpacker");
-
-  var agents$1 = {
+  var agents$2 = {
     A: {
       A: {
-        I: 0.00608274,
+        I: 0.0131217,
         D: 0.00621152,
-        F: 0.0258389,
-        E: 0.0968957,
-        A: 0.0258389,
-        B: 0.943119,
-        pB: 0.009298
+        E: 0.0262435,
+        F: 0.111535,
+        A: 0.0328044,
+        B: 0.905401,
+        fB: 0.009298
       },
       B: "ms",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "pB", "I", "D", "F", "E", "A", "B", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "fB", "I", "D", "E", "F", "A", "B", "", "", ""],
       E: "IE",
       F: {
-        pB: 962323200,
+        fB: 962323200,
         I: 998870400,
         D: 1161129600,
-        F: 1237420800,
-        E: 1300060800,
+        E: 1237420800,
+        F: 1300060800,
         A: 1346716800,
         B: 1381968000
       }
     },
     B: {
       A: {
-        C: 0.008596,
-        O: 0.004267,
-        H: 0.008596,
-        Q: 0.008596,
-        J: 0.008596,
-        K: 0.034384,
-        L: 0.133238,
-        b: 0,
-        KB: 0.004298,
-        NB: 0.00944,
-        R: 0.00415,
-        S: 0.008596,
-        T: 0.017192,
-        U: 0.017192,
-        M: 0.025788,
-        W: 0.743554,
-        X: 2.61318,
-        N: 0
+        C: 0.008542,
+        J: 0.004267,
+        K: 0.004271,
+        L: 0.008542,
+        M: 0.008542,
+        N: 0.029897,
+        O: 0.106775,
+        R: 0,
+        S: 0.004298,
+        T: 0.00944,
+        U: 0.00415,
+        V: 0.008542,
+        W: 0.012813,
+        X: 0.012813,
+        P: 0.017084,
+        Y: 0.025626,
+        Z: 2.26363,
+        G: 1.03358
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "C", "O", "H", "Q", "J", "K", "L", "b", "KB", "NB", "R", "S", "T", "U", "M", "W", "X", "N", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "C", "J", "K", "L", "M", "N", "O", "R", "S", "T", "U", "V", "W", "X", "P", "Y", "Z", "G", "", "", ""],
       E: "Edge",
       F: {
         C: 1438128000,
-        O: 1447286400,
-        H: 1470096000,
-        Q: 1491868800,
-        J: 1508198400,
-        K: 1525046400,
-        L: 1542067200,
-        b: 1579046400,
-        KB: 1581033600,
-        NB: 1586736000,
-        R: 1590019200,
-        S: 1594857600,
-        T: 1598486400,
-        U: 1602201600,
-        M: 1605830400,
-        W: 1611360000,
-        X: 1614816000,
-        N: 1618358400
+        J: 1447286400,
+        K: 1470096000,
+        L: 1491868800,
+        M: 1508198400,
+        N: 1525046400,
+        O: 1542067200,
+        R: 1579046400,
+        S: 1581033600,
+        T: 1586736000,
+        U: 1590019200,
+        V: 1594857600,
+        W: 1598486400,
+        X: 1602201600,
+        P: 1605830400,
+        Y: 1611360000,
+        Z: 1614816000,
+        G: 1618358400
       },
       D: {
         C: "ms",
-        O: "ms",
-        H: "ms",
-        Q: "ms",
         J: "ms",
         K: "ms",
-        L: "ms"
+        L: "ms",
+        M: "ms",
+        N: "ms",
+        O: "ms"
       }
     },
     C: {
       A: {
-        "0": 0.0047,
-        "1": 0.04298,
-        "2": 0.004298,
-        "3": 0.004298,
-        "4": 0.004525,
-        "5": 0.004298,
-        "6": 0.008596,
-        "7": 0.004538,
-        "8": 0.004267,
-        "9": 0.008596,
-        oB: 0.004298,
-        WB: 0.004538,
-        G: 0.017192,
-        c: 0.004879,
+        "0": 0.004271,
+        "1": 0.004271,
+        "2": 0.004525,
+        "3": 0.004271,
+        "4": 0.008542,
+        "5": 0.004538,
+        "6": 0.004267,
+        "7": 0.008542,
+        "8": 0.064065,
+        "9": 0.004335,
+        gB: 0.012813,
+        VB: 0.004271,
+        H: 0.021355,
+        a: 0.004879,
         I: 0.020136,
         D: 0.005725,
-        F: 0.004525,
-        E: 0.00533,
+        E: 0.004525,
+        F: 0.00533,
         A: 0.004283,
-        B: 0.004298,
+        B: 0.004271,
         C: 0.004471,
-        O: 0.004486,
-        H: 0.00453,
-        Q: 0.008596,
-        J: 0.004417,
-        K: 0.004425,
-        L: 0.004298,
-        d: 0.004443,
-        e: 0.004283,
-        f: 0.004298,
-        g: 0.013698,
-        h: 0.004298,
-        i: 0.008786,
-        j: 0.012894,
-        k: 0.004317,
-        l: 0.004393,
-        m: 0.004418,
-        n: 0.008834,
-        o: 0.008596,
-        p: 0.008928,
-        q: 0.004471,
-        r: 0.009284,
-        s: 0.004707,
-        t: 0.009076,
-        u: 0.004425,
+        J: 0.004486,
+        K: 0.00453,
+        L: 0.008542,
+        M: 0.004417,
+        N: 0.004425,
+        O: 0.008542,
+        b: 0.004443,
+        c: 0.004283,
+        d: 0.008542,
+        e: 0.013698,
+        f: 0.008542,
+        g: 0.008786,
+        h: 0.017084,
+        i: 0.004317,
+        j: 0.004393,
+        k: 0.004418,
+        l: 0.008834,
+        m: 0.008542,
+        n: 0.008928,
+        o: 0.004471,
+        p: 0.009284,
+        q: 0.004707,
+        r: 0.009076,
+        s: 0.004425,
+        t: 0.004783,
+        u: 0.004271,
         v: 0.004783,
-        w: 0.00472,
-        x: 0.004783,
-        y: 0.00487,
-        z: 0.005029,
-        AB: 0.077364,
-        BB: 0.004335,
-        CB: 0.004298,
+        w: 0.00487,
+        x: 0.005029,
+        y: 0.0047,
+        z: 0.051252,
+        AB: 0.004271,
+        BB: 0.004425,
+        CB: 0.012813,
         DB: 0.004425,
-        EB: 0.017192,
-        FB: 0.004425,
-        GB: 0.008534,
-        eB: 0.004298,
-        IB: 0.008596,
-        VB: 0.00472,
-        P: 0.004425,
-        LB: 0.017192,
-        MB: 0.00415,
-        Y: 0.004267,
-        OB: 0.008596,
-        PB: 0.004267,
-        QB: 0.017192,
-        RB: 0.00415,
-        SB: 0.004267,
-        TB: 0.004425,
-        UB: 0.012894,
-        JB: 0.00415,
+        EB: 0.008534,
+        WB: 0.004271,
+        FB: 0.008542,
+        XB: 0.00472,
+        Q: 0.004425,
+        GB: 0.017084,
         HB: 0.00415,
-        a: 0.00415,
-        XB: 0.004298,
-        YB: 0.008596,
-        ZB: 0.154728,
-        b: 0.012894,
-        KB: 0.012894,
-        NB: 0.017192,
-        nB: 0.025788,
-        R: 0.017192,
-        S: 0.055874,
-        T: 0.124642,
-        U: 2.11891,
-        M: 0.446992,
-        W: 0.008596,
-        X: 0,
-        wB: 0.008786,
-        zB: 0.00487
+        IB: 0.004267,
+        JB: 0.008542,
+        KB: 0.004267,
+        LB: 0.012813,
+        MB: 0.00415,
+        NB: 0.004271,
+        OB: 0.004425,
+        PB: 0.008542,
+        QB: 0.00415,
+        RB: 0.00415,
+        SB: 0.008542,
+        YB: 0.004298,
+        ZB: 0.008542,
+        aB: 0.153756,
+        R: 0.012813,
+        S: 0.012813,
+        T: 0.012813,
+        hB: 0.021355,
+        U: 0.012813,
+        V: 0.029897,
+        W: 0.038439,
+        X: 0.08542,
+        P: 1.76819,
+        Y: 0.708986,
+        Z: 0.008542,
+        G: 0,
+        iB: 0.008786,
+        jB: 0.00487
       },
       B: "moz",
-      C: ["oB", "WB", "wB", "zB", "G", "c", "I", "D", "F", "E", "A", "B", "C", "O", "H", "Q", "J", "K", "L", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "FB", "GB", "eB", "IB", "VB", "P", "LB", "MB", "Y", "OB", "PB", "QB", "RB", "SB", "TB", "UB", "JB", "HB", "a", "XB", "YB", "ZB", "b", "KB", "NB", "nB", "R", "S", "T", "U", "M", "W", "X", ""],
+      C: ["gB", "VB", "iB", "jB", "H", "a", "I", "D", "E", "F", "A", "B", "C", "J", "K", "L", "M", "N", "O", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "WB", "FB", "XB", "Q", "GB", "HB", "IB", "JB", "KB", "LB", "MB", "NB", "OB", "PB", "QB", "RB", "SB", "YB", "ZB", "aB", "R", "S", "T", "hB", "U", "V", "W", "X", "P", "Y", "Z", "G", ""],
       E: "Firefox",
       F: {
-        "0": 1446508800,
-        "1": 1450137600,
-        "2": 1453852800,
-        "3": 1457395200,
-        "4": 1461628800,
-        "5": 1465257600,
-        "6": 1470096000,
-        "7": 1474329600,
-        "8": 1479168000,
-        "9": 1485216000,
-        oB: 1161648000,
-        WB: 1213660800,
-        wB: 1246320000,
-        zB: 1264032000,
-        G: 1300752000,
-        c: 1308614400,
+        "0": 1453852800,
+        "1": 1457395200,
+        "2": 1461628800,
+        "3": 1465257600,
+        "4": 1470096000,
+        "5": 1474329600,
+        "6": 1479168000,
+        "7": 1485216000,
+        "8": 1488844800,
+        "9": 1492560000,
+        gB: 1161648000,
+        VB: 1213660800,
+        iB: 1246320000,
+        jB: 1264032000,
+        H: 1300752000,
+        a: 1308614400,
         I: 1313452800,
         D: 1317081600,
-        F: 1317081600,
-        E: 1320710400,
+        E: 1317081600,
+        F: 1320710400,
         A: 1324339200,
         B: 1327968000,
         C: 1331596800,
-        O: 1335225600,
-        H: 1338854400,
-        Q: 1342483200,
-        J: 1346112000,
-        K: 1349740800,
-        L: 1353628800,
-        d: 1357603200,
-        e: 1361232000,
-        f: 1364860800,
-        g: 1368489600,
-        h: 1372118400,
-        i: 1375747200,
-        j: 1379376000,
-        k: 1386633600,
-        l: 1391472000,
-        m: 1395100800,
-        n: 1398729600,
-        o: 1402358400,
-        p: 1405987200,
-        q: 1409616000,
-        r: 1413244800,
-        s: 1417392000,
-        t: 1421107200,
-        u: 1424736000,
-        v: 1428278400,
-        w: 1431475200,
-        x: 1435881600,
-        y: 1439251200,
-        z: 1442880000,
-        AB: 1488844800,
-        BB: 1492560000,
-        CB: 1497312000,
-        DB: 1502150400,
-        EB: 1506556800,
-        FB: 1510617600,
-        GB: 1516665600,
-        eB: 1520985600,
-        IB: 1525824000,
-        VB: 1529971200,
-        P: 1536105600,
-        LB: 1540252800,
-        MB: 1544486400,
-        Y: 1548720000,
-        OB: 1552953600,
-        PB: 1558396800,
-        QB: 1562630400,
-        RB: 1567468800,
-        SB: 1571788800,
-        TB: 1575331200,
-        UB: 1578355200,
-        JB: 1581379200,
-        HB: 1583798400,
-        a: 1586304000,
-        XB: 1588636800,
-        YB: 1591056000,
-        ZB: 1593475200,
-        b: 1595894400,
-        KB: 1598313600,
-        NB: 1600732800,
-        nB: 1603152000,
-        R: 1605571200,
-        S: 1607990400,
-        T: 1611619200,
-        U: 1614038400,
-        M: 1616457600,
-        W: null,
-        X: null
+        J: 1335225600,
+        K: 1338854400,
+        L: 1342483200,
+        M: 1346112000,
+        N: 1349740800,
+        O: 1353628800,
+        b: 1357603200,
+        c: 1361232000,
+        d: 1364860800,
+        e: 1368489600,
+        f: 1372118400,
+        g: 1375747200,
+        h: 1379376000,
+        i: 1386633600,
+        j: 1391472000,
+        k: 1395100800,
+        l: 1398729600,
+        m: 1402358400,
+        n: 1405987200,
+        o: 1409616000,
+        p: 1413244800,
+        q: 1417392000,
+        r: 1421107200,
+        s: 1424736000,
+        t: 1428278400,
+        u: 1431475200,
+        v: 1435881600,
+        w: 1439251200,
+        x: 1442880000,
+        y: 1446508800,
+        z: 1450137600,
+        AB: 1497312000,
+        BB: 1502150400,
+        CB: 1506556800,
+        DB: 1510617600,
+        EB: 1516665600,
+        WB: 1520985600,
+        FB: 1525824000,
+        XB: 1529971200,
+        Q: 1536105600,
+        GB: 1540252800,
+        HB: 1544486400,
+        IB: 1548720000,
+        JB: 1552953600,
+        KB: 1558396800,
+        LB: 1562630400,
+        MB: 1567468800,
+        NB: 1571788800,
+        OB: 1575331200,
+        PB: 1578355200,
+        QB: 1581379200,
+        RB: 1583798400,
+        SB: 1586304000,
+        YB: 1588636800,
+        ZB: 1591056000,
+        aB: 1593475200,
+        R: 1595894400,
+        S: 1598313600,
+        T: 1600732800,
+        hB: 1603152000,
+        U: 1605571200,
+        V: 1607990400,
+        W: 1611619200,
+        X: 1614038400,
+        P: 1616457600,
+        Y: 1618790400,
+        Z: null,
+        G: null
       }
     },
     D: {
       A: {
-        "0": 0.004403,
-        "1": 0.008596,
-        "2": 0.004465,
-        "3": 0.004642,
-        "4": 0.004891,
-        "5": 0.008596,
-        "6": 0.02149,
-        "7": 0.180516,
-        "8": 0.004298,
-        "9": 0.004298,
-        G: 0.004706,
-        c: 0.004879,
+        "0": 0.004465,
+        "1": 0.004642,
+        "2": 0.004891,
+        "3": 0.008542,
+        "4": 0.021355,
+        "5": 0.200737,
+        "6": 0.004271,
+        "7": 0.004271,
+        "8": 0.004271,
+        "9": 0.055523,
+        H: 0.004706,
+        a: 0.004879,
         I: 0.004879,
         D: 0.005591,
-        F: 0.005591,
         E: 0.005591,
+        F: 0.005591,
         A: 0.004534,
         B: 0.004464,
         C: 0.010424,
-        O: 0.0083,
-        H: 0.004706,
-        Q: 0.015087,
-        J: 0.004393,
-        K: 0.004393,
-        L: 0.008652,
-        d: 0.004298,
-        e: 0.004393,
-        f: 0.004317,
-        g: 0.008596,
-        h: 0.008786,
-        i: 0.017192,
-        j: 0.004461,
-        k: 0.004298,
-        l: 0.004326,
-        m: 0.0047,
-        n: 0.004538,
-        o: 0.008596,
-        p: 0.008596,
-        q: 0.004566,
-        r: 0.008596,
-        s: 0.008596,
-        t: 0.017192,
-        u: 0.004335,
+        J: 0.0083,
+        K: 0.004706,
+        L: 0.015087,
+        M: 0.004393,
+        N: 0.004393,
+        O: 0.008652,
+        b: 0.008542,
+        c: 0.004393,
+        d: 0.004317,
+        e: 0.008542,
+        f: 0.008786,
+        g: 0.025626,
+        h: 0.004461,
+        i: 0.004298,
+        j: 0.004326,
+        k: 0.0047,
+        l: 0.004538,
+        m: 0.008542,
+        n: 0.008596,
+        o: 0.004566,
+        p: 0.012813,
+        q: 0.008542,
+        r: 0.025626,
+        s: 0.004335,
+        t: 0.004464,
+        u: 0.025626,
         v: 0.004464,
-        w: 0.030086,
-        x: 0.004464,
-        y: 0.012894,
-        z: 0.0236,
-        AB: 0.004267,
-        BB: 0.051576,
-        CB: 0.012894,
-        DB: 0.012894,
-        EB: 0.055874,
-        FB: 0.008596,
-        GB: 0.008596,
-        eB: 0.008596,
-        IB: 0.012894,
-        VB: 0.034384,
-        P: 0.008596,
-        LB: 0.02149,
-        MB: 0.017192,
-        Y: 0.025788,
-        OB: 0.02149,
-        PB: 0.02149,
-        QB: 0.034384,
-        RB: 0.06447,
-        SB: 0.051576,
-        TB: 0.030086,
-        UB: 0.038682,
-        JB: 0.02149,
-        HB: 0.094556,
-        a: 0.077364,
-        XB: 0.068768,
-        YB: 0.038682,
-        ZB: 0.068768,
-        b: 0.184814,
-        KB: 0.103152,
-        NB: 0.111748,
-        R: 0.159026,
-        S: 0.15043,
-        T: 0.210602,
-        U: 0.296562,
-        M: 0.614614,
-        W: 9.08167,
-        X: 15.1247,
-        N: 0.025788,
-        "2B": 0.02149,
-        fB: 0,
-        gB: 0
+        w: 0.012813,
+        x: 0.0236,
+        y: 0.004403,
+        z: 0.008542,
+        AB: 0.012813,
+        BB: 0.017084,
+        CB: 0.064065,
+        DB: 0.008542,
+        EB: 0.012813,
+        WB: 0.008542,
+        FB: 0.012813,
+        XB: 0.089691,
+        Q: 0.008542,
+        GB: 0.021355,
+        HB: 0.012813,
+        IB: 0.021355,
+        JB: 0.021355,
+        KB: 0.04271,
+        LB: 0.04271,
+        MB: 0.068336,
+        NB: 0.051252,
+        OB: 0.025626,
+        PB: 0.046981,
+        QB: 0.021355,
+        RB: 0.119588,
+        SB: 0.093962,
+        YB: 0.064065,
+        ZB: 0.034168,
+        aB: 0.081149,
+        R: 0.175111,
+        S: 0.102504,
+        T: 0.081149,
+        U: 0.166569,
+        V: 0.136672,
+        W: 0.205008,
+        X: 0.230634,
+        P: 0.431371,
+        Y: 0.743154,
+        Z: 16.8235,
+        G: 6.40223,
+        kB: 0.021355,
+        lB: 0.012813,
+        mB: 0
       },
       B: "webkit",
-      C: ["", "", "G", "c", "I", "D", "F", "E", "A", "B", "C", "O", "H", "Q", "J", "K", "L", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "FB", "GB", "eB", "IB", "VB", "P", "LB", "MB", "Y", "OB", "PB", "QB", "RB", "SB", "TB", "UB", "JB", "HB", "a", "XB", "YB", "ZB", "b", "KB", "NB", "R", "S", "T", "U", "M", "W", "X", "N", "2B", "fB", "gB"],
+      C: ["", "", "", "H", "a", "I", "D", "E", "F", "A", "B", "C", "J", "K", "L", "M", "N", "O", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "WB", "FB", "XB", "Q", "GB", "HB", "IB", "JB", "KB", "LB", "MB", "NB", "OB", "PB", "QB", "RB", "SB", "YB", "ZB", "aB", "R", "S", "T", "U", "V", "W", "X", "P", "Y", "Z", "G", "kB", "lB", "mB"],
       E: "Chrome",
       F: {
-        "0": 1429401600,
-        "1": 1432080000,
-        "2": 1437523200,
-        "3": 1441152000,
-        "4": 1444780800,
-        "5": 1449014400,
-        "6": 1453248000,
-        "7": 1456963200,
-        "8": 1460592000,
-        "9": 1464134400,
-        G: 1264377600,
-        c: 1274745600,
+        "0": 1437523200,
+        "1": 1441152000,
+        "2": 1444780800,
+        "3": 1449014400,
+        "4": 1453248000,
+        "5": 1456963200,
+        "6": 1460592000,
+        "7": 1464134400,
+        "8": 1469059200,
+        "9": 1472601600,
+        H: 1264377600,
+        a: 1274745600,
         I: 1283385600,
         D: 1287619200,
-        F: 1291248000,
-        E: 1296777600,
+        E: 1291248000,
+        F: 1296777600,
         A: 1299542400,
         B: 1303862400,
         C: 1307404800,
-        O: 1312243200,
-        H: 1316131200,
-        Q: 1316131200,
-        J: 1319500800,
-        K: 1323734400,
-        L: 1328659200,
-        d: 1332892800,
-        e: 1337040000,
-        f: 1340668800,
-        g: 1343692800,
-        h: 1348531200,
-        i: 1352246400,
-        j: 1357862400,
-        k: 1361404800,
-        l: 1364428800,
-        m: 1369094400,
-        n: 1374105600,
-        o: 1376956800,
-        p: 1384214400,
-        q: 1389657600,
-        r: 1392940800,
-        s: 1397001600,
-        t: 1400544000,
-        u: 1405468800,
-        v: 1409011200,
-        w: 1412640000,
-        x: 1416268800,
-        y: 1421798400,
-        z: 1425513600,
-        AB: 1469059200,
-        BB: 1472601600,
-        CB: 1476230400,
-        DB: 1480550400,
-        EB: 1485302400,
-        FB: 1489017600,
-        GB: 1492560000,
-        eB: 1496707200,
-        IB: 1500940800,
-        VB: 1504569600,
-        P: 1508198400,
-        LB: 1512518400,
-        MB: 1516752000,
-        Y: 1520294400,
-        OB: 1523923200,
-        PB: 1527552000,
-        QB: 1532390400,
-        RB: 1536019200,
-        SB: 1539648000,
-        TB: 1543968000,
-        UB: 1548720000,
-        JB: 1552348800,
-        HB: 1555977600,
-        a: 1559606400,
-        XB: 1564444800,
-        YB: 1568073600,
-        ZB: 1571702400,
-        b: 1575936000,
-        KB: 1580860800,
-        NB: 1586304000,
-        R: 1589846400,
-        S: 1594684800,
-        T: 1598313600,
-        U: 1601942400,
-        M: 1605571200,
-        W: 1611014400,
-        X: 1614556800,
-        N: 1618272000,
-        "2B": null,
-        fB: null,
-        gB: null
+        J: 1312243200,
+        K: 1316131200,
+        L: 1316131200,
+        M: 1319500800,
+        N: 1323734400,
+        O: 1328659200,
+        b: 1332892800,
+        c: 1337040000,
+        d: 1340668800,
+        e: 1343692800,
+        f: 1348531200,
+        g: 1352246400,
+        h: 1357862400,
+        i: 1361404800,
+        j: 1364428800,
+        k: 1369094400,
+        l: 1374105600,
+        m: 1376956800,
+        n: 1384214400,
+        o: 1389657600,
+        p: 1392940800,
+        q: 1397001600,
+        r: 1400544000,
+        s: 1405468800,
+        t: 1409011200,
+        u: 1412640000,
+        v: 1416268800,
+        w: 1421798400,
+        x: 1425513600,
+        y: 1429401600,
+        z: 1432080000,
+        AB: 1476230400,
+        BB: 1480550400,
+        CB: 1485302400,
+        DB: 1489017600,
+        EB: 1492560000,
+        WB: 1496707200,
+        FB: 1500940800,
+        XB: 1504569600,
+        Q: 1508198400,
+        GB: 1512518400,
+        HB: 1516752000,
+        IB: 1520294400,
+        JB: 1523923200,
+        KB: 1527552000,
+        LB: 1532390400,
+        MB: 1536019200,
+        NB: 1539648000,
+        OB: 1543968000,
+        PB: 1548720000,
+        QB: 1552348800,
+        RB: 1555977600,
+        SB: 1559606400,
+        YB: 1564444800,
+        ZB: 1568073600,
+        aB: 1571702400,
+        R: 1575936000,
+        S: 1580860800,
+        T: 1586304000,
+        U: 1589846400,
+        V: 1594684800,
+        W: 1598313600,
+        X: 1601942400,
+        P: 1605571200,
+        Y: 1611014400,
+        Z: 1614556800,
+        G: 1618272000,
+        kB: null,
+        lB: null,
+        mB: null
       }
     },
     E: {
       A: {
-        G: 0,
-        c: 0.004298,
+        H: 0,
+        a: 0.008542,
         I: 0.004656,
         D: 0.004465,
-        F: 0.219198,
-        E: 0.004891,
+        E: 0.234905,
+        F: 0.004891,
         A: 0.004425,
-        B: 0.008596,
-        C: 0.017192,
-        O: 0.111748,
-        H: 3.05158,
-        hB: 0,
-        aB: 0.008692,
-        jB: 0.103152,
-        kB: 0.00456,
-        lB: 0.004283,
-        mB: 0.034384,
-        bB: 0.025788,
-        Z: 0.068768,
-        V: 0.111748,
-        qB: 0.507164,
-        rB: 0
+        B: 0.008542,
+        C: 0.012813,
+        J: 0.098233,
+        K: 2.95126,
+        nB: 0,
+        bB: 0.008692,
+        oB: 0.106775,
+        pB: 0.00456,
+        qB: 0.004283,
+        rB: 0.034168,
+        cB: 0.021355,
+        TB: 0.064065,
+        UB: 0.098233,
+        sB: 0.439913,
+        tB: 0.055523,
+        uB: 0
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "hB", "aB", "G", "c", "jB", "I", "kB", "D", "lB", "F", "E", "mB", "A", "bB", "B", "Z", "C", "V", "O", "qB", "H", "rB", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "nB", "bB", "H", "a", "oB", "I", "pB", "D", "qB", "E", "F", "rB", "A", "cB", "B", "TB", "C", "UB", "J", "sB", "K", "tB", "uB", "", ""],
       E: "Safari",
       F: {
-        hB: 1205798400,
-        aB: 1226534400,
-        G: 1244419200,
-        c: 1275868800,
-        jB: 1311120000,
+        nB: 1205798400,
+        bB: 1226534400,
+        H: 1244419200,
+        a: 1275868800,
+        oB: 1311120000,
         I: 1343174400,
-        kB: 1382400000,
+        pB: 1382400000,
         D: 1382400000,
-        lB: 1410998400,
-        F: 1413417600,
-        E: 1443657600,
-        mB: 1458518400,
+        qB: 1410998400,
+        E: 1413417600,
+        F: 1443657600,
+        rB: 1458518400,
         A: 1474329600,
-        bB: 1490572800,
+        cB: 1490572800,
         B: 1505779200,
-        Z: 1522281600,
+        TB: 1522281600,
         C: 1537142400,
-        V: 1553472000,
-        O: 1568851200,
-        qB: 1585008000,
-        H: 1600214400,
-        rB: null
+        UB: 1553472000,
+        J: 1568851200,
+        sB: 1585008000,
+        K: 1600214400,
+        tB: 1619395200,
+        uB: null
       }
     },
     F: {
       A: {
-        "0": 0.004418,
-        "1": 0.004298,
-        "2": 0.004227,
-        "3": 0.004725,
-        "4": 0.004298,
-        "5": 0.008942,
+        "0": 0.004227,
+        "1": 0.004725,
+        "2": 0.004271,
+        "3": 0.008942,
+        "4": 0.004707,
+        "5": 0.004827,
         "6": 0.004707,
-        "7": 0.004827,
-        "8": 0.004707,
-        "9": 0.004707,
-        E: 0.0082,
+        "7": 0.004707,
+        "8": 0.004326,
+        "9": 0.008922,
+        F: 0.0082,
         B: 0.016581,
         C: 0.004317,
-        Q: 0.00685,
-        J: 0.00685,
-        K: 0.00685,
-        L: 0.005014,
-        d: 0.006015,
-        e: 0.004879,
-        f: 0.006597,
-        g: 0.006597,
-        h: 0.013434,
-        i: 0.006702,
-        j: 0.006015,
-        k: 0.005595,
-        l: 0.004393,
-        m: 0.008652,
-        n: 0.004879,
-        o: 0.004879,
-        p: 0.004711,
-        q: 0.005152,
-        r: 0.005014,
-        s: 0.009758,
-        t: 0.004879,
-        u: 0.008596,
-        v: 0.004283,
-        w: 0.004367,
-        x: 0.004534,
-        y: 0.004267,
-        z: 0.004227,
-        AB: 0.004326,
-        BB: 0.008922,
-        CB: 0.014349,
+        L: 0.00685,
+        M: 0.00685,
+        N: 0.00685,
+        O: 0.005014,
+        b: 0.006015,
+        c: 0.004879,
+        d: 0.006597,
+        e: 0.006597,
+        f: 0.013434,
+        g: 0.006702,
+        h: 0.006015,
+        i: 0.005595,
+        j: 0.004393,
+        k: 0.008652,
+        l: 0.004879,
+        m: 0.004879,
+        n: 0.004711,
+        o: 0.005152,
+        p: 0.005014,
+        q: 0.009758,
+        r: 0.004879,
+        s: 0.008542,
+        t: 0.004283,
+        u: 0.004367,
+        v: 0.004534,
+        w: 0.004271,
+        x: 0.004227,
+        y: 0.004418,
+        z: 0.008542,
+        AB: 0.014349,
+        BB: 0.004425,
+        CB: 0.00472,
         DB: 0.004425,
-        EB: 0.00472,
-        FB: 0.004425,
-        GB: 0.004425,
-        IB: 0.00472,
-        P: 0.004532,
-        LB: 0.004566,
-        MB: 0.02283,
-        Y: 0.00867,
-        OB: 0.004656,
-        PB: 0.004642,
-        QB: 0.004298,
-        RB: 0.00944,
-        SB: 0.00415,
-        TB: 0.004267,
-        UB: 0.004298,
-        JB: 0.326648,
-        HB: 0,
-        a: 0,
-        sB: 0.00685,
-        tB: 0.004298,
-        uB: 0.008392,
-        vB: 0.004706,
-        Z: 0.006229,
-        cB: 0.004879,
-        xB: 0.008786,
-        V: 0.00472
+        EB: 0.004425,
+        FB: 0.00472,
+        Q: 0.004532,
+        GB: 0.004566,
+        HB: 0.02283,
+        IB: 0.00867,
+        JB: 0.004656,
+        KB: 0.004642,
+        LB: 0.004298,
+        MB: 0.00944,
+        NB: 0.00415,
+        OB: 0.004271,
+        PB: 0.004298,
+        QB: 0.324596,
+        RB: 0.153756,
+        SB: 0.516791,
+        vB: 0.00685,
+        wB: 0.008542,
+        xB: 0.008392,
+        yB: 0.004706,
+        TB: 0.006229,
+        dB: 0.004879,
+        zB: 0.008786,
+        UB: 0.00472
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "E", "sB", "tB", "uB", "vB", "B", "Z", "cB", "xB", "C", "V", "Q", "J", "K", "L", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "FB", "GB", "IB", "P", "LB", "MB", "Y", "OB", "PB", "QB", "RB", "SB", "TB", "UB", "JB", "HB", "a", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "F", "vB", "wB", "xB", "yB", "B", "TB", "dB", "zB", "C", "UB", "L", "M", "N", "O", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "AB", "BB", "CB", "DB", "EB", "FB", "Q", "GB", "HB", "IB", "JB", "KB", "LB", "MB", "NB", "OB", "PB", "QB", "RB", "SB", "", "", ""],
       E: "Opera",
       F: {
-        "0": 1481587200,
-        "1": 1486425600,
-        "2": 1490054400,
-        "3": 1494374400,
-        "4": 1498003200,
-        "5": 1502236800,
-        "6": 1506470400,
-        "7": 1510099200,
-        "8": 1515024000,
-        "9": 1517961600,
-        E: 1150761600,
-        sB: 1223424000,
-        tB: 1251763200,
-        uB: 1267488000,
-        vB: 1277942400,
+        "0": 1490054400,
+        "1": 1494374400,
+        "2": 1498003200,
+        "3": 1502236800,
+        "4": 1506470400,
+        "5": 1510099200,
+        "6": 1515024000,
+        "7": 1517961600,
+        "8": 1521676800,
+        "9": 1525910400,
+        F: 1150761600,
+        vB: 1223424000,
+        wB: 1251763200,
+        xB: 1267488000,
+        yB: 1277942400,
         B: 1292457600,
-        Z: 1302566400,
-        cB: 1309219200,
-        xB: 1323129600,
+        TB: 1302566400,
+        dB: 1309219200,
+        zB: 1323129600,
         C: 1323129600,
-        V: 1352073600,
-        Q: 1372723200,
-        J: 1377561600,
-        K: 1381104000,
-        L: 1386288000,
-        d: 1390867200,
-        e: 1393891200,
-        f: 1399334400,
-        g: 1401753600,
-        h: 1405987200,
-        i: 1409616000,
-        j: 1413331200,
-        k: 1417132800,
-        l: 1422316800,
-        m: 1425945600,
-        n: 1430179200,
-        o: 1433808000,
-        p: 1438646400,
-        q: 1442448000,
-        r: 1445904000,
-        s: 1449100800,
-        t: 1454371200,
-        u: 1457308800,
-        v: 1462320000,
-        w: 1465344000,
-        x: 1470096000,
-        y: 1474329600,
-        z: 1477267200,
-        AB: 1521676800,
-        BB: 1525910400,
-        CB: 1530144000,
-        DB: 1534982400,
-        EB: 1537833600,
-        FB: 1543363200,
-        GB: 1548201600,
-        IB: 1554768000,
-        P: 1561593600,
-        LB: 1566259200,
-        MB: 1570406400,
-        Y: 1573689600,
-        OB: 1578441600,
-        PB: 1583971200,
-        QB: 1587513600,
-        RB: 1592956800,
-        SB: 1595894400,
-        TB: 1600128000,
-        UB: 1603238400,
-        JB: 1613520000,
-        HB: 1612224000,
-        a: 1616544000
+        UB: 1352073600,
+        L: 1372723200,
+        M: 1377561600,
+        N: 1381104000,
+        O: 1386288000,
+        b: 1390867200,
+        c: 1393891200,
+        d: 1399334400,
+        e: 1401753600,
+        f: 1405987200,
+        g: 1409616000,
+        h: 1413331200,
+        i: 1417132800,
+        j: 1422316800,
+        k: 1425945600,
+        l: 1430179200,
+        m: 1433808000,
+        n: 1438646400,
+        o: 1442448000,
+        p: 1445904000,
+        q: 1449100800,
+        r: 1454371200,
+        s: 1457308800,
+        t: 1462320000,
+        u: 1465344000,
+        v: 1470096000,
+        w: 1474329600,
+        x: 1477267200,
+        y: 1481587200,
+        z: 1486425600,
+        AB: 1530144000,
+        BB: 1534982400,
+        CB: 1537833600,
+        DB: 1543363200,
+        EB: 1548201600,
+        FB: 1554768000,
+        Q: 1561593600,
+        GB: 1566259200,
+        HB: 1570406400,
+        IB: 1573689600,
+        JB: 1578441600,
+        KB: 1583971200,
+        LB: 1587513600,
+        MB: 1592956800,
+        NB: 1595894400,
+        OB: 1600128000,
+        PB: 1603238400,
+        QB: 1613520000,
+        RB: 1612224000,
+        SB: 1616544000
       },
       D: {
-        E: "o",
+        F: "o",
         B: "o",
         C: "o",
-        sB: "o",
-        tB: "o",
-        uB: "o",
         vB: "o",
-        Z: "o",
-        cB: "o",
+        wB: "o",
         xB: "o",
-        V: "o"
+        yB: "o",
+        TB: "o",
+        dB: "o",
+        zB: "o",
+        UB: "o"
       }
     },
     G: {
       A: {
-        F: 0.00295413,
-        aB: 0,
-        yB: 0,
-        dB: 0.00295413,
-        "0B": 0.00886238,
-        "1B": 0.118165,
-        ZC: 0.0295413,
-        "3B": 0.023633,
-        "4B": 0.0206789,
-        "5B": 0.169862,
-        "6B": 0.0546513,
-        "7B": 0.168385,
-        "8B": 0.0945321,
-        "9B": 0.0841926,
-        AC: 0.093055,
-        BC: 0.345633,
-        CC: 0.0797614,
-        DC: 0.0369266,
-        EC: 0.215651,
-        FC: 0.768073,
-        GC: 11.852
+        E: 0.0014611,
+        bB: 0,
+        "0B": 0,
+        eB: 0.00292219,
+        "1B": 0.00876657,
+        "2B": 0.159259,
+        "3B": 0.0321441,
+        "4B": 0.0204553,
+        "5B": 0.0262997,
+        "6B": 0.153415,
+        "7B": 0.0555216,
+        "8B": 0.159259,
+        "9B": 0.0905879,
+        AC: 0.077438,
+        BC: 0.0847435,
+        CC: 0.283452,
+        DC: 0.0715937,
+        EC: 0.0336052,
+        FC: 0.189942,
+        GC: 0.647265,
+        HC: 11.7531,
+        IC: 0.150493
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "aB", "yB", "dB", "0B", "1B", "ZC", "F", "3B", "4B", "5B", "6B", "7B", "8B", "9B", "AC", "BC", "CC", "DC", "EC", "FC", "GC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "bB", "0B", "eB", "1B", "2B", "3B", "E", "4B", "5B", "6B", "7B", "8B", "9B", "AC", "BC", "CC", "DC", "EC", "FC", "GC", "HC", "IC", "", "", ""],
       E: "Safari on iOS",
       F: {
-        aB: 1270252800,
-        yB: 1283904000,
-        dB: 1299628800,
-        "0B": 1331078400,
-        "1B": 1359331200,
-        ZC: 1394409600,
-        F: 1410912000,
-        "3B": 1413763200,
-        "4B": 1442361600,
-        "5B": 1458518400,
-        "6B": 1473724800,
-        "7B": 1490572800,
-        "8B": 1505779200,
-        "9B": 1522281600,
-        AC: 1537142400,
-        BC: 1553472000,
-        CC: 1568851200,
-        DC: 1572220800,
-        EC: 1580169600,
-        FC: 1585008000,
-        GC: 1600214400
+        bB: 1270252800,
+        "0B": 1283904000,
+        eB: 1299628800,
+        "1B": 1331078400,
+        "2B": 1359331200,
+        "3B": 1394409600,
+        E: 1410912000,
+        "4B": 1413763200,
+        "5B": 1442361600,
+        "6B": 1458518400,
+        "7B": 1473724800,
+        "8B": 1490572800,
+        "9B": 1505779200,
+        AC: 1522281600,
+        BC: 1537142400,
+        CC: 1553472000,
+        DC: 1568851200,
+        EC: 1572220800,
+        FC: 1580169600,
+        GC: 1585008000,
+        HC: 1600214400,
+        IC: 1619395200
       }
     },
     H: {
       A: {
-        HC: 0.993284
+        JC: 1.0685
       },
       B: "o",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "HC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "JC", "", "", ""],
       E: "Opera Mini",
       F: {
-        HC: 1426464000
+        JC: 1426464000
       }
     },
     I: {
       A: {
-        WB: 0,
-        G: 0.00293845,
-        N: 0,
-        IC: 0,
-        JC: 0,
+        VB: 0,
+        H: 0.0137496,
+        G: 0,
         KC: 0,
-        LC: 0.00514229,
-        dB: 0.0205692,
+        LC: 0,
         MC: 0,
-        NC: 0.0910921
+        NC: 0.0120309,
+        eB: 0.051561,
+        OC: 0,
+        PC: 0.214838
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "IC", "JC", "KC", "WB", "G", "LC", "dB", "MC", "NC", "N", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "KC", "LC", "MC", "VB", "H", "NC", "eB", "OC", "PC", "G", "", "", ""],
       E: "Android Browser",
       F: {
-        IC: 1256515200,
-        JC: 1274313600,
-        KC: 1291593600,
-        WB: 1298332800,
-        G: 1318896000,
-        LC: 1341792000,
-        dB: 1374624000,
-        MC: 1386547200,
-        NC: 1401667200,
-        N: 1618704000
+        KC: 1256515200,
+        LC: 1274313600,
+        MC: 1291593600,
+        VB: 1298332800,
+        H: 1318896000,
+        NC: 1341792000,
+        eB: 1374624000,
+        OC: 1386547200,
+        PC: 1401667200,
+        G: 1618704000
       }
     },
     J: {
@@ -59084,7 +59150,7 @@
         A: 0
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "D", "A", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "D", "A", "", "", ""],
       E: "Blackberry Browser",
       F: {
         D: 1325376000,
@@ -59096,47 +59162,47 @@
         A: 0,
         B: 0,
         C: 0,
-        P: 0.0111391,
-        Z: 0,
-        cB: 0,
-        V: 0
+        Q: 0.0111391,
+        TB: 0,
+        dB: 0,
+        UB: 0
       },
       B: "o",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "A", "B", "Z", "cB", "C", "V", "P", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "A", "B", "TB", "dB", "C", "UB", "Q", "", "", ""],
       E: "Opera Mobile",
       F: {
         A: 1287100800,
         B: 1300752000,
-        Z: 1314835200,
-        cB: 1318291200,
+        TB: 1314835200,
+        dB: 1318291200,
         C: 1330300800,
-        V: 1349740800,
-        P: 1613433600
+        UB: 1349740800,
+        Q: 1613433600
       },
       D: {
-        P: "webkit"
+        Q: "webkit"
       }
     },
     L: {
       A: {
-        N: 37.3466
+        G: 37.9297
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "N", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "G", "", "", ""],
       E: "Chrome for Android",
       F: {
-        N: 1618704000
+        G: 1618704000
       }
     },
     M: {
       A: {
-        M: 0.279398
+        P: 0.274992
       },
       B: "moz",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "M", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "P", "", "", ""],
       E: "Firefox for Android",
       F: {
-        M: 1616457600
+        P: 1616457600
       }
     },
     N: {
@@ -59145,7 +59211,7 @@
         B: 0.022664
       },
       B: "ms",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "A", "B", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "A", "B", "", "", ""],
       E: "IE Mobile",
       F: {
         A: 1340150400,
@@ -59154,129 +59220,129 @@
     },
     O: {
       A: {
-        OC: 1.38559
+        QC: 1.30048
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "OC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "QC", "", "", ""],
       E: "UC Browser for Android",
       F: {
-        OC: 1471392000
+        QC: 1471392000
       },
       D: {
-        OC: "webkit"
+        QC: "webkit"
       }
     },
     P: {
       A: {
-        G: 0.281782,
-        PC: 0.0103543,
-        QC: 0.010304,
-        RC: 0.0730547,
-        SC: 0.0103584,
-        TC: 0.0730547,
-        bB: 0.0417456,
-        UC: 0.166982,
-        VC: 0.146109,
-        WC: 2.66128
+        H: 0.30804,
+        RC: 0.0103543,
+        SC: 0.010304,
+        TC: 0.071876,
+        UC: 0.0103584,
+        VC: 0.071876,
+        cB: 0.041072,
+        WC: 0.174556,
+        XC: 0.133484,
+        YC: 1.85851,
+        ZC: 0.800904
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "G", "PC", "QC", "RC", "SC", "TC", "bB", "UC", "VC", "WC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "H", "RC", "SC", "TC", "UC", "VC", "cB", "WC", "XC", "YC", "ZC", "", "", ""],
       E: "Samsung Internet",
       F: {
-        G: 1461024000,
-        PC: 1481846400,
-        QC: 1509408000,
-        RC: 1528329600,
-        SC: 1546128000,
-        TC: 1554163200,
-        bB: 1567900800,
-        UC: 1582588800,
-        VC: 1593475200,
-        WC: 1605657600
+        H: 1461024000,
+        RC: 1481846400,
+        SC: 1509408000,
+        TC: 1528329600,
+        UC: 1546128000,
+        VC: 1554163200,
+        cB: 1567900800,
+        WC: 1582588800,
+        XC: 1593475200,
+        YC: 1605657600,
+        ZC: 1618531200
       }
     },
     Q: {
       A: {
-        XC: 0.176762
+        aC: 0.177599
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "XC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "aC", "", "", ""],
       E: "QQ Browser",
       F: {
-        XC: 1589846400
+        aC: 1589846400
       }
     },
     R: {
       A: {
-        YC: 0
+        bC: 0
       },
       B: "webkit",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "YC", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "bC", "", "", ""],
       E: "Baidu Browser",
       F: {
-        YC: 1491004800
+        bC: 1491004800
       }
     },
     S: {
       A: {
-        iB: 0.079828
+        cC: 0.097393
       },
       B: "moz",
-      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "iB", "", "", ""],
+      C: ["", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "cC", "", "", ""],
       E: "KaiOS Browser",
       F: {
-        iB: 1527811200
+        cC: 1527811200
       }
     }
   };
 
-  var agents_1 = createCommonjsModule(function (module, exports) {
+  var browsers = browsers$1.browsers;
+  var versions$1 = browserVersions.browserVersions;
 
-    Object.defineProperty(exports, "__esModule", {
-      value: true
-    });
-    exports.agents = undefined;
-
-    function unpackBrowserVersions(versionsData) {
-      return Object.keys(versionsData).reduce(function (usage, version) {
-        usage[browserVersions_1.browserVersions[version]] = versionsData[version];
-        return usage;
-      }, {});
-    }
-
-    exports.agents = Object.keys(agents$1).reduce(function (map, key) {
-      var versionsData = agents$1[key];
-      map[browsers_1.browsers[key]] = Object.keys(versionsData).reduce(function (data, entry) {
-        if (entry === 'A') {
-          data.usage_global = unpackBrowserVersions(versionsData[entry]);
-        } else if (entry === 'C') {
-          data.versions = versionsData[entry].reduce(function (list, version) {
-            if (version === '') {
-              list.push(null);
-            } else {
-              list.push(browserVersions_1.browserVersions[version]);
-            }
-
-            return list;
-          }, []);
-        } else if (entry === 'D') {
-          data.prefix_exceptions = unpackBrowserVersions(versionsData[entry]);
-        } else if (entry === 'E') {
-          data.browser = versionsData[entry];
-        } else if (entry === 'F') {
-          data.release_date = Object.keys(versionsData[entry]).reduce(function (map, key) {
-            map[browserVersions_1.browserVersions[key]] = versionsData[entry][key];
-            return map;
-          }, {});
-        } else {
-          data.prefix = versionsData[entry];
-        }
-
-        return data;
-      }, {});
-      return map;
+  function unpackBrowserVersions(versionsData) {
+    return Object.keys(versionsData).reduce(function (usage, version) {
+      usage[versions$1[version]] = versionsData[version];
+      return usage;
     }, {});
-  }, "/$$rollup_base$$/packages/babel-helper-compilation-targets/node_modules/browserslist/node_modules/caniuse-lite/dist/unpacker");
+  }
+
+  var agents_1 = Object.keys(agents$2).reduce(function (map, key) {
+    var versionsData = agents$2[key];
+    map[browsers[key]] = Object.keys(versionsData).reduce(function (data, entry) {
+      if (entry === 'A') {
+        data.usage_global = unpackBrowserVersions(versionsData[entry]);
+      } else if (entry === 'C') {
+        data.versions = versionsData[entry].reduce(function (list, version) {
+          if (version === '') {
+            list.push(null);
+          } else {
+            list.push(versions$1[version]);
+          }
+
+          return list;
+        }, []);
+      } else if (entry === 'D') {
+        data.prefix_exceptions = unpackBrowserVersions(versionsData[entry]);
+      } else if (entry === 'E') {
+        data.browser = versionsData[entry];
+      } else if (entry === 'F') {
+        data.release_date = Object.keys(versionsData[entry]).reduce(function (map2, key2) {
+          map2[versions$1[key2]] = versionsData[entry][key2];
+          return map2;
+        }, {});
+      } else {
+        data.prefix = versionsData[entry];
+      }
+
+      return data;
+    }, {});
+    return map;
+  }, {});
+  var agents$1 = {
+    agents: agents_1
+  };
 
   var v4 = {
   	start: "2015-09-08",
@@ -59504,7 +59570,7 @@
 
   var fs$1 = /*@__PURE__*/getAugmentedNamespace(_nodeResolve_empty$1);
 
-  var agents = agents_1.agents;
+  var agents = agents$1.agents;
   var YEAR = 365.259641 * 24 * 60 * 60 * 1000;
   var ANDROID_EVERGREEN_FIRST = 37;
   var QUERY_OR = 1;
@@ -60266,7 +60332,7 @@
     regexp: /^since (\d+)-(\d+)-(\d+)$/i,
     select: sinceQuery
   }, {
-    regexp: /^(>=?|<=?)\s*(\d*\.?\d+)%$/,
+    regexp: /^(>=?|<=?)\s*(\d+|\d+\.\d+|\.\d+)%$/,
     select: function select(context, sign, popularity) {
       popularity = parseFloat(popularity);
       var usage = browserslist.usage.global;
@@ -60291,7 +60357,7 @@
       }, []);
     }
   }, {
-    regexp: /^(>=?|<=?)\s*(\d*\.?\d+)%\s+in\s+my\s+stats$/,
+    regexp: /^(>=?|<=?)\s*(\d+|\d+\.\d+|\.\d+)%\s+in\s+my\s+stats$/,
     select: function select(context, sign, popularity) {
       popularity = parseFloat(popularity);
 
@@ -60321,7 +60387,7 @@
       }, []);
     }
   }, {
-    regexp: /^(>=?|<=?)\s*(\d*\.?\d+)%\s+in\s+(\S+)\s+stats$/,
+    regexp: /^(>=?|<=?)\s*(\d+|\d+\.\d+|\.\d+)%\s+in\s+(\S+)\s+stats$/,
     select: function select(context, sign, popularity, name) {
       popularity = parseFloat(popularity);
       var stats = browser$2.loadStat(context, name, browserslist.data);
@@ -60360,7 +60426,7 @@
       }, []);
     }
   }, {
-    regexp: /^(>=?|<=?)\s*(\d*\.?\d+)%\s+in\s+((alt-)?\w\w)$/,
+    regexp: /^(>=?|<=?)\s*(\d+|\d+\.\d+|\.\d+)%\s+in\s+((alt-)?\w\w)$/,
     select: function select(context, sign, popularity, place) {
       popularity = parseFloat(popularity);
 
@@ -60393,10 +60459,10 @@
       }, []);
     }
   }, {
-    regexp: /^cover\s+(\d*\.?\d+)%$/,
+    regexp: /^cover\s+(\d+|\d+\.\d+|\.\d+)%$/,
     select: coverQuery
   }, {
-    regexp: /^cover\s+(\d*\.?\d+)%\s+in\s+(my\s+stats|(alt-)?\w\w)$/,
+    regexp: /^cover\s+(\d+|\d+\.\d+|\.\d+)%\s+in\s+(my\s+stats|(alt-)?\w\w)$/,
     select: coverQuery
   }, {
     regexp: /^supports\s+([\w-]+)$/,
@@ -64776,12 +64842,14 @@
   	chrome: "91"
   },
   	"proposal-private-property-in-object": {
-  	chrome: "91"
+  	chrome: "91",
+  	firefox: "90"
   },
   	"proposal-class-properties": {
   	chrome: "74",
   	opera: "62",
   	edge: "79",
+  	firefox: "90",
   	safari: "14.1",
   	node: "12",
   	samsung: "11",
@@ -64791,6 +64859,8 @@
   	chrome: "84",
   	opera: "70",
   	edge: "84",
+  	firefox: "90",
+  	safari: "tp",
   	node: "14.6",
   	electron: "10.0"
   },
@@ -66162,10 +66232,10 @@
     createDebug.enable = enable;
     createDebug.enabled = enabled;
     createDebug.humanize = ms;
+    createDebug.destroy = destroy;
     Object.keys(env).forEach(function (key) {
       createDebug[key] = env[key];
     });
-    createDebug.instances = [];
     createDebug.names = [];
     createDebug.skips = [];
     createDebug.formatters = {};
@@ -66185,6 +66255,9 @@
 
     function createDebug(namespace) {
       var prevTime;
+      var enableOverride = null;
+      var namespacesCache;
+      var enabledCache;
 
       function debug() {
         for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -66211,7 +66284,7 @@
         var index = 0;
         args[0] = args[0].replace(/%([a-zA-Z%])/g, function (match, format) {
           if (match === '%%') {
-            return match;
+            return '%';
           }
 
           index++;
@@ -66232,29 +66305,35 @@
       }
 
       debug.namespace = namespace;
-      debug.enabled = createDebug.enabled(namespace);
       debug.useColors = createDebug.useColors();
-      debug.color = selectColor(namespace);
-      debug.destroy = destroy;
+      debug.color = createDebug.selectColor(namespace);
       debug.extend = extend;
+      debug.destroy = createDebug.destroy;
+      Object.defineProperty(debug, 'enabled', {
+        enumerable: true,
+        configurable: false,
+        get: function get() {
+          if (enableOverride !== null) {
+            return enableOverride;
+          }
+
+          if (namespacesCache !== createDebug.namespaces) {
+            namespacesCache = createDebug.namespaces;
+            enabledCache = createDebug.enabled(namespace);
+          }
+
+          return enabledCache;
+        },
+        set: function set(v) {
+          enableOverride = v;
+        }
+      });
 
       if (typeof createDebug.init === 'function') {
         createDebug.init(debug);
       }
 
-      createDebug.instances.push(debug);
       return debug;
-    }
-
-    function destroy() {
-      var index = createDebug.instances.indexOf(this);
-
-      if (index !== -1) {
-        createDebug.instances.splice(index, 1);
-        return true;
-      }
-
-      return false;
     }
 
     function extend(namespace, delimiter) {
@@ -66265,6 +66344,7 @@
 
     function enable(namespaces) {
       createDebug.save(namespaces);
+      createDebug.namespaces = namespaces;
       createDebug.names = [];
       createDebug.skips = [];
       var i;
@@ -66283,11 +66363,6 @@
         } else {
           createDebug.names.push(new RegExp('^' + namespaces + '$'));
         }
-      }
-
-      for (i = 0; i < createDebug.instances.length; i++) {
-        var instance = createDebug.instances[i];
-        instance.enabled = createDebug.enabled(instance.namespace);
       }
     }
 
@@ -66334,6 +66409,10 @@
       return val;
     }
 
+    function destroy() {
+      console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+    }
+
     createDebug.enable(createDebug.load());
     return createDebug;
   }
@@ -66341,12 +66420,22 @@
   var common = setup;
 
   var browser$1 = createCommonjsModule(function (module, exports) {
-    exports.log = log;
     exports.formatArgs = formatArgs;
     exports.save = save;
     exports.load = load;
     exports.useColors = useColors;
     exports.storage = localstorage();
+
+    exports.destroy = function () {
+      var warned = false;
+      return function () {
+        if (!warned) {
+          warned = true;
+          console.warn('Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.');
+        }
+      };
+    }();
+
     exports.colors = ['#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC', '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF', '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC', '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF', '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC', '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033', '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366', '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933', '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC', '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF', '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'];
 
     function useColors() {
@@ -66386,11 +66475,7 @@
       args.splice(lastC, 0, c);
     }
 
-    function log() {
-      var _console;
-
-      return typeof console === 'object' && console.log && (_console = console).log.apply(_console, arguments);
-    }
+    exports.log = console.debug || console.log || function () {};
 
     function save(namespaces) {
       try {
@@ -74104,14 +74189,11 @@
 
     new ReplaceSupers({
       methodPath: path,
-      methodNode: node,
       objectRef: classRef,
-      isStatic: node["static"],
       superRef: superRef,
-      scope: scope,
       file: this,
       refToPreserve: classRef
-    }, true).replace();
+    }).replace();
     var properties = [prop("kind", stringLiteral(isMethod ? node.kind : "field")), prop("decorators", takeDecorators(node)), prop("static", node["static"] && booleanLiteral(true)), prop("key", getKey(node))].filter(Boolean);
 
     if (isMethod) {
@@ -74164,15 +74246,17 @@
     var definitions = arrayExpression(elements.filter(function (element) {
       return !element.node["abstract"];
     }).map(extractElementDescriptor.bind(file, node.id, superId)));
-    var replacement = template$2.expression.ast(_templateObject2$8 || (_templateObject2$8 = _taggedTemplateLiteralLoose(["\n    ", "(\n      ", ",\n      function (", ", ", ") {\n        ", "\n        return { F: ", ", d: ", " };\n      },\n      ", "\n    )\n  "])), addDecorateHelper(file), classDecorators || nullLiteral(), initializeId, superClass ? cloneNode(superId) : null, node, cloneNode(node.id), definitions, superClass);
-    var classPathDesc = "arguments.1.body.body.0";
+    var wrapperCall = template$2.expression.ast(_templateObject2$8 || (_templateObject2$8 = _taggedTemplateLiteralLoose(["\n    ", "(\n      ", ",\n      function (", ", ", ") {\n        ", "\n        return { F: ", ", d: ", " };\n      },\n      ", "\n    )\n  "])), addDecorateHelper(file), classDecorators || nullLiteral(), initializeId, superClass ? cloneNode(superId) : null, node, cloneNode(node.id), definitions, superClass);
 
     if (!isStrict) {
-      replacement.arguments[1].body.directives.push(directive(directiveLiteral("use strict")));
+      wrapperCall.arguments[1].body.directives.push(directive(directiveLiteral("use strict")));
     }
 
+    var replacement = wrapperCall;
+    var classPathDesc = "arguments.1.body.body.0";
+
     if (isDeclaration) {
-      replacement = template$2.ast(_templateObject3$7 || (_templateObject3$7 = _taggedTemplateLiteralLoose(["let ", " = ", ""])), ref, replacement);
+      replacement = template$2.statement.ast(_templateObject3$7 || (_templateObject3$7 = _taggedTemplateLiteralLoose(["let ", " = ", ""])), ref, wrapperCall);
       classPathDesc = "declarations.0.init." + classPathDesc;
     }
 
@@ -74419,7 +74503,7 @@
     }
   }
 
-  var version$2 = "7.14.3".split(".").reduce(function (v, x) {
+  var version$2 = "7.14.4".split(".").reduce(function (v, x) {
     return v * 1e5 + +x;
   }, 0);
   var versionKey$1 = "@babel/plugin-class-features/version";
@@ -77741,6 +77825,19 @@
         keyExpression = callExpression(memberExpression(arrayExpression(keys), identifier("map")), [file.addHelper("toPropertyKey")]);
       } else {
         keyExpression = arrayExpression(keys);
+
+        if (!isProgram(path.scope.block)) {
+          var program = path.findParent(function (path) {
+            return path.isProgram();
+          });
+          var id = path.scope.generateUidIdentifier("excluded");
+          program.scope.push({
+            id: id,
+            init: keyExpression,
+            kind: "const"
+          });
+          keyExpression = cloneNode(id);
+        }
       }
 
       return [impureComputedPropertyDeclarators, restElement.argument, callExpression(file.addHelper("objectWithoutProperties" + (objectRestNoSymbols ? "Loose" : "")), [cloneNode(objRef), keyExpression])];
@@ -82164,7 +82261,13 @@
             convertBlockScopedToVar(path, node, block, _this2.scope);
           }
 
-          declarators = declarators.concat(node.declarations || node);
+          if (node.declarations) {
+            for (var i = 0; i < node.declarations.length; i++) {
+              declarators.push(node.declarations[i]);
+            }
+          } else {
+            declarators.push(node);
+          }
         }
 
         if (isLabeledStatement(node)) {
@@ -84118,7 +84221,7 @@
 
         call = logicalExpression("||", bareSuperNode, thisExpression());
       } else {
-        call = optimiseCallExpression(cloneNode(classState.superFnId), thisExpression(), bareSuperNode.arguments);
+        call = optimiseCallExpression(cloneNode(classState.superFnId), thisExpression(), bareSuperNode.arguments, false);
       }
 
       if (bareSuper.parentPath.isExpressionStatement() && bareSuper.parentPath.container === body.node.body && body.node.body.length - 1 === bareSuper.parentPath.key) {
@@ -84504,9 +84607,10 @@
 
           if (path.isCallExpression()) {
             annotateAsPure(path);
+            var callee = path.get("callee");
 
-            if (path.get("callee").isArrowFunctionExpression()) {
-              path.get("callee").arrowFunctionToExpression();
+            if (callee.isArrowFunctionExpression()) {
+              callee.arrowFunctionToExpression();
             }
           }
         }
@@ -84846,6 +84950,17 @@
 
           if (!allLiteral) {
             keyExpression = callExpression(memberExpression(keyExpression, identifier("map")), [this.addHelper("toPropertyKey")]);
+          } else if (!isProgram(this.scope.block)) {
+            var program = this.scope.path.findParent(function (path) {
+              return path.isProgram();
+            });
+            var id = this.scope.generateUidIdentifier("excluded");
+            program.scope.push({
+              id: id,
+              init: keyExpression,
+              kind: "const"
+            });
+            keyExpression = cloneNode(id);
           }
 
           value = callExpression(this.addHelper("objectWithoutProperties" + (objectRestNoSymbols ? "Loose" : "")), [cloneNode(objRef), keyExpression]);
@@ -111978,8 +112093,9 @@
     }
   }
 
-  var PARSED_PARAMS = new WeakSet();
   var GLOBAL_TYPES = new WeakMap();
+  var NEEDS_EXPLICIT_ESM = new WeakMap();
+  var PARSED_PARAMS = new WeakSet();
 
   function isGlobalType(path, name) {
     var program = path.find(function (path) {
@@ -112050,12 +112166,14 @@
         if (node.typeAnnotation) node.typeAnnotation = null;
         if (node.definite) node.definite = null;
         if (node.declare) node.declare = null;
+        if (node.override) node.override = null;
       },
       method: function method(_ref) {
         var node = _ref.node;
         if (node.accessibility) node.accessibility = null;
         if (node["abstract"]) node["abstract"] = null;
         if (node.optional) node.optional = null;
+        if (node.override) node.override = null;
       },
       constructor: function constructor(path, classPath) {
         if (path.node.accessibility) path.node.accessibility = null;
@@ -112095,119 +112213,138 @@
         Pattern: visitPattern,
         Identifier: visitPattern,
         RestElement: visitPattern,
-        Program: function Program(path, state) {
-          var file = state.file;
-          var fileJsxPragma = null;
-          var fileJsxPragmaFrag = null;
+        Program: {
+          enter: function enter(path, state) {
+            var file = state.file;
+            var fileJsxPragma = null;
+            var fileJsxPragmaFrag = null;
 
-          if (!GLOBAL_TYPES.has(path.node)) {
-            GLOBAL_TYPES.set(path.node, new Set());
-          }
+            if (!GLOBAL_TYPES.has(path.node)) {
+              GLOBAL_TYPES.set(path.node, new Set());
+            }
 
-          if (file.ast.comments) {
-            for (var _iterator2 = _createForOfIteratorHelperLoose(file.ast.comments), _step2; !(_step2 = _iterator2()).done;) {
-              var comment = _step2.value;
-              var jsxMatches = JSX_PRAGMA_REGEX.exec(comment.value);
+            if (file.ast.comments) {
+              for (var _iterator2 = _createForOfIteratorHelperLoose(file.ast.comments), _step2; !(_step2 = _iterator2()).done;) {
+                var comment = _step2.value;
+                var jsxMatches = JSX_PRAGMA_REGEX.exec(comment.value);
 
-              if (jsxMatches) {
-                if (jsxMatches[1]) {
-                  fileJsxPragmaFrag = jsxMatches[2];
-                } else {
-                  fileJsxPragma = jsxMatches[2];
+                if (jsxMatches) {
+                  if (jsxMatches[1]) {
+                    fileJsxPragmaFrag = jsxMatches[2];
+                  } else {
+                    fileJsxPragma = jsxMatches[2];
+                  }
                 }
               }
             }
-          }
 
-          var pragmaImportName = fileJsxPragma || jsxPragma;
+            var pragmaImportName = fileJsxPragma || jsxPragma;
 
-          if (pragmaImportName) {
-            var _pragmaImportName$spl = pragmaImportName.split(".");
+            if (pragmaImportName) {
+              var _pragmaImportName$spl = pragmaImportName.split(".");
 
-            var _pragmaImportName$spl2 = _slicedToArray$2(_pragmaImportName$spl, 1);
+              var _pragmaImportName$spl2 = _slicedToArray$2(_pragmaImportName$spl, 1);
 
-            pragmaImportName = _pragmaImportName$spl2[0];
-          }
+              pragmaImportName = _pragmaImportName$spl2[0];
+            }
 
-          var pragmaFragImportName = fileJsxPragmaFrag || jsxPragmaFrag;
+            var pragmaFragImportName = fileJsxPragmaFrag || jsxPragmaFrag;
 
-          if (pragmaFragImportName) {
-            var _pragmaFragImportName = pragmaFragImportName.split(".");
+            if (pragmaFragImportName) {
+              var _pragmaFragImportName = pragmaFragImportName.split(".");
 
-            var _pragmaFragImportName2 = _slicedToArray$2(_pragmaFragImportName, 1);
+              var _pragmaFragImportName2 = _slicedToArray$2(_pragmaFragImportName, 1);
 
-            pragmaFragImportName = _pragmaFragImportName2[0];
-          }
+              pragmaFragImportName = _pragmaFragImportName2[0];
+            }
 
-          for (var _iterator3 = _createForOfIteratorHelperLoose(path.get("body")), _step3; !(_step3 = _iterator3()).done;) {
-            var stmt = _step3.value;
+            for (var _iterator3 = _createForOfIteratorHelperLoose(path.get("body")), _step3; !(_step3 = _iterator3()).done;) {
+              var stmt = _step3.value;
 
-            if (stmt.isImportDeclaration()) {
-              if (stmt.node.importKind === "type") {
-                stmt.remove();
-                continue;
-              }
+              if (stmt.isImportDeclaration()) {
+                if (!NEEDS_EXPLICIT_ESM.has(state.file.ast.program)) {
+                  NEEDS_EXPLICIT_ESM.set(state.file.ast.program, true);
+                }
 
-              if (!onlyRemoveTypeImports) {
-                if (stmt.node.specifiers.length === 0) {
+                if (stmt.node.importKind === "type") {
+                  stmt.remove();
                   continue;
                 }
 
-                var allElided = true;
-                var importsToRemove = [];
-
-                for (var _iterator4 = _createForOfIteratorHelperLoose(stmt.node.specifiers), _step4; !(_step4 = _iterator4()).done;) {
-                  var specifier = _step4.value;
-                  var binding = stmt.scope.getBinding(specifier.local.name);
-
-                  if (binding && isImportTypeOnly({
-                    binding: binding,
-                    programPath: path,
-                    pragmaImportName: pragmaImportName,
-                    pragmaFragImportName: pragmaFragImportName
-                  })) {
-                    importsToRemove.push(binding.path);
-                  } else {
-                    allElided = false;
-                  }
-                }
-
-                if (allElided) {
-                  stmt.remove();
+                if (onlyRemoveTypeImports) {
+                  NEEDS_EXPLICIT_ESM.set(path.node, false);
                 } else {
-                  for (var _iterator5 = _createForOfIteratorHelperLoose(importsToRemove), _step5; !(_step5 = _iterator5()).done;) {
-                    var importPath = _step5.value;
-                    importPath.remove();
+                  if (stmt.node.specifiers.length === 0) {
+                    NEEDS_EXPLICIT_ESM.set(path.node, false);
+                    continue;
+                  }
+
+                  var allElided = true;
+                  var importsToRemove = [];
+
+                  for (var _iterator4 = _createForOfIteratorHelperLoose(stmt.node.specifiers), _step4; !(_step4 = _iterator4()).done;) {
+                    var specifier = _step4.value;
+                    var binding = stmt.scope.getBinding(specifier.local.name);
+
+                    if (binding && isImportTypeOnly({
+                      binding: binding,
+                      programPath: path,
+                      pragmaImportName: pragmaImportName,
+                      pragmaFragImportName: pragmaFragImportName
+                    })) {
+                      importsToRemove.push(binding.path);
+                    } else {
+                      allElided = false;
+                      NEEDS_EXPLICIT_ESM.set(path.node, false);
+                    }
+                  }
+
+                  if (allElided) {
+                    stmt.remove();
+                  } else {
+                    for (var _iterator5 = _createForOfIteratorHelperLoose(importsToRemove), _step5; !(_step5 = _iterator5()).done;) {
+                      var importPath = _step5.value;
+                      importPath.remove();
+                    }
                   }
                 }
+
+                continue;
               }
 
-              continue;
-            }
-
-            if (stmt.isExportDeclaration()) {
-              stmt = stmt.get("declaration");
-            }
-
-            if (stmt.isVariableDeclaration({
-              declare: true
-            })) {
-              for (var _i = 0, _Object$keys = Object.keys(stmt.getBindingIdentifiers()); _i < _Object$keys.length; _i++) {
-                var name = _Object$keys[_i];
-                registerGlobalType(path.scope, name);
+              if (stmt.isExportDeclaration()) {
+                stmt = stmt.get("declaration");
               }
-            } else if (stmt.isTSTypeAliasDeclaration() || stmt.isTSDeclareFunction() || stmt.isTSInterfaceDeclaration() || stmt.isClassDeclaration({
-              declare: true
-            }) || stmt.isTSEnumDeclaration({
-              declare: true
-            }) || stmt.isTSModuleDeclaration({
-              declare: true
-            }) && stmt.get("id").isIdentifier()) {
-              registerGlobalType(path.scope, stmt.node.id.name);
+
+              if (stmt.isVariableDeclaration({
+                declare: true
+              })) {
+                for (var _i = 0, _Object$keys = Object.keys(stmt.getBindingIdentifiers()); _i < _Object$keys.length; _i++) {
+                  var name = _Object$keys[_i];
+                  registerGlobalType(path.scope, name);
+                }
+              } else if (stmt.isTSTypeAliasDeclaration() || stmt.isTSDeclareFunction() || stmt.isTSInterfaceDeclaration() || stmt.isClassDeclaration({
+                declare: true
+              }) || stmt.isTSEnumDeclaration({
+                declare: true
+              }) || stmt.isTSModuleDeclaration({
+                declare: true
+              }) && stmt.get("id").isIdentifier()) {
+                registerGlobalType(path.scope, stmt.node.id.name);
+              }
+            }
+          },
+          exit: function exit(path) {
+            if (path.node.sourceType === "module" && NEEDS_EXPLICIT_ESM.get(path.node)) {
+              path.pushContainer("body", exportNamedDeclaration());
             }
           }
         },
-        ExportNamedDeclaration: function ExportNamedDeclaration(path) {
+        ExportNamedDeclaration: function ExportNamedDeclaration(path, state) {
+          if (!NEEDS_EXPLICIT_ESM.has(state.file.ast.program)) {
+            NEEDS_EXPLICIT_ESM.set(state.file.ast.program, true);
+          }
+
           if (path.node.exportKind === "type") {
             path.remove();
             return;
@@ -112218,17 +112355,27 @@
             return isGlobalType(path, local.name);
           })) {
             path.remove();
+            return;
           }
+
+          NEEDS_EXPLICIT_ESM.set(state.file.ast.program, false);
         },
         ExportSpecifier: function ExportSpecifier(path) {
           if (!path.parent.source && isGlobalType(path, path.node.local.name)) {
             path.remove();
           }
         },
-        ExportDefaultDeclaration: function ExportDefaultDeclaration(path) {
+        ExportDefaultDeclaration: function ExportDefaultDeclaration(path, state) {
+          if (!NEEDS_EXPLICIT_ESM.has(state.file.ast.program)) {
+            NEEDS_EXPLICIT_ESM.set(state.file.ast.program, true);
+          }
+
           if (isIdentifier(path.node.declaration) && isGlobalType(path, path.node.declaration.name)) {
             path.remove();
+            return;
           }
+
+          NEEDS_EXPLICIT_ESM.set(state.file.ast.program, false);
         },
         TSDeclareFunction: function TSDeclareFunction(path) {
           path.remove();
@@ -117955,7 +118102,7 @@
     typescript: presetTypescript,
     flow: presetFlow
   });
-  var version = "7.14.3";
+  var version = "7.14.4";
 
   function onDOMContentLoaded() {
     transformScriptTags();

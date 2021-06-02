@@ -40,7 +40,7 @@ import java.util.Map;
 public class XsloaderFilter implements Filterer {
     private static final Logger LOGGER = LoggerFactory.getLogger(XsloaderFilter.class);
 
-    public static final String XSLOADER_VERSION = "1.1.50";
+    public static final String XSLOADER_VERSION = "1.1.51";
 
     private byte[] content;
     private byte[] map;
@@ -151,7 +151,7 @@ public class XsloaderFilter implements Filterer {
             WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(jsFilter);
 
             if (enableHtmv) {
-                HtmvFilterer htmvFilterer = new HtmvFilterer(servletContext);
+                HtmvFilterer htmvFilterer = new HtmvFilterer(servletContext, reactAutojs);
                 autoSetter.forInstance(new Object[]{htmvFilterer});
                 WrapperFilterManager.getWrapperFilterManager(servletContext).addFirstWrapperFilter(htmvFilterer);
             }

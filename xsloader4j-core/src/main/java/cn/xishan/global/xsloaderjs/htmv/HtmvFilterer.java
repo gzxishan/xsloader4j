@@ -79,6 +79,15 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter {
                             }
 
                             String script = appScript;
+                            script = script.replace("#{reactAutojs}", String.valueOf(reactAutojs));
+                            if (reactAutojs) {
+                                script = script.replace("#{react}",
+                                        servletContext.getContextPath() + "/react.react-inner.js");
+                                script = script.replace("#{react-dom}",
+                                        servletContext.getContextPath() +
+                                                "/react-dom.react-inner.js");
+                            }
+
                             script = script.replace("#{app-class}", "vue-app");
                             script = script.replace("#{app-id}", "vue-app");
                             script = script.replace("#{app}",
@@ -204,9 +213,11 @@ public class HtmvFilterer implements WrapperFilterManager.WrapperFilter {
     private HtmvPath[] htmvPaths;
     private HtmvPath starHtmvPath;
     private String appScript;
+    private boolean reactAutojs;
 
-    public HtmvFilterer(ServletContext servletContext) {
+    public HtmvFilterer(ServletContext servletContext, boolean reactAutojs) {
         this.servletContext = servletContext;
+        this.reactAutojs = reactAutojs;
     }
 
     /**

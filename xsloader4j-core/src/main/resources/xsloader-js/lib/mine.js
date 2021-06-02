@@ -271,6 +271,7 @@
 				allowNamespaces: true,
 				allowDeclareFields: true,
 				onlyRemoveTypeImports: true,
+				allExtensions: true,
 			}]);
 
 			option.plugins.push(['transform-react-jsx', {

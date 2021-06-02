@@ -8,7 +8,7 @@
  */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('react')) :
-  typeof define === 'function' && define.amd ? define(['react-dom','exports', 'react'], factory) :
+  typeof define === 'function' && define.amd ? define('react-dom',['exports', 'react'], factory) :
   (global = global || self, factory(global.ReactDOM = {}, global.React));
 }(this, (function (exports, React) { 'use strict';
 

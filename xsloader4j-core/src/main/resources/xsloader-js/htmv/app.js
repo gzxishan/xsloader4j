@@ -1,6 +1,11 @@
 
 window.__htmv_init_bridge_=function(){
-	xsloader.define("htmv-main",["vue"],function(Vue){//须先等待vue加载完成
+	var deps=["vue"];
+	if(#{reactAutojs}){
+		deps.push("#{react}","#{react-dom}");
+	}
+
+	xsloader.define("htmv-main",deps,function(Vue){//须先等待vue加载完成
 		this.require(["default!#{app}"],function(App){
 			var appid='#{app-id}';
 			var appclass='#{app-class}';

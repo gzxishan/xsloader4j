@@ -1,9 +1,9 @@
 /*!
- * xsloader.js v1.1.50
+ * xsloader.js v1.1.51
  * home:https://github.com/gzxishan/xsloader#readme
  * (c) 2018-2021 gzxishan
  * Released under the Apache-2.0 License.
- * build time:Thu May 27 2021 09:53:02 GMT+0800 (GMT+08:00)
+ * build time:Wed Jun 02 2021 09:14:55 GMT+0800 (GMT+08:00)
  */
 (function () {
   'use strict';
@@ -2508,7 +2508,7 @@
   var G$5 = U.global;
   var L$6 = G$5.xsloader;
   var env = {
-    version: "1.1.50"
+    version: "1.1.51"
   };
 
   var toGlobal = _objectSpread2(_objectSpread2({}, deprecated), base$1);
@@ -4213,7 +4213,7 @@
         U.appendInnerDeps(deps, callback);
       }
 
-      config && config.plugins.css.autoCssDeal(deps);
+      config && config.plugins.autoPluginsDeal(deps);
       this.selfname = selfname;
       this.deps = deps;
       this.pushName(selfname);
@@ -4660,7 +4660,7 @@
       var oneDep = deps;
       {
         var arr = [oneDep];
-        config.plugins.css.autoCssDeal(arr);
+        config.plugins.autoPluginsDeal(arr);
         oneDep = arr[0];
       }
       var pluginArgs = undefined;
@@ -5163,27 +5163,13 @@
       addVersion: true,
       innerDepType: "auto"
     }, option.props);
-    option.plugins.loading = L$a.extend({
-      enable: true,
-      color: '#2196f3',
-      bgColor: 'rgba(0,0,0,0.1)',
-      errColor: '#f5222d',
-      duration: 0.2,
-      height: 1,
-      delay: 500
-    }, option.plugins.loading);
-    option.plugins.css = L$a.extend({
-      inverse: true,
-      autoCss: true,
-      autoExts: [".css", ".scss", ".sass", ".less"]
-    }, option.plugins.css);
 
-    option.plugins.css.autoCssDeal = function (deps) {
-      if (this.autoCss) {
+    function pluginAutoExtDeal(pluginName, deps) {
+      if (this.auto) {
         for (var i = 0; i < deps.length; i++) {
           var dep = deps[i];
 
-          if (!L$a.startsWith(dep, "css!")) {
+          if (!L$a.startsWith(dep, pluginName) && dep.indexOf("!") == -1) {
             var index = dep.lastIndexOf("?");
             var query = "";
 
@@ -5196,22 +5182,67 @@
 
             for (var k = 0; k < autoExts.length; k++) {
               if (L$a.endsWith(dep, autoExts[k])) {
-                deps[i] = "css!" + dep + query;
+                deps[i] = pluginName + dep + query;
                 break;
               }
             }
           }
         }
       }
-    };
+    }
+
+    option.plugins.loading = L$a.extend({
+      enable: true,
+      color: '#2196f3',
+      bgColor: 'rgba(0,0,0,0.1)',
+      errColor: '#f5222d',
+      duration: 0.2,
+      height: 1,
+      delay: 500
+    }, option.plugins.loading);
 
     if (L$a.domAttr(script.theLoaderScript, "disable-loading") !== undefined) {
       option.plugins.loading.enable = false;
     }
 
+    option.plugins.css = L$a.extend({
+      inverse: true,
+      auto: true,
+      autoExts: [".css", ".scss", ".sass", ".less"]
+    }, option.plugins.css);
+
+    option.plugins.css.autoDeal = function (deps) {
+      return pluginAutoExtDeal.call(this, "css!", deps);
+    };
+
+    option.plugins.text = L$a.extend({
+      auto: true,
+      autoExts: [".txt", ".html", ".htm", ".svg"]
+    }, option.plugins.text);
+
+    option.plugins.text.autoDeal = function (deps) {
+      return pluginAutoExtDeal.call(this, "text!", deps);
+    };
+
+    option.plugins.json = L$a.extend({
+      auto: true,
+      autoExts: [".json"]
+    }, option.plugins.json);
+
+    option.plugins.json.autoDeal = function (deps) {
+      return pluginAutoExtDeal.call(this, "json!", deps);
+    };
+
     option.plugins.image = L$a.extend({
-      timeout: 10000
+      timeout: 10000,
+      auto: true,
+      autoExts: [".jpg", ".jpeg", ".png", ".bmp", ".gif", "webp"]
     }, option.plugins.image);
+
+    option.plugins.image.autoDeal = function (deps) {
+      return pluginAutoExtDeal.call(this, "image!", deps);
+    };
+
     option.plugins.xsmsg = L$a.extend({
       timeout: 30000,
       sleep: 500
@@ -5220,6 +5251,13 @@
       connTimeout: 30000,
       sleepTimeout: 20
     }, option.plugins.ifmsg);
+
+    option.plugins.autoPluginsDeal = function (deps) {
+      this.css.autoDeal(deps);
+      this.text.autoDeal(deps);
+      this.json.autoDeal(deps);
+      this.image.autoDeal(deps);
+    };
 
     if (!L$a.endsWith(option.baseUrl, "/")) {
       option.baseUrl += "/";
