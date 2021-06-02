@@ -121,6 +121,9 @@ public class PackDepMojo extends AbstractMojo {
                         JSONObject localDependencies = item.getJSONObject("localDependencies");
                         for (String moduleName : localDependencies.keySet()) {
                             JSONObject module = localDependencies.getJSONObject(moduleName);
+                            if (module.containsKey("enable") && !module.getBooleanValue("enable")) {
+                                continue;
+                            }
 
                             getLog().info(String.format("append local dependency: %s", moduleName));
 
@@ -154,19 +157,20 @@ public class PackDepMojo extends AbstractMojo {
                             }
 
                             String main = module.getString("main");
-                            String rpath = "./" + localModuleDir.getName() + "/" + moduleName + "/" +
-                                    (OftenTool.isEmpty(main) ? "index" : main);
+                            if (OftenTool.notEmpty(main)) {
+                                String rpath = "./" + localModuleDir.getName() + "/" + moduleName + "/" + main;
 
-                            String varName = "var" + (index++);
-                            mainScriptImport.append("const ").append(varName).append(" = require('").append(rpath)
-                                    .append("');\n");
-                            if (moduleName.equals(exportName)) {
-                                exportVarName = varName;
-                            } else {
-                                mainScriptDefine.append("defineEnv.define('").append(moduleName)
-                                        .append("',function(){return ")
-                                        .append(varName)
-                                        .append(";});\n");
+                                String varName = "var" + (index++);
+                                mainScriptImport.append("const ").append(varName).append(" = require('").append(rpath)
+                                        .append("');\n");
+                                if (moduleName.equals(exportName)) {
+                                    exportVarName = varName;
+                                } else {
+                                    mainScriptDefine.append("defineEnv.define('").append(moduleName)
+                                            .append("',function(){return ")
+                                            .append(varName)
+                                            .append(";});\n");
+                                }
                             }
                         }
                     }

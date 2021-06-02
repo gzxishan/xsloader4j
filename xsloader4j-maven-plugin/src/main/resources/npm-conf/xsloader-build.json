@@ -13,6 +13,7 @@
       "localDependencies": {
         "quill": {
           "version": "2.0.0-dev.3",
+          "enable": true,
           "dir": "webapp/local-lib/quill/2.0.0-dev.3/",
           "main": "quill.js",
           "entry": {
