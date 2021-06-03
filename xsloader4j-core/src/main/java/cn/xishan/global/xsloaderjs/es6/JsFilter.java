@@ -256,9 +256,9 @@ public class JsFilter implements WrapperFilterManager.WrapperFilter {
             case "jsx":
             case "js":
             case "ts":
-            case "jsr":
-            case "htmr_jsr":
-            case "jtr":
+            case "jsr"://默认自动引入内置的react与react-dom
+            case "htmr_jsr"://默认自动引入内置的react与react-dom
+            case "jtr"://默认自动引入内置的react与react-dom
             case "vue":
             case "htmv_vue":
             case "scss":

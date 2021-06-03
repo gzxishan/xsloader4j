@@ -8,7 +8,9 @@
       "ignoreCurrentRequireDep": true,
       "dependencies": {
         "vue-class-component": "^7.2.6",
-        "vue-property-decorator": "^9.1.2"
+        "vue-property-decorator": "^9.1.2",
+        //设置为true表示安装最新的，并替换成新版本
+        "draft-js": true
       },
       "localDependencies": {
         "quill": {
@@ -30,6 +32,16 @@
           "commonjs": "vue",
           "commonjs2": "vue",
           "amd": "vue"
+        },
+        "react": {
+          "commonjs": "react",
+          "commonjs2": "react",
+          "amd": "react"
+        },
+        "react-dom": {
+          "commonjs": "react-dom",
+          "commonjs2": "react-dom",
+          "amd": "react-dom"
         }
       }
     }
