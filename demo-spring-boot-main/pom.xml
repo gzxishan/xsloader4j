@@ -19,7 +19,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.log4j12.version>1.7.30</project.log4j12.version>
-        <project.CommonsFileupoad.version>1.4</project.CommonsFileupoad.version>
+        <project.CommonsFileupoad.version>1.5</project.CommonsFileupoad.version>
     </properties>
 
     <dependencies>
